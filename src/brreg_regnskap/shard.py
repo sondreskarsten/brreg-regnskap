@@ -33,11 +33,14 @@ def claim_shard(storage: StorageBackend, storage_path: str) -> int:
 
     for digit in range(10):
         path = f"{storage_path}/manifest_shard_{digit}.parquet"
-        if not storage.exists(path):
-            free.append(digit)
-            continue
-        mtime = storage.modified_time(path)
-        if mtime is None or mtime < cutoff:
+        try:
+            if not storage.exists(path):
+                free.append(digit)
+                continue
+            mtime = storage.modified_time(path)
+            if mtime is None or mtime < cutoff:
+                free.append(digit)
+        except Exception:
             free.append(digit)
 
     if not free:

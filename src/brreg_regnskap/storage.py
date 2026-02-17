@@ -86,6 +86,8 @@ class StorageBackend:
         backend = StorageBackendType.S3 if self._protocol == "s3" else StorageBackendType.GCS
         try:
             self._fs.ls(fs_path)
+        except FileNotFoundError:
+            pass
         except Exception as exc:
             raise CredentialError(
                 f"{self._credential_help_message(backend)}\n\nOriginal error: {exc}"

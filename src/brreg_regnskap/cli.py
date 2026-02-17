@@ -89,7 +89,6 @@ def sync(
 
             tmp_settings = Settings(storage_path=storage_path)
             tmp_storage = StorageBackend.from_settings(tmp_settings)
-            tmp_storage.check_credentials()
             shard_digit = claim_shard(tmp_storage, storage_path.rstrip("/"))
         else:
             shard_digit = int(shard)
