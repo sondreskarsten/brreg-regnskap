@@ -409,6 +409,9 @@ class SyncEngine:
         )
 
         checkpoint_every = self._settings.checkpoint_interval
+        burst_count = 0
+        BURST_SIZE = 30
+        BURST_PAUSE = 30
 
         for idx, orgnr in enumerate(todo):
             if self._should_shutdown():
@@ -417,12 +420,13 @@ class SyncEngine:
                 self._checkpoint_mgr.save(state)
                 return
 
-            years = await self._extract_years_from_regnskap(orgnr, regnskap_client)
+            years = await self._fetch_years_safe(orgnr, regnskap_client)
             if years:
                 self._backfill_db.set_years(orgnr, years)
 
             state.last_orgnr_processed = orgnr
             state.entities_processed += 1
+            burst_count += 1
 
             if (idx + 1) % checkpoint_every == 0 or idx + 1 == len(todo):
                 self._backfill_db.save()
@@ -434,7 +438,9 @@ class SyncEngine:
                     db_size=len(self._backfill_db),
                 )
 
-            await asyncio.sleep(0.5)
+            if burst_count >= BURST_SIZE and idx + 1 < len(todo):
+                burst_count = 0
+                await asyncio.sleep(BURST_PAUSE)
 
         self._backfill_db.save()
         logger.info("backfill_scan_complete", db_size=len(self._backfill_db))
@@ -443,6 +449,18 @@ class SyncEngine:
         state.entities_processed = 0
         state.current_year = None
         self._checkpoint_mgr.save(state)
+
+    async def _fetch_years_safe(
+        self,
+        orgnr: str,
+        regnskap_client: RegnskapsregisteretClient,
+    ) -> list[int]:
+        try:
+            years = await self._throttled_request(regnskap_client.fetch_years, orgnr)
+            return sorted(years, reverse=True)
+        except Exception as exc:
+            logger.warning("backfill_scan_failed", orgnr=orgnr, error=str(exc))
+            return []
 
     async def _extract_years_from_regnskap(
         self,
