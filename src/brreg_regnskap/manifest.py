@@ -1,0 +1,249 @@
+"""Parquet manifest for tracking downloaded regnskap files.
+
+The manifest is the source of truth for what has been downloaded. Each row represents
+a (orgnr, year) pair with its download status, file paths, hash, and journal number.
+
+Implementation notes:
+    - Schema is defined as MANIFEST_SCHEMA using pyarrow types.
+    - The manifest is stored as a single Parquet file with zstd compression.
+    - For GitHub Actions matrix jobs, each job writes a shard manifest. The merge
+      operation combines all shards into the global manifest.
+    - Upsert logic: filter out existing (orgnr, year) pairs, append new records.
+    - Correction detection: compare journalnr for existing (orgnr, year) pairs.
+      If different, the existing record should be marked and the old file archived.
+    - The manifest is small (~500K rows, ~10-20MB compressed) — full read-modify-write
+      is acceptable. No need for incremental append or partitioning.
+"""
+
+from __future__ import annotations
+
+import io
+from typing import TYPE_CHECKING
+
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.parquet as pq
+
+if TYPE_CHECKING:
+    from brreg_regnskap.storage import StorageBackend
+
+from brreg_regnskap.api.models import ManifestRecord
+
+MANIFEST_SCHEMA = pa.schema(
+    [
+        pa.field("orgnr", pa.string(), nullable=False),
+        pa.field("year", pa.int32(), nullable=False),
+        pa.field("download_timestamp", pa.string()),
+        pa.field("file_hash", pa.string()),
+        pa.field("json_path", pa.string()),
+        pa.field("pdf_path", pa.string()),
+        pa.field("file_size_bytes", pa.int64()),
+        pa.field("is_correction", pa.bool_()),
+        pa.field("journalnr", pa.string()),
+        pa.field("source_url", pa.string()),
+        pa.field("status", pa.string()),
+    ]
+)
+
+
+def _empty_table() -> pa.Table:
+    return pa.table(
+        {f.name: pa.array([], type=f.type) for f in MANIFEST_SCHEMA},
+        schema=MANIFEST_SCHEMA,
+    )
+
+
+def _record_to_dict(r: ManifestRecord) -> dict:
+    return {
+        "orgnr": r.orgnr,
+        "year": r.year,
+        "download_timestamp": r.download_timestamp,
+        "file_hash": r.file_hash,
+        "json_path": r.json_path,
+        "pdf_path": r.pdf_path,
+        "file_size_bytes": r.file_size_bytes,
+        "is_correction": r.is_correction,
+        "journalnr": r.journalnr,
+        "source_url": r.source_url,
+        "status": r.status,
+    }
+
+
+def _row_to_record(table: pa.Table, idx: int) -> ManifestRecord:
+    row = {col: table.column(col)[idx].as_py() for col in table.column_names}
+    return ManifestRecord(**row)
+
+
+class ManifestManager:
+    """Manages the Parquet manifest tracking all downloaded regnskap files.
+
+    Usage:
+        manifest = ManifestManager(storage, settings.manifest_path)
+        table = manifest.load()
+        manifest.upsert([record1, record2])
+        existing = manifest.get("964118191", 2024)
+        missing = manifest.list_missing(["964118191", "123456789"], 2024)
+    """
+
+    def __init__(self, storage: StorageBackend, manifest_path: str) -> None:
+        self._storage = storage
+        self._manifest_path = manifest_path
+
+    def load(self) -> pa.Table:
+        """Load the manifest from storage. Returns empty table if not found.
+
+        Returns a pyarrow Table with MANIFEST_SCHEMA.
+        """
+        if not self._storage.exists(self._manifest_path):
+            return _empty_table()
+        raw = self._storage.read_bytes(self._manifest_path)
+        buf = pa.BufferReader(raw)
+        return pq.read_table(buf, schema=MANIFEST_SCHEMA)
+
+    def save(self, table: pa.Table) -> None:
+        """Write the manifest table to storage atomically.
+
+        Uses zstd compression. Overwrites the existing manifest.
+        """
+        sink = io.BytesIO()
+        pq.write_table(table, sink, compression="zstd")
+        self._storage.write_bytes(self._manifest_path, sink.getvalue())
+
+    def upsert(self, records: list[ManifestRecord]) -> None:
+        """Insert or update records in the manifest.
+
+        For each record, if (orgnr, year) already exists:
+            - If journalnr differs: this is a correction. Update the record,
+              set is_correction=True. Caller is responsible for archiving old files.
+            - If journalnr matches: update timestamp and status.
+        If (orgnr, year) does not exist: insert new record.
+        """
+        if not records:
+            return
+
+        existing = self.load()
+
+        new_keys = {(r.orgnr, r.year) for r in records}
+
+        if existing.num_rows > 0:
+            orgnr_col = existing.column("orgnr")
+            year_col = existing.column("year")
+            keep_mask = pa.array(
+                [
+                    (orgnr_col[i].as_py(), year_col[i].as_py()) not in new_keys
+                    for i in range(existing.num_rows)
+                ]
+            )
+            existing = existing.filter(keep_mask)
+
+        new_rows = {f.name: [] for f in MANIFEST_SCHEMA}
+        for r in records:
+            d = _record_to_dict(r)
+            for col in new_rows:
+                new_rows[col].append(d[col])
+
+        new_arrays = {}
+        for f in MANIFEST_SCHEMA:
+            new_arrays[f.name] = pa.array(new_rows[f.name], type=f.type)
+        new_table = pa.table(new_arrays, schema=MANIFEST_SCHEMA)
+
+        merged = pa.concat_tables([existing, new_table], promote_options="none")
+        self.save(merged)
+
+    def get(self, orgnr: str, year: int) -> ManifestRecord | None:
+        """Look up a single manifest entry by (orgnr, year).
+
+        Returns None if not found.
+        """
+        table = self.load()
+        if table.num_rows == 0:
+            return None
+
+        mask = pc.and_(
+            pc.equal(table.column("orgnr"), orgnr),
+            pc.equal(table.column("year"), year),
+        )
+        filtered = table.filter(mask)
+        if filtered.num_rows == 0:
+            return None
+        return _row_to_record(filtered, 0)
+
+    def list_missing(self, orgnr_list: list[str], year: int) -> list[str]:
+        """Return orgnr values from the input list that are NOT in the manifest for the given year.
+
+        Used to determine which entities need downloading.
+        """
+        table = self.load()
+        if table.num_rows == 0:
+            return list(orgnr_list)
+
+        year_mask = pc.equal(table.column("year"), year)
+        year_rows = table.filter(year_mask)
+        existing_orgnr = set(year_rows.column("orgnr").to_pylist())
+        return [o for o in orgnr_list if o not in existing_orgnr]
+
+    def detect_corrections(self, orgnr: str, new_journalnr: str, year: int) -> bool:
+        """Check if the given orgnr+year has a different journalnr in the manifest.
+
+        Returns True if a correction is detected (existing journalnr differs).
+        Returns False if no existing entry or journalnr matches.
+        """
+        existing = self.get(orgnr, year)
+        if existing is None:
+            return False
+        if existing.journalnr is None:
+            return False
+        return existing.journalnr != new_journalnr
+
+    @staticmethod
+    def merge_shards(storage: StorageBackend, shard_paths: list[str], output_path: str) -> None:
+        """Merge multiple shard manifest files into a single global manifest.
+
+        Used after GitHub Actions matrix jobs complete. Concatenates all shard tables,
+        deduplicates by (orgnr, year) keeping the most recent download_timestamp,
+        and writes the merged result.
+        """
+        tables = []
+
+        output_mgr = ManifestManager(storage, output_path)
+        existing = output_mgr.load()
+        if existing.num_rows > 0:
+            tables.append(existing)
+
+        for path in shard_paths:
+            if not storage.exists(path):
+                continue
+            raw = storage.read_bytes(path)
+            buf = pa.BufferReader(raw)
+            shard = pq.read_table(buf, schema=MANIFEST_SCHEMA)
+            if shard.num_rows > 0:
+                tables.append(shard)
+
+        if not tables:
+            output_mgr.save(_empty_table())
+            return
+
+        combined = pa.concat_tables(tables, promote_options="none")
+
+        if combined.num_rows == 0:
+            output_mgr.save(combined)
+            return
+
+        orgnr_col = combined.column("orgnr")
+        year_col = combined.column("year")
+        ts_col = combined.column("download_timestamp")
+
+        seen: dict[tuple[str, int], int] = {}
+        for i in range(combined.num_rows):
+            key = (orgnr_col[i].as_py(), year_col[i].as_py())
+            ts = ts_col[i].as_py() or ""
+            if key not in seen:
+                seen[key] = i
+            else:
+                existing_ts = ts_col[seen[key]].as_py() or ""
+                if ts > existing_ts:
+                    seen[key] = i
+
+        keep_indices = sorted(seen.values())
+        deduped = combined.take(keep_indices)
+        output_mgr.save(deduped)

@@ -1,0 +1,79 @@
+[
+  {
+    "id": 6300613,
+    "journalnr": "2025741982",
+    "regnskapstype": "SELSKAP",
+    "virksomhet": {
+      "organisasjonsnummer": "964118191",
+      "organisasjonsform": "ASA",
+      "morselskap": true
+    },
+    "regnskapsperiode": {
+      "fraDato": "2024-01-01",
+      "tilDato": "2024-12-31"
+    },
+    "valuta": "EUR",
+    "avviklingsregnskap": false,
+    "oppstillingsplan": "store",
+    "revisjon": {
+      "ikkeRevidertAarsregnskap": false,
+      "fravalgRevisjon": false
+    },
+    "regnkapsprinsipper": {
+      "smaaForetak": false,
+      "regnskapsregler": "regnskapslovenAlminneligRegler"
+    },
+    "egenkapitalGjeld": {
+      "sumEgenkapitalGjeld": 6440000000.00,
+      "egenkapital": {
+        "sumEgenkapital": 2919000000.00,
+        "opptjentEgenkapital": {
+          "sumOpptjentEgenkapital": 1239000000.00
+        },
+        "innskuttEgenkapital": {
+          "sumInnskuttEgenkaptial": 1680000000.00
+        }
+      },
+      "gjeldOversikt": {
+        "sumGjeld": 3521000000.00,
+        "kortsiktigGjeld": {
+          "sumKortsiktigGjeld": 1666000000.00
+        },
+        "langsiktigGjeld": {
+          "sumLangsiktigGjeld": 1855000000.00
+        }
+      }
+    },
+    "eiendeler": {
+      "sumEiendeler": 6440000000.00,
+      "omloepsmidler": {
+        "sumOmloepsmidler": 1591000000.00
+      },
+      "anleggsmidler": {
+        "sumAnleggsmidler": 4849000000.00
+      }
+    },
+    "resultatregnskapResultat": {
+      "ordinaertResultatFoerSkattekostnad": 238000000.00,
+      "aarsresultat": 194000000.00,
+      "finansresultat": {
+        "nettoFinans": -29000000.00,
+        "finansinntekt": {
+          "sumFinansinntekter": 135000000.00
+        },
+        "finanskostnad": {
+          "sumFinanskostnad": 164000000.00
+        }
+      },
+      "driftsresultat": {
+        "driftsresultat": 267000000.00,
+        "driftsinntekter": {
+          "sumDriftsinntekter": 1931000000.00
+        },
+        "driftskostnad": {
+          "sumDriftskostnad": 1664000000.00
+        }
+      }
+    }
+  }
+]

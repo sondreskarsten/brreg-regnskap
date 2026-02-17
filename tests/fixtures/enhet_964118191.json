@@ -1,0 +1,56 @@
+{
+  "organisasjonsnummer": "964118191",
+  "navn": "MOWI ASA",
+  "organisasjonsform": {
+    "kode": "ASA",
+    "beskrivelse": "Allmennaksjeselskap"
+  },
+  "hjemmeside": "www.mowi.com",
+  "postadresse": {
+    "land": "Norge",
+    "landkode": "NO",
+    "postnummer": "5835",
+    "poststed": "BERGEN",
+    "adresse": ["Postboks 4102 Sandviken"],
+    "kommune": "BERGEN",
+    "kommunenummer": "4601"
+  },
+  "registreringsdatoEnhetsregisteret": "1995-02-20",
+  "registrertIMvaregisteret": true,
+  "naeringskode1": {
+    "kode": "03.211",
+    "beskrivelse": "Produksjon av fisk, bløtdyr, krepsdyr og pigghuder i sjø og brakkvann"
+  },
+  "naeringskode2": {
+    "kode": "03.222",
+    "beskrivelse": "Produksjon av yngel og settefisk i ferskvann"
+  },
+  "naeringskode3": {
+    "kode": "03.212",
+    "beskrivelse": "Produksjon av yngel og settefisk i sjø og brakkvann"
+  },
+  "antallAnsatte": 2530,
+  "harRegistrertAntallAnsatte": true,
+  "forretningsadresse": {
+    "land": "Norge",
+    "landkode": "NO",
+    "postnummer": "5035",
+    "poststed": "BERGEN",
+    "adresse": ["Sandviksbodene 77A/B"],
+    "kommune": "BERGEN",
+    "kommunenummer": "4601"
+  },
+  "stiftelsesdato": "1992-05-18",
+  "institusjonellSektorkode": {
+    "kode": "2100",
+    "beskrivelse": "Private aksjeselskaper mv."
+  },
+  "registrertIForetaksregisteret": true,
+  "sisteInnsendteAarsregnskap": "2024",
+  "konkurs": false,
+  "underAvvikling": false,
+  "underTvangsavviklingEllerTvangsopplosning": false,
+  "maalform": "Bokmål",
+  "vedtektsdato": "2025-03-25",
+  "erIKonsern": true
+}

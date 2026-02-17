@@ -1,0 +1,109 @@
+name: BRREG Sync
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # Weekly Monday 03:00 UTC
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Sync mode'
+        type: choice
+        options:
+          - full
+          - incremental
+        default: incremental
+      max_parallel:
+        description: 'Max parallel jobs'
+        type: number
+        default: 5
+
+# Ensure only one sync runs at a time
+concurrency:
+  group: brreg-sync
+  cancel-in-progress: false
+
+env:
+  STORAGE_PATH: ${{ vars.BRREG_STORAGE_PATH || 's3://brreg-regnskap/data' }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+      mode: ${{ steps.gen.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-north-1' }}
+
+      - name: Install
+        run: uv sync --frozen --extra s3
+
+      - name: Generate matrix
+        id: gen
+        run: |
+          uv run python scripts/generate_matrix.py \
+            --storage-path "$STORAGE_PATH" \
+            --mode "${{ inputs.mode || 'incremental' }}"
+
+  process:
+    needs: plan
+    if: needs.plan.outputs.matrix != '{"include":[]}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJSON(inputs.max_parallel || '5') }}
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-north-1' }}
+
+      - name: Install
+        run: uv sync --frozen --extra s3
+
+      - name: Sync shard
+        run: |
+          uv run brreg-regnskap sync "$STORAGE_PATH" \
+            --mode ${{ needs.plan.outputs.mode }} \
+            --range-start "${{ matrix.start }}" \
+            --range-end "${{ matrix.end }}" \
+            --max-runtime 300 \
+            --log-level INFO
+
+  merge:
+    needs: [plan, process]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-north-1' }}
+
+      - name: Install
+        run: uv sync --frozen --extra s3
+
+      - name: Merge shard manifests
+        run: uv run brreg-regnskap merge-manifests "$STORAGE_PATH"
