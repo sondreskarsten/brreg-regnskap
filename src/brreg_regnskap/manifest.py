@@ -90,26 +90,37 @@ class ManifestManager:
     def __init__(self, storage: StorageBackend, manifest_path: str) -> None:
         self._storage = storage
         self._manifest_path = manifest_path
+        self._cache: pa.Table | None = None
 
     def load(self) -> pa.Table:
         """Load the manifest from storage. Returns empty table if not found.
 
+        Uses an in-memory cache to avoid repeated Parquet deserialization.
         Returns a pyarrow Table with MANIFEST_SCHEMA.
         """
+        if self._cache is not None:
+            return self._cache
         if not self._storage.exists(self._manifest_path):
             return _empty_table()
         raw = self._storage.read_bytes(self._manifest_path)
         buf = pa.BufferReader(raw)
-        return pq.read_table(buf, schema=MANIFEST_SCHEMA)
+        self._cache = pq.read_table(buf, schema=MANIFEST_SCHEMA)
+        return self._cache
 
     def save(self, table: pa.Table) -> None:
         """Write the manifest table to storage atomically.
 
         Uses zstd compression. Overwrites the existing manifest.
+        Updates the in-memory cache.
         """
         sink = io.BytesIO()
         pq.write_table(table, sink, compression="zstd")
         self._storage.write_bytes(self._manifest_path, sink.getvalue())
+        self._cache = table
+
+    def invalidate_cache(self) -> None:
+        """Clear the in-memory cache, forcing next load() to read from storage."""
+        self._cache = None
 
     def upsert(self, records: list[ManifestRecord]) -> None:
         """Insert or update records in the manifest.
@@ -155,7 +166,7 @@ class ManifestManager:
     def get(self, orgnr: str, year: int) -> ManifestRecord | None:
         """Look up a single manifest entry by (orgnr, year).
 
-        Returns None if not found.
+        Uses the in-memory cache. Returns None if not found.
         """
         table = self.load()
         if table.num_rows == 0:

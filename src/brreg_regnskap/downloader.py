@@ -64,9 +64,7 @@ RETRYABLE_HTTP_STATUSES = {429, 502, 503, 504}
 def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, RETRYABLE_ERRORS):
         return True
-    if isinstance(exc, aiohttp.ClientResponseError) and exc.status in RETRYABLE_HTTP_STATUSES:
-        return True
-    return False
+    return isinstance(exc, aiohttp.ClientResponseError) and exc.status in RETRYABLE_HTTP_STATUSES
 
 
 def _before_retry_log(retry_state: RetryCallState) -> None:
@@ -135,9 +133,9 @@ class SyncEngine:
         """Full sync: two-phase pipeline.
 
         Phase 1 (metadata): Build available_years.json by calling fetch_years for each entity.
-        Phase 2 (download): Year-by-year, newest first. For each year, process only
-            entities whose sisteInnsendteAarsregnskap matches that year.
-            Per entity: download regnskap JSON + PDF for that year.
+        Phase 2 (download): Year-by-year, newest first. Uses available_years.json to
+            build year groups so ALL available years are covered, not just the latest.
+            Per entity/year: download regnskap JSON (only for latest year) + PDF.
         """
         connector = aiohttp.TCPConnector(limit=self._settings.max_concurrent)
         timeout = aiohttp.ClientTimeout(total=300)
@@ -174,14 +172,18 @@ class SyncEngine:
                     if e.organisasjonsnummer <= self._settings.orgnr_range_end
                 ]
 
-            orgnr_to_year: dict[str, int] = {}
+            orgnr_to_latest_year: dict[str, int] = {}
             for e in entities:
                 if e.sisteInnsendteAarsregnskap:
-                    orgnr_to_year[e.organisasjonsnummer] = int(e.sisteInnsendteAarsregnskap)
+                    orgnr_to_latest_year[e.organisasjonsnummer] = int(e.sisteInnsendteAarsregnskap)
 
-            if state.phase == "metadata" or not self._storage.exists(self._settings.available_years_path):
+            needs_metadata = (
+                state.phase == "metadata"
+                or not self._storage.exists(self._settings.available_years_path)
+            )
+            if needs_metadata:
                 await self._build_available_years(
-                    list(orgnr_to_year.keys()), regnskap_client, state,
+                    list(orgnr_to_latest_year.keys()), regnskap_client, state,
                 )
                 if self._should_shutdown():
                     return
@@ -189,12 +191,25 @@ class SyncEngine:
             state.phase = "download"
             self._checkpoint_mgr.save(state)
 
+            # Load available_years.json to build year groups covering ALL years,
+            # not just the sisteInnsendteAarsregnskap year.
+            available_years_data: dict[str, list[int]] = {}
+            if self._storage.exists(self._settings.available_years_path):
+                raw_ay = self._storage.read_bytes(self._settings.available_years_path)
+                available_years_data = json.loads(raw_ay)
+
             year_groups: dict[int, list[str]] = {}
-            for orgnr, year in orgnr_to_year.items():
-                year_groups.setdefault(year, []).append(orgnr)
+            for orgnr in orgnr_to_latest_year:
+                entity_years = available_years_data.get(orgnr, [])
+                if not entity_years:
+                    # Fallback: use sisteInnsendteAarsregnskap year if no years data
+                    entity_years = [orgnr_to_latest_year[orgnr]]
+                for year in entity_years:
+                    year_groups.setdefault(year, []).append(orgnr)
 
             all_years = sorted(year_groups.keys(), reverse=True)
-            logger.info("year_groups", years=all_years, counts={y: len(v) for y, v in year_groups.items()})
+            year_counts = {y: len(v) for y, v in year_groups.items()}
+            logger.info("year_groups", years=all_years, counts=year_counts)
 
             if state.current_year:
                 all_years = [y for y in all_years if y <= state.current_year]
@@ -215,7 +230,9 @@ class SyncEngine:
                 state.entities_processed = 0
                 logger.info("year_pass_start", year=year, entities=len(orgnr_list))
 
-                await self._process_year_batch(orgnr_list, year, regnskap_client, state)
+                await self._process_year_batch(
+                    orgnr_list, year, regnskap_client, state, orgnr_to_latest_year,
+                )
 
             self._checkpoint_mgr.clear()
             logger.info("sync_complete", **{k: v for k, v in self._stats.items()})
@@ -229,15 +246,26 @@ class SyncEngine:
         """Phase 1: fetch available PDF years for all entities, save as one JSON.
 
         Processes entities serially to avoid thundering-herd 429s on the /aar endpoint.
+        On resume, loads partial results from the intermediate file so progress
+        accumulated before an interruption is not lost.
         """
         if self._storage.exists(self._settings.available_years_path):
             logger.info("reusing_available_years", path=self._settings.available_years_path)
             return
 
         logger.info("building_available_years", entities=len(orgnr_list))
-        result: dict[str, list[int]] = {}
 
+        # Load partial results from intermediate file if resuming
+        partial_path = self._settings.available_years_path + ".partial"
+        result: dict[str, list[int]] = {}
         if state.last_orgnr_processed and state.phase == "metadata":
+            if self._storage.exists(partial_path):
+                try:
+                    raw = self._storage.read_bytes(partial_path)
+                    result = json.loads(raw)
+                    logger.info("loaded_partial_years", entities=len(result))
+                except Exception as exc:
+                    logger.warning("partial_years_load_failed", error=str(exc))
             orgnr_list = [o for o in orgnr_list if o > state.last_orgnr_processed]
 
         total = len(orgnr_list)
@@ -246,6 +274,9 @@ class SyncEngine:
         for idx, orgnr in enumerate(orgnr_list):
             if self._should_shutdown():
                 logger.info("graceful_shutdown", reason="time_limit", phase="metadata")
+                # Save partial results so they aren't lost on resume
+                partial_data = json.dumps(result, separators=(",", ":")).encode("utf-8")
+                self._storage.write_bytes(partial_path, partial_data)
                 self._checkpoint_mgr.save(state)
                 return
 
@@ -257,6 +288,9 @@ class SyncEngine:
             state.entities_processed += 1
 
             if (idx + 1) % checkpoint_every == 0:
+                # Save partial results alongside checkpoint
+                partial_data = json.dumps(result, separators=(",", ":")).encode("utf-8")
+                self._storage.write_bytes(partial_path, partial_data)
                 self._checkpoint_mgr.save(state)
                 logger.info(
                     "metadata_checkpoint",
@@ -269,7 +303,11 @@ class SyncEngine:
 
         data = json.dumps(result, separators=(",", ":")).encode("utf-8")
         self._storage.write_bytes(self._settings.available_years_path, data)
-        logger.info("available_years_saved", path=self._settings.available_years_path, entities=len(result))
+        years_path = self._settings.available_years_path
+        logger.info("available_years_saved", path=years_path, entities=len(result))
+
+        # Clean up partial file
+        self._storage.delete(partial_path)
 
         state.last_orgnr_processed = None
         state.phase = "download"
@@ -290,6 +328,7 @@ class SyncEngine:
         year: int,
         regnskap_client: RegnskapsregisteretClient,
         state: CheckpointState,
+        orgnr_to_latest_year: dict[str, int] | None = None,
     ) -> None:
         """Process all entities for a single year in small sub-batches."""
         sub_batch_size = self._settings.max_concurrent
@@ -307,7 +346,13 @@ class SyncEngine:
 
             batch = orgnr_list[i : i + sub_batch_size]
             tasks = [
-                self._process_entity_year_safe(orgnr, year, regnskap_client)
+                self._process_entity_year_safe(
+                    orgnr, year, regnskap_client,
+                    is_latest_year=(
+                        orgnr_to_latest_year is not None
+                        and orgnr_to_latest_year.get(orgnr) == year
+                    ),
+                )
                 for orgnr in batch
             ]
             results = await asyncio.gather(*tasks)
@@ -426,18 +471,24 @@ class SyncEngine:
                 **self._stats,
             )
 
-        self._checkpoint_mgr.clear()
-        logger.info("sync_complete", processed=state.entities_processed)
+        # Note: checkpoint is NOT cleared here — the caller (_run_incremental)
+        # saves the final state with updated last_oppdateringsid. Clearing here
+        # would risk data loss if the process crashes before the caller saves.
+        logger.info("batch_processing_complete", processed=state.entities_processed)
 
     async def _process_entity_year_safe(
         self,
         orgnr: str,
         year: int,
         regnskap_client: RegnskapsregisteretClient,
+        *,
+        is_latest_year: bool = True,
     ) -> list[ManifestRecord]:
         """Wrapper that catches all exceptions per entity/year."""
         try:
-            return await self._process_entity_year(orgnr, year, regnskap_client)
+            return await self._process_entity_year(
+                orgnr, year, regnskap_client, is_latest_year=is_latest_year,
+            )
         except Exception as exc:
             logger.error("entity_year_failed", orgnr=orgnr, year=year, error=str(exc))
             self._stats["failed"] += 1
@@ -456,8 +507,15 @@ class SyncEngine:
         orgnr: str,
         year: int,
         regnskap_client: RegnskapsregisteretClient,
+        *,
+        is_latest_year: bool = True,
     ) -> list[ManifestRecord]:
         """Process one entity for one year: download regnskap JSON + PDF.
+
+        Args:
+            is_latest_year: If True, fetch and save regnskap JSON (the API only
+                returns the most recent submission). For historical years, only
+                the PDF is downloaded since JSON would be a duplicate.
 
         Returns manifest records for the year processed.
         """
@@ -465,9 +523,15 @@ class SyncEngine:
         now = self._now_iso()
 
         existing = self._manifest.get(orgnr, year)
-        if existing and existing.pdf_path and existing.json_path and existing.status == "success":
-            self._stats["skipped"] += 1
-            return []
+        # For latest year: skip if both JSON and PDF already present
+        # For historical years: skip if PDF already present
+        if existing and existing.status == "success":
+            if is_latest_year and existing.pdf_path and existing.json_path:
+                self._stats["skipped"] += 1
+                return []
+            if not is_latest_year and existing.pdf_path:
+                self._stats["skipped"] += 1
+                return []
 
         records: list[ManifestRecord] = []
 
@@ -477,32 +541,35 @@ class SyncEngine:
         journalnr = None
         is_correction = False
 
-        try:
-            raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw, orgnr)
-        except aiohttp.ClientResponseError as exc:
-            logger.warning("regnskap_json_failed", orgnr=orgnr, status=exc.status)
-        except Exception as exc:
-            logger.warning("regnskap_json_failed", orgnr=orgnr, error=str(exc))
+        # Only fetch regnskap JSON for the latest year — the API always returns
+        # the most recent submission regardless of which year we request.
+        if is_latest_year:
+            try:
+                raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw, orgnr)
+            except aiohttp.ClientResponseError as exc:
+                logger.warning("regnskap_json_failed", orgnr=orgnr, status=exc.status)
+            except Exception as exc:
+                logger.warning("regnskap_json_failed", orgnr=orgnr, error=str(exc))
 
-        if raw_json is not None:
-            parsed_items = json.loads(raw_json)
-            if isinstance(parsed_items, list) and parsed_items:
-                regnskap = Regnskap.model_validate(parsed_items[0])
-            elif isinstance(parsed_items, dict):
-                regnskap = Regnskap.model_validate(parsed_items)
-            else:
-                regnskap = None
+            if raw_json is not None:
+                parsed_items = json.loads(raw_json)
+                if isinstance(parsed_items, list) and parsed_items:
+                    regnskap = Regnskap.model_validate(parsed_items[0])
+                elif isinstance(parsed_items, dict):
+                    regnskap = Regnskap.model_validate(parsed_items)
+                else:
+                    regnskap = None
 
-            if regnskap:
-                journalnr = str(regnskap.journalnr) if regnskap.journalnr else None
-                if journalnr:
-                    is_correction = self._manifest.detect_corrections(orgnr, journalnr, year)
-                    if is_correction:
-                        await self._archive_correction(orgnr, year, journalnr)
+                if regnskap:
+                    journalnr = str(regnskap.journalnr) if regnskap.journalnr else None
+                    if journalnr:
+                        is_correction = self._manifest.detect_corrections(orgnr, journalnr, year)
+                        if is_correction:
+                            await self._archive_correction(orgnr, year, journalnr)
 
-                json_path = self._settings.regnskap_json_path(orgnr, year)
-                file_hash = self._hash_content(raw_json)
-                self._storage.write_bytes(json_path, raw_json)
+                    json_path = self._settings.regnskap_json_path(orgnr, year)
+                    file_hash = self._hash_content(raw_json)
+                    self._storage.write_bytes(json_path, raw_json)
 
         pdf_path = None
         pdf_size = 0
@@ -519,6 +586,9 @@ class SyncEngine:
             self._stats["pdfs"] += 1
 
         if json_path or pdf_path:
+            has_json_but_no_pdf = is_latest_year and json_path and not pdf_path
+            status = "pdf_missing" if has_json_but_no_pdf else "success"
+
             records.append(
                 ManifestRecord(
                     orgnr=orgnr,
@@ -531,12 +601,23 @@ class SyncEngine:
                     is_correction=is_correction,
                     journalnr=journalnr,
                     source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
-                    status="success",
+                    status=status,
                 )
             )
             self._stats["success"] += 1
-        else:
+        elif is_latest_year:
+            # Latest year but got nothing — skip, don't count as failure
             self._stats["skipped"] += 1
+        else:
+            # Historical year with no PDF available
+            records.append(
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=year,
+                    download_timestamp=now,
+                    status="pdf_missing",
+                )
+            )
 
         return records
 
@@ -578,7 +659,10 @@ class SyncEngine:
             raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw, orgnr)
         except aiohttp.ClientResponseError as exc:
             error_detail = f"HTTP {exc.status}: {exc.message} url={exc.request_info.real_url}"
-            logger.warning("regnskap_server_error", orgnr=orgnr, status=exc.status, error=error_detail)
+            logger.warning(
+                "regnskap_server_error", orgnr=orgnr,
+                status=exc.status, error=error_detail,
+            )
             self._stats["failed"] += 1
             return [
                 ManifestRecord(
@@ -694,15 +778,19 @@ class SyncEngine:
                     )
                 )
 
-        if records:
-            self._stats["success"] += 1
-        else:
+        success_count = sum(1 for r in records if r.status == "success")
+        failed_count = sum(1 for r in records if r.status in ("failed", "pdf_failed"))
+        if success_count:
+            self._stats["success"] += success_count
+        if failed_count:
+            self._stats["failed"] += failed_count
+        if not records:
             self._stats["skipped"] += 1
 
         return records
 
-    async def _archive_correction(self, orgnr: str, year: int, old_journalnr: str) -> None:
-        """Move existing regnskap files to corrections/ before overwriting."""
+    async def _archive_correction(self, orgnr: str, year: int, new_journalnr: str) -> None:
+        """Move existing regnskap files to corrections/ before overwriting with new version."""
         ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
 
         existing_json = self._settings.regnskap_json_path(orgnr, year)

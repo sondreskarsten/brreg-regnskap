@@ -60,10 +60,14 @@ def sync(
     mode: SyncMode = typer.Option(
         SyncMode.FULL, "--mode", "-m", help="Sync mode: full or incremental"
     ),
-    max_concurrent: int = typer.Option(50, "--max-concurrent", "-c"),
-    requests_per_second: float = typer.Option(10.0, "--rps"),
-    max_runtime: int = typer.Option(
-        0, "--max-runtime", help="Max runtime in minutes (0=unlimited)"
+    max_concurrent: int | None = typer.Option(
+        None, "--max-concurrent", "-c", help="Max simultaneous HTTP connections"
+    ),
+    requests_per_second: float | None = typer.Option(
+        None, "--rps", help="Rate limit (requests per second)"
+    ),
+    max_runtime: int | None = typer.Option(
+        None, "--max-runtime", help="Max runtime in minutes (0=unlimited)"
     ),
     range_start: str | None = typer.Option(
         None, "--range-start", help="Start of orgnr range (for matrix jobs)"
@@ -71,22 +75,32 @@ def sync(
     range_end: str | None = typer.Option(
         None, "--range-end", help="End of orgnr range (for matrix jobs)"
     ),
-    checkpoint_interval: int = typer.Option(1000, "--checkpoint-interval"),
+    checkpoint_interval: int | None = typer.Option(
+        None, "--checkpoint-interval", help="Save checkpoint every N entities"
+    ),
     log_level: str = typer.Option("INFO", "--log-level", "-l"),
 ) -> None:
     """Run a full or incremental sync of BRREG regnskap data."""
     _configure_logging(log_level)
 
-    settings = Settings(
-        storage_path=storage_path,
-        max_concurrent=max_concurrent,
-        requests_per_second=requests_per_second,
-        max_runtime_minutes=max_runtime,
-        checkpoint_interval=checkpoint_interval,
-        log_level=log_level,
-        orgnr_range_start=range_start,
-        orgnr_range_end=range_end,
-    )
+    # Only pass CLI args that were explicitly provided, so that env vars
+    # and Settings defaults are respected for unset options.
+    overrides: dict[str, object] = {
+        "storage_path": storage_path,
+        "log_level": log_level,
+        "orgnr_range_start": range_start,
+        "orgnr_range_end": range_end,
+    }
+    if max_concurrent is not None:
+        overrides["max_concurrent"] = max_concurrent
+    if requests_per_second is not None:
+        overrides["requests_per_second"] = requests_per_second
+    if max_runtime is not None:
+        overrides["max_runtime_minutes"] = max_runtime
+    if checkpoint_interval is not None:
+        overrides["checkpoint_interval"] = checkpoint_interval
+
+    settings = Settings(**overrides)  # type: ignore[arg-type]
 
     from brreg_regnskap.downloader import SyncEngine
 
@@ -115,13 +129,13 @@ def status(
     table = manifest.load()
     state = checkpoint.load()
 
+    import pyarrow.compute as pc
+
     console.print(f"[bold]Manifest:[/bold] {settings.manifest_path}")
     console.print(f"  Total records: {table.num_rows}")
     if table.num_rows > 0:
         status_col = table.column("status")
         for s in ["success", "failed", "pending", "pdf_missing"]:
-            import pyarrow.compute as pc
-
             count = pc.sum(pc.equal(status_col, s)).as_py()
             if count:
                 console.print(f"  {s}: {count}")

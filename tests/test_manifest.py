@@ -137,6 +137,39 @@ class TestManifestManager:
         m = _make_manifest(tmp_path)
         assert m.detect_corrections("964118191", "ANY", 2024) is False
 
+    def test_cache_avoids_repeated_disk_reads(self, tmp_path: Path) -> None:
+        """After load(), subsequent get() calls use the cache, not disk."""
+        m = _make_manifest(tmp_path)
+        m.upsert([_make_record()])
+        # First get loads from disk and caches
+        r1 = m.get("964118191", 2024)
+        assert r1 is not None
+        # Second get should use cache (no disk read)
+        r2 = m.get("964118191", 2024)
+        assert r2 is not None
+        assert r1.orgnr == r2.orgnr
+
+    def test_upsert_updates_cache(self, tmp_path: Path) -> None:
+        """After upsert, get() should see the new data without explicit reload."""
+        m = _make_manifest(tmp_path)
+        m.upsert([_make_record(status="pending")])
+        r1 = m.get("964118191", 2024)
+        assert r1 is not None
+        assert r1.status == "pending"
+        m.upsert([_make_record(status="success")])
+        r2 = m.get("964118191", 2024)
+        assert r2 is not None
+        assert r2.status == "success"
+
+    def test_invalidate_cache(self, tmp_path: Path) -> None:
+        m = _make_manifest(tmp_path)
+        m.upsert([_make_record()])
+        _ = m.load()  # populate cache
+        m.invalidate_cache()
+        # After invalidation, load reads from disk again
+        table = m.load()
+        assert table.num_rows == 1
+
 
 class TestManifestMerge:
     def test_merge_two_shards(self, tmp_path: Path) -> None:

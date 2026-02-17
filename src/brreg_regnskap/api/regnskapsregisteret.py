@@ -28,7 +28,6 @@ import aiohttp
 
 from brreg_regnskap.api.models import Regnskap
 
-
 BASE_URL = "https://data.brreg.no/regnskapsregisteret"
 
 
@@ -124,7 +123,8 @@ class RegnskapsregisteretClient:
         Returns raw PDF bytes on success.
         """
         url = f"{BASE_URL}/regnskap/aarsregnskap/kopi/{orgnr}/{year}"
-        async with self.session.get(url) as resp:
+        headers = {"Accept": "application/pdf"}
+        async with self.session.get(url, headers=headers) as resp:
             if resp.status == 404:
                 return None
             resp.raise_for_status()
