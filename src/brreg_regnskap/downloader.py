@@ -301,7 +301,11 @@ class SyncEngine:
         if regnskap.regnskapsperiode and regnskap.regnskapsperiode.tilDato:
             regnskap_year = int(regnskap.regnskapsperiode.tilDato[:4])
 
-        available_years = await self._throttled_request(regnskap_client.fetch_years, orgnr)
+        available_years = []
+        try:
+            available_years = await self._throttled_request(regnskap_client.fetch_years, orgnr)
+        except Exception as exc:
+            logger.warning("fetch_years_failed", orgnr=orgnr, error=str(exc))
 
         if regnskap_year and journalnr:
             is_correction = self._manifest.detect_corrections(orgnr, journalnr, regnskap_year)
@@ -333,7 +337,21 @@ class SyncEngine:
             if existing and existing.pdf_path and existing.status == "success":
                 continue
 
-            pdf_data = await self._throttled_request(regnskap_client.download_pdf, orgnr, year)
+            try:
+                pdf_data = await self._throttled_request(regnskap_client.download_pdf, orgnr, year)
+            except Exception as exc:
+                logger.warning("pdf_download_failed", orgnr=orgnr, year=year, error=str(exc))
+                if not any(r.year == year for r in records):
+                    records.append(
+                        ManifestRecord(
+                            orgnr=orgnr,
+                            year=year,
+                            download_timestamp=now,
+                            status="pdf_failed",
+                        )
+                    )
+                continue
+
             if pdf_data is None:
                 if not any(r.year == year for r in records):
                     records.append(
@@ -397,7 +415,7 @@ class SyncEngine:
             retry=retry_if_exception_type(RETRYABLE_ERRORS),
             wait=wait_exponential_jitter(initial=1, max=60, jitter=2),
             stop=stop_after_attempt(self._settings.max_retries),
-            before=_before_retry_log,
+            before_sleep=_before_retry_log,
             reraise=True,
         )
         async def _inner() -> Any:
