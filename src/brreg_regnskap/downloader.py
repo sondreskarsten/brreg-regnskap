@@ -43,7 +43,7 @@ from tenacity import (
 
 from brreg_regnskap.api.enhetsregisteret import EnhetsregisteretClient
 from brreg_regnskap.api.models import ManifestRecord, Regnskap
-from brreg_regnskap.api.regnskapsregisteret import RegnskapsregisteretClient
+from brreg_regnskap.api.regnskapsregisteret import BrregRateLimitError, RegnskapsregisteretClient
 from brreg_regnskap.checkpoint import CheckpointManager, CheckpointState
 from brreg_regnskap.config import Settings, SyncMode
 from brreg_regnskap.manifest import ManifestManager
@@ -55,6 +55,7 @@ RETRYABLE_ERRORS = (
     aiohttp.ServerDisconnectedError,
     asyncio.TimeoutError,
     ConnectionError,
+    BrregRateLimitError,
 )
 
 RETRYABLE_HTTP_STATUSES = {429, 502, 503, 504}

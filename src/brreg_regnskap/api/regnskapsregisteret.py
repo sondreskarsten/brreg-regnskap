@@ -18,6 +18,8 @@ Implementation notes:
     - All methods are async using aiohttp.
     - HTTP 404 on PDF means the PDF is not (yet) available — return None, don't raise.
     - HTTP 404 on regnskap JSON means the company has no registered accounts — return None.
+    - BRREG returns HTTP 200 with body {"message": "Too many requests!"} instead of
+      HTTP 429. All methods must detect this and raise BrregRateLimitError for retry.
 """
 
 from __future__ import annotations
@@ -26,7 +28,12 @@ import aiohttp
 
 from brreg_regnskap.api.models import Regnskap
 
+
 BASE_URL = "https://data.brreg.no/regnskapsregisteret"
+
+
+class BrregRateLimitError(Exception):
+    """BRREG returns HTTP 200 with JSON error body instead of HTTP 429."""
 
 
 class RegnskapsregisteretClient:
@@ -89,7 +96,10 @@ class RegnskapsregisteretClient:
             if resp.status == 404:
                 return None
             resp.raise_for_status()
-            return await resp.read()
+            raw = await resp.read()
+            if b"Too many requests" in raw[:200]:
+                raise BrregRateLimitError(f"Rate limited on regnskap/{orgnr}")
+            return raw
 
     async def fetch_years(self, orgnr: str) -> list[int]:
         """Fetch the list of years with available PDF annual reports.
@@ -103,6 +113,8 @@ class RegnskapsregisteretClient:
                 return []
             resp.raise_for_status()
             data = await resp.json()
+        if isinstance(data, dict) and "message" in data:
+            raise BrregRateLimitError(f"Rate limited on years/{orgnr}: {data['message']}")
         return [int(y) for y in data] if isinstance(data, list) else []
 
     async def download_pdf(self, orgnr: str, year: int) -> bytes | None:
@@ -116,4 +128,7 @@ class RegnskapsregisteretClient:
             if resp.status == 404:
                 return None
             resp.raise_for_status()
-            return await resp.read()
+            data = await resp.read()
+            if len(data) < 500 and b"Too many requests" in data:
+                raise BrregRateLimitError(f"Rate limited on pdf/{orgnr}/{year}")
+            return data

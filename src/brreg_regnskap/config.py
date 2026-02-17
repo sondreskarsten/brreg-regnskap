@@ -49,8 +49,8 @@ class Settings(BaseSettings):
     )
 
     storage_path: str = "./data"
-    max_concurrent: int = 50
-    requests_per_second: float = 10.0
+    max_concurrent: int = 5
+    requests_per_second: float = 3.0
     max_retries: int = 5
     checkpoint_interval: int = 1000
     max_runtime_minutes: int = 0
