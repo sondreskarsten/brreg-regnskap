@@ -73,7 +73,9 @@ class EnhetsregisteretClient:
         Use iter_entities_from_dump() to parse.
         """
         url = f"{BASE_URL}/enheter/lastned"
-        async with self.session.get(url) as resp:
+        headers = {"Accept": "application/vnd.brreg.enhetsregisteret.enhet.v2+gzip;charset=UTF-8"}
+        timeout = aiohttp.ClientTimeout(total=600)
+        async with self.session.get(url, headers=headers, timeout=timeout) as resp:
             resp.raise_for_status()
             return await resp.read()
 
