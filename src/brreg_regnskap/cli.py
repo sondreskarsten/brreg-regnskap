@@ -71,11 +71,28 @@ def sync(
     range_end: str | None = typer.Option(
         None, "--range-end", help="End of orgnr range (for matrix jobs)"
     ),
+    shard: str | None = typer.Option(
+        None, "--shard", "-s",
+        help="Shard digit 0-9, or 'auto' to claim a free shard"
+    ),
     checkpoint_interval: int = typer.Option(1000, "--checkpoint-interval"),
     log_level: str = typer.Option("INFO", "--log-level", "-l"),
 ) -> None:
     """Run a full or incremental sync of BRREG regnskap data."""
     _configure_logging(log_level)
+
+    shard_digit: int | None = None
+    if shard is not None:
+        if shard == "auto":
+            from brreg_regnskap.shard import claim_shard
+            from brreg_regnskap.storage import StorageBackend
+
+            tmp_settings = Settings(storage_path=storage_path)
+            tmp_storage = StorageBackend.from_settings(tmp_settings)
+            tmp_storage.check_credentials()
+            shard_digit = claim_shard(tmp_storage, storage_path.rstrip("/"))
+        else:
+            shard_digit = int(shard)
 
     settings = Settings(
         storage_path=storage_path,
@@ -86,6 +103,7 @@ def sync(
         log_level=log_level,
         orgnr_range_start=range_start,
         orgnr_range_end=range_end,
+        shard=shard_digit,
     )
 
     from brreg_regnskap.downloader import SyncEngine
@@ -213,8 +231,9 @@ def merge_manifests(
     all_files = storage.list_dir(storage_path)
     shard_paths = [
         f for f in all_files
-        if f.rsplit("/", 1)[-1].startswith("manifest-")
+        if f.rsplit("/", 1)[-1].startswith("manifest")
         and f.endswith(".parquet")
+        and f != settings.manifest_path
     ]
 
     if not shard_paths:

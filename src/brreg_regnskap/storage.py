@@ -20,6 +20,7 @@ from __future__ import annotations
 import contextlib
 import os
 import uuid
+from datetime import UTC, datetime
 
 import fsspec
 
@@ -157,6 +158,29 @@ class StorageBackend:
         fs_path = self._to_fs_path(path)
         with contextlib.suppress(FileNotFoundError):
             self._fs.rm(fs_path)
+
+    def modified_time(self, path: str) -> datetime | None:
+        """Return the last modified time of the file as a UTC datetime.
+
+        Returns None if the file doesn't exist or mtime is unavailable.
+        """
+        fs_path = self._to_fs_path(path)
+        try:
+            info = self._fs.info(fs_path)
+        except FileNotFoundError:
+            return None
+        mtime = info.get("mtime") or info.get("updated") or info.get("LastModified")
+        if mtime is None:
+            return None
+        if isinstance(mtime, (int, float)):
+            return datetime.fromtimestamp(mtime, tz=UTC)
+        if isinstance(mtime, datetime):
+            if mtime.tzinfo is None:
+                return mtime.replace(tzinfo=UTC)
+            return mtime
+        if isinstance(mtime, str):
+            return datetime.fromisoformat(mtime.replace("Z", "+00:00"))
+        return None
 
     def rename(self, src: str, dst: str) -> None:
         """Rename/move a file. Used for archiving corrections.

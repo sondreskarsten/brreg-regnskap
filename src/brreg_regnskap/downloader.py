@@ -172,7 +172,7 @@ class SyncEngine:
         state.mode = mode.value
         state.run_started_at = self._now_iso()
 
-        logger.info("sync_started", mode=mode.value, storage=self._settings.storage_path)
+        logger.info("sync_started", mode=mode.value, storage=self._settings.storage_path, shard=self._settings.shard)
 
         if mode == SyncMode.FULL:
             await self._run_full(state)
@@ -217,6 +217,11 @@ class SyncEngine:
                 entities = [
                     e for e in entities
                     if e.organisasjonsnummer <= self._settings.orgnr_range_end
+                ]
+            if self._settings.shard is not None:
+                entities = [
+                    e for e in entities
+                    if int(e.organisasjonsnummer) % 10 == self._settings.shard
                 ]
 
             orgnr_to_year: dict[str, int] = {}
