@@ -162,20 +162,22 @@ class TestProcessEntity:
 
 class TestCorrectionDetection:
     @pytest.mark.asyncio
-    async def test_correction_archives_old_files(
+    async def test_correction_creates_new_version(
         self,
         engine: SyncEngine,
         local_settings: Settings,
         regnskap_json_fixture: list,
     ) -> None:
-        old_json_path = local_settings.regnskap_json_path("964118191", 2024)
+        old_json_path = local_settings.regnskap_json_path("964118191", 2024, 1)
         engine._storage.write_bytes(old_json_path, b'{"old": true}')
         engine._manifest.upsert([
             ManifestRecord(
                 orgnr="964118191",
                 year=2024,
+                version=1,
                 download_timestamp="2025-01-01T00:00:00Z",
                 json_path=old_json_path,
+                file_hash="oldhash",
                 journalnr="OLD_JOURNALNR",
                 status="success",
             )
@@ -193,9 +195,10 @@ class TestCorrectionDetection:
         assert len(json_records) == 1
         assert json_records[0].is_correction is True
         assert json_records[0].journalnr == "2025741982"
+        assert json_records[0].version == 2
 
-        corrections = engine._storage.list_dir(f"{local_settings.storage_path}/corrections")
-        assert len(corrections) > 0
+        assert engine._storage.exists(old_json_path)
+        assert engine._storage.exists(local_settings.regnskap_json_path("964118191", 2024, 2))
 
 
 class TestProcessEntitySafe:

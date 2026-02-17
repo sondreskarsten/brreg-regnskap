@@ -33,8 +33,10 @@ MANIFEST_SCHEMA = pa.schema(
     [
         pa.field("orgnr", pa.string(), nullable=False),
         pa.field("year", pa.int32(), nullable=False),
+        pa.field("version", pa.int32(), nullable=False),
         pa.field("download_timestamp", pa.string()),
         pa.field("file_hash", pa.string()),
+        pa.field("pdf_hash", pa.string()),
         pa.field("json_path", pa.string()),
         pa.field("pdf_path", pa.string()),
         pa.field("file_size_bytes", pa.int64()),
@@ -58,8 +60,10 @@ def _record_to_dict(r: ManifestRecord) -> dict:
     return {
         "orgnr": r.orgnr,
         "year": r.year,
+        "version": r.version,
         "download_timestamp": r.download_timestamp,
         "file_hash": r.file_hash,
+        "pdf_hash": r.pdf_hash,
         "json_path": r.json_path,
         "pdf_path": r.pdf_path,
         "file_size_bytes": r.file_size_bytes,
@@ -79,12 +83,15 @@ def _row_to_record(table: pa.Table, idx: int) -> ManifestRecord:
 class ManifestManager:
     """Manages the Parquet manifest tracking all downloaded regnskap files.
 
+    Primary key: (orgnr, year, version). Multiple versions per (orgnr, year)
+    represent corrections — each version is immutable once written.
+
     Usage:
         manifest = ManifestManager(storage, settings.manifest_path)
         table = manifest.load()
         manifest.upsert([record1, record2])
-        existing = manifest.get("964118191", 2024)
-        missing = manifest.list_missing(["964118191", "123456789"], 2024)
+        existing = manifest.get("964118191", 2024, 1)
+        versions = manifest.get_versions("964118191", 2024)
     """
 
     def __init__(self, storage: StorageBackend, manifest_path: str) -> None:
@@ -100,7 +107,14 @@ class ManifestManager:
             return _empty_table()
         raw = self._storage.read_bytes(self._manifest_path)
         buf = pa.BufferReader(raw)
-        return pq.read_table(buf, schema=MANIFEST_SCHEMA)
+        table = pq.read_table(buf)
+        if "version" not in table.column_names:
+            version_col = pa.array([1] * table.num_rows, type=pa.int32())
+            table = table.append_column(pa.field("version", pa.int32(), nullable=False), version_col)
+        if "pdf_hash" not in table.column_names:
+            pdf_hash_col = pa.array([None] * table.num_rows, type=pa.string())
+            table = table.append_column(pa.field("pdf_hash", pa.string()), pdf_hash_col)
+        return table.cast(MANIFEST_SCHEMA)
 
     def save(self, table: pa.Table) -> None:
         """Write the manifest table to storage atomically.
@@ -114,25 +128,23 @@ class ManifestManager:
     def upsert(self, records: list[ManifestRecord]) -> None:
         """Insert or update records in the manifest.
 
-        For each record, if (orgnr, year) already exists:
-            - If journalnr differs: this is a correction. Update the record,
-              set is_correction=True. Caller is responsible for archiving old files.
-            - If journalnr matches: update timestamp and status.
-        If (orgnr, year) does not exist: insert new record.
+        Key: (orgnr, year, version). Records with matching keys are replaced.
+        Records with new keys are inserted.
         """
         if not records:
             return
 
         existing = self.load()
 
-        new_keys = {(r.orgnr, r.year) for r in records}
+        new_keys = {(r.orgnr, r.year, r.version) for r in records}
 
         if existing.num_rows > 0:
             orgnr_col = existing.column("orgnr")
             year_col = existing.column("year")
+            version_col = existing.column("version")
             keep_mask = pa.array(
                 [
-                    (orgnr_col[i].as_py(), year_col[i].as_py()) not in new_keys
+                    (orgnr_col[i].as_py(), year_col[i].as_py(), version_col[i].as_py()) not in new_keys
                     for i in range(existing.num_rows)
                 ]
             )
@@ -152,8 +164,8 @@ class ManifestManager:
         merged = pa.concat_tables([existing, new_table], promote_options="none")
         self.save(merged)
 
-    def get(self, orgnr: str, year: int) -> ManifestRecord | None:
-        """Look up a single manifest entry by (orgnr, year).
+    def get(self, orgnr: str, year: int, version: int = 1) -> ManifestRecord | None:
+        """Look up a single manifest entry by (orgnr, year, version).
 
         Returns None if not found.
         """
@@ -162,13 +174,54 @@ class ManifestManager:
             return None
 
         mask = pc.and_(
-            pc.equal(table.column("orgnr"), orgnr),
-            pc.equal(table.column("year"), year),
+            pc.and_(
+                pc.equal(table.column("orgnr"), orgnr),
+                pc.equal(table.column("year"), year),
+            ),
+            pc.equal(table.column("version"), version),
         )
         filtered = table.filter(mask)
         if filtered.num_rows == 0:
             return None
         return _row_to_record(filtered, 0)
+
+    def get_versions(self, orgnr: str, year: int) -> list[ManifestRecord]:
+        """Return all version records for a given (orgnr, year), sorted by version."""
+        table = self.load()
+        if table.num_rows == 0:
+            return []
+
+        mask = pc.and_(
+            pc.equal(table.column("orgnr"), orgnr),
+            pc.equal(table.column("year"), year),
+        )
+        filtered = table.filter(mask)
+        if filtered.num_rows == 0:
+            return []
+
+        records = [_row_to_record(filtered, i) for i in range(filtered.num_rows)]
+        records.sort(key=lambda r: r.version)
+        return records
+
+    def max_version(self, orgnr: str, year: int) -> int:
+        """Return the highest version number for (orgnr, year), or 0 if none."""
+        versions = self.get_versions(orgnr, year)
+        if not versions:
+            return 0
+        return max(r.version for r in versions)
+
+    def has_hash(self, orgnr: str, year: int, file_hash: str | None, pdf_hash: str | None) -> bool:
+        """Check if any version of (orgnr, year) already has this content.
+
+        Returns True if either file_hash or pdf_hash matches an existing version.
+        """
+        versions = self.get_versions(orgnr, year)
+        for v in versions:
+            if file_hash and v.file_hash and v.file_hash == file_hash:
+                return True
+            if pdf_hash and v.pdf_hash and v.pdf_hash == pdf_hash:
+                return True
+        return False
 
     def list_missing(self, orgnr_list: list[str], year: int) -> list[str]:
         """Return orgnr values from the input list that are NOT in the manifest for the given year.
@@ -187,22 +240,23 @@ class ManifestManager:
     def detect_corrections(self, orgnr: str, new_journalnr: str, year: int) -> bool:
         """Check if the given orgnr+year has a different journalnr in the manifest.
 
-        Returns True if a correction is detected (existing journalnr differs).
-        Returns False if no existing entry or journalnr matches.
+        Returns True if a correction is detected (any existing version has a different journalnr).
+        Returns False if no existing entry or all journalnr values match.
         """
-        existing = self.get(orgnr, year)
-        if existing is None:
+        versions = self.get_versions(orgnr, year)
+        if not versions:
             return False
-        if existing.journalnr is None:
-            return False
-        return existing.journalnr != new_journalnr
+        for v in versions:
+            if v.journalnr and v.journalnr != new_journalnr:
+                return True
+        return False
 
     @staticmethod
     def merge_shards(storage: StorageBackend, shard_paths: list[str], output_path: str) -> None:
         """Merge multiple shard manifest files into a single global manifest.
 
         Used after GitHub Actions matrix jobs complete. Concatenates all shard tables,
-        deduplicates by (orgnr, year) keeping the most recent download_timestamp,
+        deduplicates by (orgnr, year, version) keeping the most recent download_timestamp,
         and writes the merged result.
         """
         tables = []
@@ -233,11 +287,12 @@ class ManifestManager:
 
         orgnr_col = combined.column("orgnr")
         year_col = combined.column("year")
+        version_col = combined.column("version")
         ts_col = combined.column("download_timestamp")
 
-        seen: dict[tuple[str, int], int] = {}
+        seen: dict[tuple[str, int, int], int] = {}
         for i in range(combined.num_rows):
-            key = (orgnr_col[i].as_py(), year_col[i].as_py())
+            key = (orgnr_col[i].as_py(), year_col[i].as_py(), version_col[i].as_py())
             ts = ts_col[i].as_py() or ""
             if key not in seen:
                 seen[key] = i

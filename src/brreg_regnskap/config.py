@@ -87,11 +87,13 @@ class Settings(BaseSettings):
     def shard_manifest_path(self, range_start: str, range_end: str) -> str:
         return f"{self.storage_path}/manifest-{range_start}-{range_end}.parquet"
 
-    def regnskap_json_path(self, orgnr: str, year: int) -> str:
-        return f"{self.storage_path}/regnskap/{orgnr}/regnskap_{year}.json"
+    def regnskap_json_path(self, orgnr: str, year: int, version: int = 1) -> str:
+        suffix = f"_v{version}" if version > 1 else ""
+        return f"{self.storage_path}/regnskap/{orgnr}/regnskap_{year}{suffix}.json"
 
-    def regnskap_pdf_path(self, orgnr: str, year: int) -> str:
-        return f"{self.storage_path}/regnskap/{orgnr}/aarsregnskap_{year}.pdf"
+    def regnskap_pdf_path(self, orgnr: str, year: int, version: int = 1) -> str:
+        suffix = f"_v{version}" if version > 1 else ""
+        return f"{self.storage_path}/regnskap/{orgnr}/aarsregnskap_{year}{suffix}.pdf"
 
     def correction_json_path(self, orgnr: str, year: int, journalnr: str, ts: str) -> str:
         return f"{self.storage_path}/corrections/{orgnr}/regnskap_{year}_{journalnr}_{ts}.json"

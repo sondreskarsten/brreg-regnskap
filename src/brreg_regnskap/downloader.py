@@ -330,14 +330,23 @@ class SyncEngine:
                 status="pdf_missing",
             )]
 
-        pdf_path = self._settings.regnskap_pdf_path(orgnr, year)
+        pdf_hash_val = self._hash_content(pdf_data)
+
+        if self._manifest.has_hash(orgnr, year, file_hash=None, pdf_hash=pdf_hash_val):
+            logger.info("pdf_duplicate_skipped", orgnr=orgnr, year=year)
+            self._stats["skipped"] += 1
+            return []
+
+        version = self._manifest.max_version(orgnr, year) + 1
+        is_correction = version > 1
+
+        pdf_path = self._settings.regnskap_pdf_path(orgnr, year, version)
         self._storage.write_bytes(pdf_path, pdf_data)
         self._stats["pdfs"] += 1
 
         json_path = None
         file_hash = None
         journalnr = None
-        is_correction = False
         json_error = None
 
         try:
@@ -357,20 +366,17 @@ class SyncEngine:
 
             if regnskap:
                 journalnr = str(regnskap.journalnr) if regnskap.journalnr else None
-                if journalnr:
-                    is_correction = self._manifest.detect_corrections(orgnr, journalnr, year)
-                    if is_correction:
-                        await self._archive_correction(orgnr, year, journalnr)
 
-            json_path = self._settings.regnskap_json_path(orgnr, year)
+            json_path = self._settings.regnskap_json_path(orgnr, year, version)
             file_hash = self._hash_content(raw_json)
             self._storage.write_bytes(json_path, raw_json)
             self._stats["jsons"] += 1
 
         self._stats["success"] += 1
         return [ManifestRecord(
-            orgnr=orgnr, year=year, download_timestamp=now,
-            file_hash=file_hash, json_path=json_path, pdf_path=pdf_path,
+            orgnr=orgnr, year=year, version=version, download_timestamp=now,
+            file_hash=file_hash, pdf_hash=pdf_hash_val,
+            json_path=json_path, pdf_path=pdf_path,
             file_size_bytes=len(pdf_data), is_correction=is_correction,
             journalnr=journalnr,
             source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
@@ -620,14 +626,25 @@ class SyncEngine:
                 status="pdf_missing",
             )
 
-        pdf_path = self._settings.regnskap_pdf_path(orgnr, year)
+        pdf_hash_val = self._hash_content(pdf_data)
+
+        if self._manifest.has_hash(orgnr, year, file_hash=None, pdf_hash=pdf_hash_val):
+            logger.info("backfill_pdf_duplicate_skipped", orgnr=orgnr, year=year)
+            self._stats["skipped"] += 1
+            return None
+
+        version = self._manifest.max_version(orgnr, year) + 1
+
+        pdf_path = self._settings.regnskap_pdf_path(orgnr, year, version)
         self._storage.write_bytes(pdf_path, pdf_data)
         self._stats["pdfs"] += 1
         self._stats["success"] += 1
 
         return ManifestRecord(
-            orgnr=orgnr, year=year, download_timestamp=now,
+            orgnr=orgnr, year=year, version=version, download_timestamp=now,
+            pdf_hash=pdf_hash_val,
             pdf_path=pdf_path, file_size_bytes=len(pdf_data),
+            is_correction=version > 1,
             status="success",
         )
 
@@ -759,16 +776,20 @@ class SyncEngine:
             regnskap_year = int(regnskap.regnskapsperiode.tilDato[:4])
 
         if regnskap_year and journalnr:
-            is_correction = self._manifest.detect_corrections(orgnr, journalnr, regnskap_year)
-            if is_correction:
-                await self._archive_correction(orgnr, regnskap_year, journalnr)
-
-            json_path = self._settings.regnskap_json_path(orgnr, regnskap_year)
             file_hash = self._hash_content(raw_json)
+            is_correction = self._manifest.detect_corrections(orgnr, journalnr, regnskap_year)
+
+            if self._manifest.has_hash(orgnr, regnskap_year, file_hash=file_hash, pdf_hash=None):
+                self._stats["skipped"] += 1
+                return records
+
+            version = self._manifest.max_version(orgnr, regnskap_year) + 1
+            json_path = self._settings.regnskap_json_path(orgnr, regnskap_year, version)
             self._storage.write_bytes(json_path, raw_json)
 
             records.append(ManifestRecord(
-                orgnr=orgnr, year=regnskap_year, download_timestamp=now,
+                orgnr=orgnr, year=regnskap_year, version=version,
+                download_timestamp=now,
                 file_hash=file_hash, json_path=json_path, pdf_path=None,
                 file_size_bytes=len(raw_json), is_correction=is_correction,
                 journalnr=journalnr,
@@ -785,8 +806,8 @@ class SyncEngine:
         available_years.sort(reverse=True)
 
         for year in available_years:
-            existing = self._manifest.get(orgnr, year)
-            if existing and existing.pdf_path and existing.status == "success":
+            versions = self._manifest.get_versions(orgnr, year)
+            if any(v.pdf_path and v.status == "success" for v in versions):
                 continue
 
             try:
@@ -808,16 +829,25 @@ class SyncEngine:
                     ))
                 continue
 
-            pdf_path = self._settings.regnskap_pdf_path(orgnr, year)
+            pdf_hash_val = self._hash_content(pdf_data)
+            if self._manifest.has_hash(orgnr, year, file_hash=None, pdf_hash=pdf_hash_val):
+                continue
+
+            pdf_version = self._manifest.max_version(orgnr, year) + 1
+            pdf_path = self._settings.regnskap_pdf_path(orgnr, year, pdf_version)
             self._storage.write_bytes(pdf_path, pdf_data)
             self._stats["pdfs"] += 1
 
             existing_record = next((r for r in records if r.year == year), None)
             if existing_record:
                 existing_record.pdf_path = pdf_path
+                existing_record.pdf_hash = pdf_hash_val
+                existing_record.version = pdf_version
             else:
                 records.append(ManifestRecord(
-                    orgnr=orgnr, year=year, download_timestamp=now,
+                    orgnr=orgnr, year=year, version=pdf_version,
+                    download_timestamp=now,
+                    pdf_hash=pdf_hash_val,
                     pdf_path=pdf_path, file_size_bytes=len(pdf_data),
                     status="success",
                 ))
@@ -842,23 +872,6 @@ class SyncEngine:
                 logger.info("found_existing_dump", path=path, age_days=days_ago)
                 return self._storage.read_bytes(path)
         return None
-
-    async def _archive_correction(self, orgnr: str, year: int, old_journalnr: str) -> None:
-        ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
-
-        existing_json = self._settings.regnskap_json_path(orgnr, year)
-        if self._storage.exists(existing_json):
-            old_record = self._manifest.get(orgnr, year)
-            jnr = old_record.journalnr if old_record and old_record.journalnr else "unknown"
-            correction_json = self._settings.correction_json_path(orgnr, year, jnr, ts)
-            self._storage.rename(existing_json, correction_json)
-            logger.info("archived_correction", orgnr=orgnr, year=year, type="json")
-
-        existing_pdf = self._settings.regnskap_pdf_path(orgnr, year)
-        if self._storage.exists(existing_pdf):
-            correction_pdf = self._settings.correction_pdf_path(orgnr, year, ts)
-            self._storage.rename(existing_pdf, correction_pdf)
-            logger.info("archived_correction", orgnr=orgnr, year=year, type="pdf")
 
     async def _throttled_request(self, coro_fn: Any, *args: Any, **kwargs: Any) -> Any:
         @retry(

@@ -135,12 +135,17 @@ class ManifestRecord(BaseModel):
 
     This model is used for creating/reading manifest entries. The Parquet schema
     in manifest.py must match these fields exactly.
+
+    Primary key: (orgnr, year, version). Multiple versions per (orgnr, year) are
+    allowed — corrections create new versions rather than overwriting.
     """
 
     orgnr: str
     year: int
+    version: int = 1
     download_timestamp: str  # ISO 8601 UTC
     file_hash: str | None = None  # SHA-256 of JSON content
+    pdf_hash: str | None = None  # SHA-256 of PDF content
     json_path: str | None = None
     pdf_path: str | None = None
     file_size_bytes: int | None = None
