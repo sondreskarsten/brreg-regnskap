@@ -333,31 +333,6 @@ class SyncEngine:
         except Exception as exc:
             logger.warning("fetch_years_failed", orgnr=orgnr, error=str(exc))
 
-        if regnskap_year and journalnr:
-            is_correction = self._manifest.detect_corrections(orgnr, journalnr, regnskap_year)
-            if is_correction:
-                await self._archive_correction(orgnr, regnskap_year, journalnr)
-
-            json_path = self._settings.regnskap_json_path(orgnr, regnskap_year)
-            file_hash = self._hash_content(raw_json)
-            self._storage.write_bytes(json_path, raw_json)
-
-            records.append(
-                ManifestRecord(
-                    orgnr=orgnr,
-                    year=regnskap_year,
-                    download_timestamp=now,
-                    file_hash=file_hash,
-                    json_path=json_path,
-                    pdf_path=None,
-                    file_size_bytes=len(raw_json),
-                    is_correction=is_correction,
-                    journalnr=journalnr,
-                    source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
-                    status="success",
-                )
-            )
-
         for year in available_years:
             existing = self._manifest.get(orgnr, year)
             if existing and existing.pdf_path and existing.status == "success":
@@ -367,37 +342,56 @@ class SyncEngine:
                 pdf_data = await self._throttled_request(regnskap_client.download_pdf, orgnr, year)
             except Exception as exc:
                 logger.warning("pdf_download_failed", orgnr=orgnr, year=year, error=str(exc))
-                if not any(r.year == year for r in records):
-                    records.append(
-                        ManifestRecord(
-                            orgnr=orgnr,
-                            year=year,
-                            download_timestamp=now,
-                            status="pdf_failed",
-                            error_detail=str(exc)[:500],
-                        )
+                records.append(
+                    ManifestRecord(
+                        orgnr=orgnr,
+                        year=year,
+                        download_timestamp=now,
+                        status="pdf_failed",
+                        error_detail=str(exc)[:500],
                     )
+                )
                 continue
 
             if pdf_data is None:
-                if not any(r.year == year for r in records):
-                    records.append(
-                        ManifestRecord(
-                            orgnr=orgnr,
-                            year=year,
-                            download_timestamp=now,
-                            status="pdf_missing",
-                        )
+                records.append(
+                    ManifestRecord(
+                        orgnr=orgnr,
+                        year=year,
+                        download_timestamp=now,
+                        status="pdf_missing",
                     )
+                )
                 continue
 
             pdf_path = self._settings.regnskap_pdf_path(orgnr, year)
             self._storage.write_bytes(pdf_path, pdf_data)
             self._stats["pdfs"] += 1
 
-            existing_record = next((r for r in records if r.year == year), None)
-            if existing_record:
-                existing_record.pdf_path = pdf_path
+            if year == regnskap_year and journalnr:
+                is_correction = self._manifest.detect_corrections(orgnr, journalnr, regnskap_year)
+                if is_correction:
+                    await self._archive_correction(orgnr, regnskap_year, journalnr)
+
+                json_path = self._settings.regnskap_json_path(orgnr, regnskap_year)
+                file_hash = self._hash_content(raw_json)
+                self._storage.write_bytes(json_path, raw_json)
+
+                records.append(
+                    ManifestRecord(
+                        orgnr=orgnr,
+                        year=regnskap_year,
+                        download_timestamp=now,
+                        file_hash=file_hash,
+                        json_path=json_path,
+                        pdf_path=pdf_path,
+                        file_size_bytes=len(raw_json) + len(pdf_data),
+                        is_correction=is_correction,
+                        journalnr=journalnr,
+                        source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
+                        status="success",
+                    )
+                )
             else:
                 records.append(
                     ManifestRecord(

@@ -103,10 +103,10 @@ class TestProcessEntity:
             async with RegnskapsregisteretClient() as client:
                 records = await engine._process_entity("964118191", client)
 
-        json_records = [r for r in records if r.json_path]
-        assert len(json_records) == 1
-        assert json_records[0].status == "success"
-        assert json_records[0].pdf_path is None
+        assert len(records) == 1
+        assert records[0].status == "pdf_missing"
+        assert records[0].json_path is None
+        assert records[0].pdf_path is None
 
     @pytest.mark.asyncio
     async def test_process_entity_no_years(
@@ -121,9 +121,7 @@ class TestProcessEntity:
             async with RegnskapsregisteretClient() as client:
                 records = await engine._process_entity("964118191", client)
 
-        assert len(records) == 1
-        assert records[0].json_path is not None
-        assert records[0].pdf_path is None
+        assert len(records) == 0
 
     @pytest.mark.asyncio
     async def test_skips_already_downloaded_pdf(
