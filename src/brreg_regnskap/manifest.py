@@ -114,6 +114,7 @@ class ManifestManager:
         if "pdf_hash" not in table.column_names:
             pdf_hash_col = pa.array([None] * table.num_rows, type=pa.string())
             table = table.append_column(pa.field("pdf_hash", pa.string()), pdf_hash_col)
+        table = table.select([f.name for f in MANIFEST_SCHEMA])
         return table.cast(MANIFEST_SCHEMA)
 
     def save(self, table: pa.Table) -> None:
