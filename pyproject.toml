@@ -31,11 +31,6 @@ dependencies = [
 [project.optional-dependencies]
 s3 = ["s3fs>=2024.2"]
 gcs = ["gcsfs>=2024.2"]
-ocr = [
-    "PyMuPDF>=1.24,<2",
-    "pytesseract>=0.3,<1",
-    "Pillow>=10,<12",
-]
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.23",
