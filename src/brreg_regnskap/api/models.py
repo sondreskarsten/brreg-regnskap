@@ -147,4 +147,5 @@ class ManifestRecord(BaseModel):
     is_correction: bool = False
     journalnr: str | None = None
     source_url: str | None = None
-    status: str = "pending"  # pending, success, failed, pdf_missing
+    status: str = "pending"  # pending, success, failed, pdf_missing, pdf_failed, server_error
+    error_detail: str | None = None

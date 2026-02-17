@@ -36,7 +36,7 @@ from aiolimiter import AsyncLimiter
 from tenacity import (
     RetryCallState,
     retry,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
     wait_exponential_jitter,
 )
@@ -52,11 +52,20 @@ from brreg_regnskap.storage import StorageBackend
 logger = structlog.get_logger()
 
 RETRYABLE_ERRORS = (
-    aiohttp.ClientError,
     aiohttp.ServerDisconnectedError,
     asyncio.TimeoutError,
     ConnectionError,
 )
+
+RETRYABLE_HTTP_STATUSES = {429, 502, 503, 504}
+
+
+def _is_retryable(exc: BaseException) -> bool:
+    if isinstance(exc, RETRYABLE_ERRORS):
+        return True
+    if isinstance(exc, aiohttp.ClientResponseError) and exc.status in RETRYABLE_HTTP_STATUSES:
+        return True
+    return False
 
 
 def _before_retry_log(retry_state: RetryCallState) -> None:
@@ -266,6 +275,7 @@ class SyncEngine:
                     year=0,
                     download_timestamp=self._now_iso(),
                     status="failed",
+                    error_detail=str(exc)[:500],
                 )
             ]
 
@@ -282,7 +292,23 @@ class SyncEngine:
         records: list[ManifestRecord] = []
         now = self._now_iso()
 
-        raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw, orgnr)
+        try:
+            raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw, orgnr)
+        except aiohttp.ClientResponseError as exc:
+            error_detail = f"HTTP {exc.status}: {exc.message} url={exc.request_info.real_url}"
+            logger.warning("regnskap_server_error", orgnr=orgnr, status=exc.status, error=error_detail)
+            self._stats["failed"] += 1
+            return [
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=0,
+                    download_timestamp=now,
+                    source_url=str(exc.request_info.real_url),
+                    status="server_error",
+                    error_detail=error_detail,
+                )
+            ]
+
         if raw_json is None:
             self._stats["skipped"] += 1
             return records
@@ -348,6 +374,7 @@ class SyncEngine:
                             year=year,
                             download_timestamp=now,
                             status="pdf_failed",
+                            error_detail=str(exc)[:500],
                         )
                     )
                 continue
@@ -412,7 +439,7 @@ class SyncEngine:
         """Execute an async request with semaphore + rate limiter + retry."""
 
         @retry(
-            retry=retry_if_exception_type(RETRYABLE_ERRORS),
+            retry=retry_if_exception(_is_retryable),
             wait=wait_exponential_jitter(initial=1, max=60, jitter=2),
             stop=stop_after_attempt(self._settings.max_retries),
             before_sleep=_before_retry_log,

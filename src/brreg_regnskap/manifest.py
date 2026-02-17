@@ -42,6 +42,7 @@ MANIFEST_SCHEMA = pa.schema(
         pa.field("journalnr", pa.string()),
         pa.field("source_url", pa.string()),
         pa.field("status", pa.string()),
+        pa.field("error_detail", pa.string()),
     ]
 )
 
@@ -66,6 +67,7 @@ def _record_to_dict(r: ManifestRecord) -> dict:
         "journalnr": r.journalnr,
         "source_url": r.source_url,
         "status": r.status,
+        "error_detail": r.error_detail,
     }
 
 
