@@ -3,15 +3,15 @@
 Pipeline order on every run:
     1. FRESH PASS — For each entity in enhetsregisteret where
        sisteInnsendteAarsregnskap is set and we don't already have that
-       orgnr+year in the manifest with a PDF: download PDF, then regnskap JSON.
-       JSON only exists for sisteInnsendteAarsregnskap year.
+       orgnr+year in the manifest with a PDF: download PDF, OCR extract
+       journalnr from cover page, then fetch regnskap JSON.
     2. BACKFILL SCAN — For every orgnr with at least one PDF already
-       downloaded, call /regnskap/{orgnr} to discover all available years.
+       downloaded, call /aar to discover all available years.
        Store {orgnr: [year, ...]} in backfill_years.json (the backfill DB).
        Skip orgnr already present in the DB.
     3. BACKFILL DOWNLOAD — Year-by-year, newest first, across ALL entities.
-       Download PDFs only (no JSON). Do not start year N-1 until year N is
-       fully collected for every entity that has it.
+       Download PDFs + OCR extract journalnr. Do not start year N-1 until
+       year N is fully collected for every entity that has it.
 
 Rate limiting:
     - Serial requests with 0.5s sleep for /regnskap endpoint
@@ -19,15 +19,17 @@ Rate limiting:
     - tenacity retry: wait_exponential_jitter(initial=1, max=60, jitter=2)
 
 Storage layout:
-    regnskap/{orgnr}/regnskap_{year}.json    - raw JSON (fresh pass only)
-    regnskap/{orgnr}/aarsregnskap_{year}.pdf - PDF annual report
-    metadata/backfill_years.json             - {orgnr: [2024, 2023, ...]}
-    corrections/{orgnr}/...                  - archived corrections
+    regnskap/{orgnr}/regnskap_{year}.json       - raw JSON (fresh pass only)
+    regnskap/{orgnr}/aarsregnskap_{year}.pdf     - PDF annual report
+    regnskap/{orgnr}/regnskap_{year}_v2.json     - correction (version 2+)
+    regnskap/{orgnr}/aarsregnskap_{year}_v2.pdf  - correction (version 2+)
+    metadata/backfill_years.json                 - {orgnr: [2024, 2023, ...]}
 """
 
 from __future__ import annotations
 
 import asyncio
+import functools
 import hashlib
 import json
 import time
@@ -52,6 +54,12 @@ from brreg_regnskap.checkpoint import CheckpointManager, CheckpointState
 from brreg_regnskap.config import Settings, SyncMode
 from brreg_regnskap.manifest import ManifestManager
 from brreg_regnskap.storage import StorageBackend
+
+try:
+    from brreg_regnskap.pdf_extract import extract_journal_info
+    _HAS_OCR = True
+except ImportError:
+    _HAS_OCR = False
 
 logger = structlog.get_logger()
 
@@ -337,6 +345,8 @@ class SyncEngine:
             self._stats["skipped"] += 1
             return []
 
+        ocr_journalnr = await self._extract_journalnr_async(pdf_data, orgnr, year)
+
         version = self._manifest.max_version(orgnr, year) + 1
         is_correction = version > 1
 
@@ -346,7 +356,7 @@ class SyncEngine:
 
         json_path = None
         file_hash = None
-        journalnr = None
+        journalnr = ocr_journalnr
         json_error = None
 
         try:
@@ -364,8 +374,8 @@ class SyncEngine:
             elif isinstance(parsed_items, dict):
                 regnskap = Regnskap.model_validate(parsed_items)
 
-            if regnskap:
-                journalnr = str(regnskap.journalnr) if regnskap.journalnr else None
+            if regnskap and regnskap.journalnr:
+                journalnr = str(regnskap.journalnr)
 
             json_path = self._settings.regnskap_json_path(orgnr, year, version)
             file_hash = self._hash_content(raw_json)
@@ -633,6 +643,8 @@ class SyncEngine:
             self._stats["skipped"] += 1
             return None
 
+        ocr_journalnr = await self._extract_journalnr_async(pdf_data, orgnr, year)
+
         version = self._manifest.max_version(orgnr, year) + 1
 
         pdf_path = self._settings.regnskap_pdf_path(orgnr, year, version)
@@ -645,6 +657,7 @@ class SyncEngine:
             pdf_hash=pdf_hash_val,
             pdf_path=pdf_path, file_size_bytes=len(pdf_data),
             is_correction=version > 1,
+            journalnr=ocr_journalnr,
             status="success",
         )
 
@@ -860,6 +873,24 @@ class SyncEngine:
         return records
 
     # ── SHARED HELPERS ─────────────────────────────────────────────────
+
+    async def _extract_journalnr_async(self, pdf_data: bytes, orgnr: str, year: int) -> str | None:
+        if not _HAS_OCR:
+            return None
+        loop = asyncio.get_running_loop()
+        try:
+            result = await loop.run_in_executor(
+                None, functools.partial(extract_journal_info, pdf_data)
+            )
+            jnr = result.get("journalnr")
+            if jnr and jnr != "NA":
+                logger.info("ocr_journalnr", orgnr=orgnr, year=year, journalnr=jnr)
+                return jnr
+            logger.warning("ocr_journalnr_not_found", orgnr=orgnr, year=year)
+            return None
+        except Exception as exc:
+            logger.warning("ocr_failed", orgnr=orgnr, year=year, error=str(exc))
+            return None
 
     def _load_existing_dump(self) -> bytes | None:
         for days_ago in range(0, 3):
