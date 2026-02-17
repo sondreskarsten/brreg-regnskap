@@ -32,7 +32,7 @@ class CheckpointState:
     last_orgnr_processed: str | None = None
     run_started_at: str | None = None
     mode: str = "full"
-    phase: str = "metadata"
+    phase: str = "fresh"
     current_year: int | None = None
     shard_range_start: str | None = None
     shard_range_end: str | None = None

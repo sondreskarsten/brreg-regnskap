@@ -103,5 +103,5 @@ class Settings(BaseSettings):
         return f"{self.storage_path}/entities/enheter_dump_{date}.json.gz"
 
     @property
-    def available_years_path(self) -> str:
-        return f"{self.storage_path}/metadata/available_years.json"
+    def backfill_db_path(self) -> str:
+        return f"{self.storage_path}/metadata/backfill_years.json"
