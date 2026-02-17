@@ -226,7 +226,10 @@ class SyncEngine:
         regnskap_client: RegnskapsregisteretClient,
         state: CheckpointState,
     ) -> None:
-        """Phase 1: fetch available PDF years for all entities, save as one JSON."""
+        """Phase 1: fetch available PDF years for all entities, save as one JSON.
+
+        Processes entities serially to avoid thundering-herd 429s on the /aar endpoint.
+        """
         if self._storage.exists(self._settings.available_years_path):
             logger.info("reusing_available_years", path=self._settings.available_years_path)
             return
@@ -237,32 +240,32 @@ class SyncEngine:
         if state.last_orgnr_processed and state.phase == "metadata":
             orgnr_list = [o for o in orgnr_list if o > state.last_orgnr_processed]
 
-        batch_size = self._settings.checkpoint_interval
         total = len(orgnr_list)
+        checkpoint_every = self._settings.checkpoint_interval
 
-        for i in range(0, total, batch_size):
+        for idx, orgnr in enumerate(orgnr_list):
             if self._should_shutdown():
                 logger.info("graceful_shutdown", reason="time_limit", phase="metadata")
                 self._checkpoint_mgr.save(state)
                 return
 
-            batch = orgnr_list[i : i + batch_size]
-            tasks = [self._fetch_years_safe(orgnr, regnskap_client) for orgnr in batch]
-            batch_results = await asyncio.gather(*tasks)
+            years = await self._fetch_years_safe(orgnr, regnskap_client)
+            if years:
+                result[orgnr] = years
 
-            for orgnr, years in zip(batch, batch_results, strict=True):
-                if years:
-                    result[orgnr] = years
-                state.last_orgnr_processed = orgnr
-                state.entities_processed += 1
+            state.last_orgnr_processed = orgnr
+            state.entities_processed += 1
 
-            self._checkpoint_mgr.save(state)
-            logger.info(
-                "metadata_checkpoint",
-                batch=i // batch_size + 1,
-                entities_processed=state.entities_processed,
-                total=total,
-            )
+            if (idx + 1) % checkpoint_every == 0:
+                self._checkpoint_mgr.save(state)
+                logger.info(
+                    "metadata_checkpoint",
+                    entities_processed=state.entities_processed,
+                    total=total,
+                    years_found=len(result),
+                )
+
+            await asyncio.sleep(0.35)
 
         data = json.dumps(result, separators=(",", ":")).encode("utf-8")
         self._storage.write_bytes(self._settings.available_years_path, data)
@@ -288,41 +291,44 @@ class SyncEngine:
         regnskap_client: RegnskapsregisteretClient,
         state: CheckpointState,
     ) -> None:
-        """Process all entities for a single year."""
-        batch_size = self._settings.checkpoint_interval
+        """Process all entities for a single year in small sub-batches."""
+        sub_batch_size = self._settings.max_concurrent
+        checkpoint_every = self._settings.checkpoint_interval
         total = len(orgnr_list)
+        records_since_checkpoint: list[ManifestRecord] = []
 
-        for i in range(0, total, batch_size):
+        for i in range(0, total, sub_batch_size):
             if self._should_shutdown():
                 logger.info("graceful_shutdown", reason="time_limit", year=year)
+                if records_since_checkpoint:
+                    self._manifest.upsert(records_since_checkpoint)
                 self._checkpoint_mgr.save(state)
                 return
 
-            batch = orgnr_list[i : i + batch_size]
+            batch = orgnr_list[i : i + sub_batch_size]
             tasks = [
                 self._process_entity_year_safe(orgnr, year, regnskap_client)
                 for orgnr in batch
             ]
             results = await asyncio.gather(*tasks)
 
-            all_records: list[ManifestRecord] = []
             for orgnr, records in zip(batch, results, strict=True):
-                all_records.extend(records)
+                records_since_checkpoint.extend(records)
                 state.last_orgnr_processed = orgnr
                 state.entities_processed += 1
 
-            if all_records:
-                self._manifest.upsert(all_records)
-
-            self._checkpoint_mgr.save(state)
-            logger.info(
-                "batch_checkpointed",
-                year=year,
-                batch=i // batch_size + 1,
-                entities_processed=state.entities_processed,
-                total=total,
-                **self._stats,
-            )
+            if state.entities_processed % checkpoint_every == 0 or i + sub_batch_size >= total:
+                if records_since_checkpoint:
+                    self._manifest.upsert(records_since_checkpoint)
+                    records_since_checkpoint = []
+                self._checkpoint_mgr.save(state)
+                logger.info(
+                    "batch_checkpointed",
+                    year=year,
+                    entities_processed=state.entities_processed,
+                    total=total,
+                    **self._stats,
+                )
 
         logger.info("year_pass_complete", year=year, **self._stats)
 
