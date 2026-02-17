@@ -133,7 +133,7 @@ class SyncEngine:
             regnskap_client = RegnskapsregisteretClient(session=session)
 
             logger.info("downloading_bulk_dump")
-            raw_dump = await self._throttled_request(enhet_client.download_bulk_dump())
+            raw_dump = await self._throttled_request(enhet_client.download_bulk_dump)
             logger.info("parsing_bulk_dump")
             entities = enhet_client.iter_entities_from_dump(raw_dump)
             entities.sort(key=lambda e: e.organisasjonsnummer)
@@ -282,7 +282,7 @@ class SyncEngine:
         records: list[ManifestRecord] = []
         now = self._now_iso()
 
-        raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw(orgnr))
+        raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw, orgnr)
         if raw_json is None:
             self._stats["skipped"] += 1
             return records
@@ -301,7 +301,7 @@ class SyncEngine:
         if regnskap.regnskapsperiode and regnskap.regnskapsperiode.tilDato:
             regnskap_year = int(regnskap.regnskapsperiode.tilDato[:4])
 
-        available_years = await self._throttled_request(regnskap_client.fetch_years(orgnr))
+        available_years = await self._throttled_request(regnskap_client.fetch_years, orgnr)
 
         if regnskap_year and journalnr:
             is_correction = self._manifest.detect_corrections(orgnr, journalnr, regnskap_year)
@@ -333,7 +333,7 @@ class SyncEngine:
             if existing and existing.pdf_path and existing.status == "success":
                 continue
 
-            pdf_data = await self._throttled_request(regnskap_client.download_pdf(orgnr, year))
+            pdf_data = await self._throttled_request(regnskap_client.download_pdf, orgnr, year)
             if pdf_data is None:
                 if not any(r.year == year for r in records):
                     records.append(
@@ -390,7 +390,7 @@ class SyncEngine:
             self._storage.rename(existing_pdf, correction_pdf)
             logger.info("archived_correction", orgnr=orgnr, year=year, type="pdf")
 
-    async def _throttled_request(self, coro: Any) -> Any:
+    async def _throttled_request(self, coro_fn: Any, *args: Any, **kwargs: Any) -> Any:
         """Execute an async request with semaphore + rate limiter + retry."""
 
         @retry(
@@ -403,7 +403,7 @@ class SyncEngine:
         async def _inner() -> Any:
             async with self._semaphore:
                 await self._limiter.acquire()
-                return await coro
+                return await coro_fn(*args, **kwargs)
 
         return await _inner()
 
