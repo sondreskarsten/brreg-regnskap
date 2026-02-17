@@ -132,7 +132,13 @@ class SyncEngine:
         logger.info("sync_finished", **self._stats)
 
     async def _run_full(self, state: CheckpointState) -> None:
-        """Full sync: load or download bulk dump, iterate all entities with regnskap."""
+        """Full sync: two-phase pipeline.
+
+        Phase 1 (metadata): Build available_years.json by calling fetch_years for each entity.
+        Phase 2 (download): Year-by-year, newest first. For each year, process only
+            entities whose sisteInnsendteAarsregnskap matches that year.
+            Per entity: download regnskap JSON + PDF for that year.
+        """
         connector = aiohttp.TCPConnector(limit=self._settings.max_concurrent)
         timeout = aiohttp.ClientTimeout(total=300)
 
@@ -168,21 +174,157 @@ class SyncEngine:
                     if e.organisasjonsnummer <= self._settings.orgnr_range_end
                 ]
 
-            if state.last_orgnr_processed:
-                entities = [
-                    e for e in entities
-                    if e.organisasjonsnummer > state.last_orgnr_processed
-                ]
-                logger.info(
-                    "resuming_from_checkpoint",
-                    after=state.last_orgnr_processed,
-                    remaining=len(entities),
+            orgnr_to_year: dict[str, int] = {}
+            for e in entities:
+                if e.sisteInnsendteAarsregnskap:
+                    orgnr_to_year[e.organisasjonsnummer] = int(e.sisteInnsendteAarsregnskap)
+
+            if state.phase == "metadata" or not self._storage.exists(self._settings.available_years_path):
+                await self._build_available_years(
+                    list(orgnr_to_year.keys()), regnskap_client, state,
                 )
+                if self._should_shutdown():
+                    return
 
-            state.entities_total = len(entities)
-            orgnr_list = [e.organisasjonsnummer for e in entities]
+            state.phase = "download"
+            self._checkpoint_mgr.save(state)
 
-            await self._process_batch(orgnr_list, regnskap_client, state)
+            year_groups: dict[int, list[str]] = {}
+            for orgnr, year in orgnr_to_year.items():
+                year_groups.setdefault(year, []).append(orgnr)
+
+            all_years = sorted(year_groups.keys(), reverse=True)
+            logger.info("year_groups", years=all_years, counts={y: len(v) for y, v in year_groups.items()})
+
+            if state.current_year:
+                all_years = [y for y in all_years if y <= state.current_year]
+
+            for year in all_years:
+                if self._should_shutdown():
+                    logger.info("graceful_shutdown", reason="time_limit", current_year=year)
+                    self._checkpoint_mgr.save(state)
+                    return
+
+                orgnr_list = sorted(year_groups[year])
+
+                if state.current_year == year and state.last_orgnr_processed:
+                    orgnr_list = [o for o in orgnr_list if o > state.last_orgnr_processed]
+
+                state.current_year = year
+                state.entities_total = len(orgnr_list)
+                state.entities_processed = 0
+                logger.info("year_pass_start", year=year, entities=len(orgnr_list))
+
+                await self._process_year_batch(orgnr_list, year, regnskap_client, state)
+
+            self._checkpoint_mgr.clear()
+            logger.info("sync_complete", **{k: v for k, v in self._stats.items()})
+
+    async def _build_available_years(
+        self,
+        orgnr_list: list[str],
+        regnskap_client: RegnskapsregisteretClient,
+        state: CheckpointState,
+    ) -> None:
+        """Phase 1: fetch available PDF years for all entities, save as one JSON."""
+        if self._storage.exists(self._settings.available_years_path):
+            logger.info("reusing_available_years", path=self._settings.available_years_path)
+            return
+
+        logger.info("building_available_years", entities=len(orgnr_list))
+        result: dict[str, list[int]] = {}
+
+        if state.last_orgnr_processed and state.phase == "metadata":
+            orgnr_list = [o for o in orgnr_list if o > state.last_orgnr_processed]
+
+        batch_size = self._settings.checkpoint_interval
+        total = len(orgnr_list)
+
+        for i in range(0, total, batch_size):
+            if self._should_shutdown():
+                logger.info("graceful_shutdown", reason="time_limit", phase="metadata")
+                self._checkpoint_mgr.save(state)
+                return
+
+            batch = orgnr_list[i : i + batch_size]
+            tasks = [self._fetch_years_safe(orgnr, regnskap_client) for orgnr in batch]
+            batch_results = await asyncio.gather(*tasks)
+
+            for orgnr, years in zip(batch, batch_results, strict=True):
+                if years:
+                    result[orgnr] = years
+                state.last_orgnr_processed = orgnr
+                state.entities_processed += 1
+
+            self._checkpoint_mgr.save(state)
+            logger.info(
+                "metadata_checkpoint",
+                batch=i // batch_size + 1,
+                entities_processed=state.entities_processed,
+                total=total,
+            )
+
+        data = json.dumps(result, separators=(",", ":")).encode("utf-8")
+        self._storage.write_bytes(self._settings.available_years_path, data)
+        logger.info("available_years_saved", path=self._settings.available_years_path, entities=len(result))
+
+        state.last_orgnr_processed = None
+        state.phase = "download"
+
+    async def _fetch_years_safe(
+        self, orgnr: str, regnskap_client: RegnskapsregisteretClient
+    ) -> list[int]:
+        """Fetch available years for one entity, returning [] on failure."""
+        try:
+            return await self._throttled_request(regnskap_client.fetch_years, orgnr)
+        except Exception as exc:
+            logger.warning("fetch_years_failed", orgnr=orgnr, error=str(exc))
+            return []
+
+    async def _process_year_batch(
+        self,
+        orgnr_list: list[str],
+        year: int,
+        regnskap_client: RegnskapsregisteretClient,
+        state: CheckpointState,
+    ) -> None:
+        """Process all entities for a single year."""
+        batch_size = self._settings.checkpoint_interval
+        total = len(orgnr_list)
+
+        for i in range(0, total, batch_size):
+            if self._should_shutdown():
+                logger.info("graceful_shutdown", reason="time_limit", year=year)
+                self._checkpoint_mgr.save(state)
+                return
+
+            batch = orgnr_list[i : i + batch_size]
+            tasks = [
+                self._process_entity_year_safe(orgnr, year, regnskap_client)
+                for orgnr in batch
+            ]
+            results = await asyncio.gather(*tasks)
+
+            all_records: list[ManifestRecord] = []
+            for orgnr, records in zip(batch, results, strict=True):
+                all_records.extend(records)
+                state.last_orgnr_processed = orgnr
+                state.entities_processed += 1
+
+            if all_records:
+                self._manifest.upsert(all_records)
+
+            self._checkpoint_mgr.save(state)
+            logger.info(
+                "batch_checkpointed",
+                year=year,
+                batch=i // batch_size + 1,
+                entities_processed=state.entities_processed,
+                total=total,
+                **self._stats,
+            )
+
+        logger.info("year_pass_complete", year=year, **self._stats)
 
     def _load_existing_dump(self) -> bytes | None:
         """Return the most recent bulk dump from storage if it exists.
@@ -280,6 +422,117 @@ class SyncEngine:
 
         self._checkpoint_mgr.clear()
         logger.info("sync_complete", processed=state.entities_processed)
+
+    async def _process_entity_year_safe(
+        self,
+        orgnr: str,
+        year: int,
+        regnskap_client: RegnskapsregisteretClient,
+    ) -> list[ManifestRecord]:
+        """Wrapper that catches all exceptions per entity/year."""
+        try:
+            return await self._process_entity_year(orgnr, year, regnskap_client)
+        except Exception as exc:
+            logger.error("entity_year_failed", orgnr=orgnr, year=year, error=str(exc))
+            self._stats["failed"] += 1
+            return [
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=year,
+                    download_timestamp=self._now_iso(),
+                    status="failed",
+                    error_detail=str(exc)[:500],
+                )
+            ]
+
+    async def _process_entity_year(
+        self,
+        orgnr: str,
+        year: int,
+        regnskap_client: RegnskapsregisteretClient,
+    ) -> list[ManifestRecord]:
+        """Process one entity for one year: download regnskap JSON + PDF.
+
+        Returns manifest records for the year processed.
+        """
+        self._stats["processed"] += 1
+        now = self._now_iso()
+
+        existing = self._manifest.get(orgnr, year)
+        if existing and existing.pdf_path and existing.json_path and existing.status == "success":
+            self._stats["skipped"] += 1
+            return []
+
+        records: list[ManifestRecord] = []
+
+        raw_json = None
+        json_path = None
+        file_hash = None
+        journalnr = None
+        is_correction = False
+
+        try:
+            raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw, orgnr)
+        except aiohttp.ClientResponseError as exc:
+            logger.warning("regnskap_json_failed", orgnr=orgnr, status=exc.status)
+        except Exception as exc:
+            logger.warning("regnskap_json_failed", orgnr=orgnr, error=str(exc))
+
+        if raw_json is not None:
+            parsed_items = json.loads(raw_json)
+            if isinstance(parsed_items, list) and parsed_items:
+                regnskap = Regnskap.model_validate(parsed_items[0])
+            elif isinstance(parsed_items, dict):
+                regnskap = Regnskap.model_validate(parsed_items)
+            else:
+                regnskap = None
+
+            if regnskap:
+                journalnr = str(regnskap.journalnr) if regnskap.journalnr else None
+                if journalnr:
+                    is_correction = self._manifest.detect_corrections(orgnr, journalnr, year)
+                    if is_correction:
+                        await self._archive_correction(orgnr, year, journalnr)
+
+                json_path = self._settings.regnskap_json_path(orgnr, year)
+                file_hash = self._hash_content(raw_json)
+                self._storage.write_bytes(json_path, raw_json)
+
+        pdf_path = None
+        pdf_size = 0
+        try:
+            pdf_data = await self._throttled_request(regnskap_client.download_pdf, orgnr, year)
+        except Exception as exc:
+            logger.warning("pdf_download_failed", orgnr=orgnr, year=year, error=str(exc))
+            pdf_data = None
+
+        if pdf_data is not None:
+            pdf_path = self._settings.regnskap_pdf_path(orgnr, year)
+            self._storage.write_bytes(pdf_path, pdf_data)
+            pdf_size = len(pdf_data)
+            self._stats["pdfs"] += 1
+
+        if json_path or pdf_path:
+            records.append(
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=year,
+                    download_timestamp=now,
+                    file_hash=file_hash,
+                    json_path=json_path,
+                    pdf_path=pdf_path,
+                    file_size_bytes=(len(raw_json) if raw_json else 0) + pdf_size,
+                    is_correction=is_correction,
+                    journalnr=journalnr,
+                    source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
+                    status="success",
+                )
+            )
+            self._stats["success"] += 1
+        else:
+            self._stats["skipped"] += 1
+
+        return records
 
     async def _process_entity_safe(
         self,
