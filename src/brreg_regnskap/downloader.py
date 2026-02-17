@@ -27,7 +27,7 @@ import asyncio
 import hashlib
 import json
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import aiohttp
@@ -132,7 +132,7 @@ class SyncEngine:
         logger.info("sync_finished", **self._stats)
 
     async def _run_full(self, state: CheckpointState) -> None:
-        """Full sync: download bulk dump, iterate all entities with regnskap."""
+        """Full sync: load or download bulk dump, iterate all entities with regnskap."""
         connector = aiohttp.TCPConnector(limit=self._settings.max_concurrent)
         timeout = aiohttp.ClientTimeout(total=300)
 
@@ -142,16 +142,20 @@ class SyncEngine:
         ):
             regnskap_client = RegnskapsregisteretClient(session=session)
 
-            logger.info("downloading_bulk_dump")
-            raw_dump = await self._throttled_request(enhet_client.download_bulk_dump)
+            raw_dump = self._load_existing_dump()
+            if raw_dump is not None:
+                logger.info("reusing_existing_dump")
+            else:
+                logger.info("downloading_bulk_dump")
+                raw_dump = await self._throttled_request(enhet_client.download_bulk_dump)
+                dump_date = datetime.now(UTC).strftime("%Y%m%d")
+                dump_path = self._settings.entity_dump_path(dump_date)
+                self._storage.write_bytes(dump_path, raw_dump)
+
             logger.info("parsing_bulk_dump")
             entities = enhet_client.iter_entities_from_dump(raw_dump)
             entities.sort(key=lambda e: e.organisasjonsnummer)
-
-            dump_date = datetime.now(UTC).strftime("%Y%m%d")
-            dump_path = self._settings.entity_dump_path(dump_date)
-            self._storage.write_bytes(dump_path, raw_dump)
-            logger.info("bulk_dump_saved", path=dump_path, entities=len(entities))
+            logger.info("bulk_dump_parsed", entities=len(entities))
 
             if self._settings.orgnr_range_start:
                 entities = [
@@ -179,6 +183,23 @@ class SyncEngine:
             orgnr_list = [e.organisasjonsnummer for e in entities]
 
             await self._process_batch(orgnr_list, regnskap_client, state)
+
+    def _load_existing_dump(self) -> bytes | None:
+        """Return the most recent bulk dump from storage if it exists.
+
+        Checks today's dump first, then yesterday's. Returns None if
+        no recent dump is available.
+        """
+        for days_ago in range(0, 3):
+            dt = datetime.now(UTC)
+            if days_ago:
+                dt = dt - timedelta(days=days_ago)
+            date_str = dt.strftime("%Y%m%d")
+            path = self._settings.entity_dump_path(date_str)
+            if self._storage.exists(path):
+                logger.info("found_existing_dump", path=path, age_days=days_ago)
+                return self._storage.read_bytes(path)
+        return None
 
     async def _run_incremental(self, state: CheckpointState) -> None:
         """Incremental sync: poll updates API for changed entities."""
@@ -251,7 +272,8 @@ class SyncEngine:
             logger.info(
                 "batch_checkpointed",
                 batch=i // batch_size + 1,
-                processed=state.entities_processed,
+                checkpoint_orgnr=state.last_orgnr_processed,
+                entities_processed=state.entities_processed,
                 total=total,
                 **self._stats,
             )
@@ -328,11 +350,38 @@ class SyncEngine:
         if regnskap.regnskapsperiode and regnskap.regnskapsperiode.tilDato:
             regnskap_year = int(regnskap.regnskapsperiode.tilDato[:4])
 
+        if regnskap_year and journalnr:
+            is_correction = self._manifest.detect_corrections(orgnr, journalnr, regnskap_year)
+            if is_correction:
+                await self._archive_correction(orgnr, regnskap_year, journalnr)
+
+            json_path = self._settings.regnskap_json_path(orgnr, regnskap_year)
+            file_hash = self._hash_content(raw_json)
+            self._storage.write_bytes(json_path, raw_json)
+
+            records.append(
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=regnskap_year,
+                    download_timestamp=now,
+                    file_hash=file_hash,
+                    json_path=json_path,
+                    pdf_path=None,
+                    file_size_bytes=len(raw_json),
+                    is_correction=is_correction,
+                    journalnr=journalnr,
+                    source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
+                    status="success",
+                )
+            )
+
         available_years = []
         try:
             available_years = await self._throttled_request(regnskap_client.fetch_years, orgnr)
         except Exception as exc:
             logger.warning("fetch_years_failed", orgnr=orgnr, error=str(exc))
+
+        available_years.sort(reverse=True)
 
         for year in available_years:
             existing = self._manifest.get(orgnr, year)
@@ -343,56 +392,37 @@ class SyncEngine:
                 pdf_data = await self._throttled_request(regnskap_client.download_pdf, orgnr, year)
             except Exception as exc:
                 logger.warning("pdf_download_failed", orgnr=orgnr, year=year, error=str(exc))
-                records.append(
-                    ManifestRecord(
-                        orgnr=orgnr,
-                        year=year,
-                        download_timestamp=now,
-                        status="pdf_failed",
-                        error_detail=str(exc)[:500],
+                if not any(r.year == year for r in records):
+                    records.append(
+                        ManifestRecord(
+                            orgnr=orgnr,
+                            year=year,
+                            download_timestamp=now,
+                            status="pdf_failed",
+                            error_detail=str(exc)[:500],
+                        )
                     )
-                )
                 continue
 
             if pdf_data is None:
-                records.append(
-                    ManifestRecord(
-                        orgnr=orgnr,
-                        year=year,
-                        download_timestamp=now,
-                        status="pdf_missing",
+                if not any(r.year == year for r in records):
+                    records.append(
+                        ManifestRecord(
+                            orgnr=orgnr,
+                            year=year,
+                            download_timestamp=now,
+                            status="pdf_missing",
+                        )
                     )
-                )
                 continue
 
             pdf_path = self._settings.regnskap_pdf_path(orgnr, year)
             self._storage.write_bytes(pdf_path, pdf_data)
             self._stats["pdfs"] += 1
 
-            if year == regnskap_year and journalnr:
-                is_correction = self._manifest.detect_corrections(orgnr, journalnr, regnskap_year)
-                if is_correction:
-                    await self._archive_correction(orgnr, regnskap_year, journalnr)
-
-                json_path = self._settings.regnskap_json_path(orgnr, regnskap_year)
-                file_hash = self._hash_content(raw_json)
-                self._storage.write_bytes(json_path, raw_json)
-
-                records.append(
-                    ManifestRecord(
-                        orgnr=orgnr,
-                        year=regnskap_year,
-                        download_timestamp=now,
-                        file_hash=file_hash,
-                        json_path=json_path,
-                        pdf_path=pdf_path,
-                        file_size_bytes=len(raw_json) + len(pdf_data),
-                        is_correction=is_correction,
-                        journalnr=journalnr,
-                        source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
-                        status="success",
-                    )
-                )
+            existing_record = next((r for r in records if r.year == year), None)
+            if existing_record:
+                existing_record.pdf_path = pdf_path
             else:
                 records.append(
                     ManifestRecord(
