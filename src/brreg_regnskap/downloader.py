@@ -176,6 +176,8 @@ class SyncEngine:
 
         if mode == SyncMode.FULL:
             await self._run_full(state)
+        elif mode == SyncMode.PATCH:
+            await self._run_patch(state)
         else:
             await self._run_incremental(state)
 
@@ -389,6 +391,144 @@ class SyncEngine:
             status="success",
             error_detail=json_error,
         )]
+
+    # ── PATCH SYNC ─────────────────────────────────────────────────────
+
+    def _find_latest_patch_date(self) -> str | None:
+        patches_dir = self._settings.patches_dir
+        files = self._storage.list_dir(patches_dir)
+        dates = []
+        for f in files:
+            name = f.rsplit("/", 1)[-1]
+            if name.endswith(".jsonl"):
+                dates.append(name.removesuffix(".jsonl"))
+        if not dates:
+            return None
+        dates.sort()
+        return dates[-1]
+
+    def _load_patch_file(self, date: str) -> list[dict[str, str | int | None]]:
+        path = self._settings.patch_file_path(date)
+        if not self._storage.exists(path):
+            return []
+        raw = self._storage.read_bytes(path)
+        entries = []
+        for line in raw.decode("utf-8").strip().splitlines():
+            entries.append(json.loads(line))
+        return entries
+
+    def _write_patch_file(self, date: str, entries: list[dict[str, str | int | None]]) -> None:
+        path = self._settings.patch_file_path(date)
+        lines = [json.dumps(e, separators=(",", ":")) for e in entries]
+        raw = "\n".join(lines).encode("utf-8")
+        self._storage.write_bytes(path, raw)
+
+    async def _run_patch(self, state: CheckpointState) -> None:
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
+        patch_path = self._settings.patch_file_path(today)
+
+        if self._storage.exists(patch_path):
+            logger.info("patch_file_exists", date=today)
+            patch_entries = self._load_patch_file(today)
+        else:
+            last_date = self._find_latest_patch_date()
+            since_date = last_date if last_date else today
+            logger.info("building_patch", since_date=since_date, today=today)
+
+            patch_entries = []
+            seen_orgnr: set[str] = set()
+            async with EnhetsregisteretClient() as enhet_client:
+                async for update, year in enhet_client.poll_regnskap_updates_since_date(since_date):
+                    orgnr = update.organisasjonsnummer
+                    if orgnr in seen_orgnr:
+                        continue
+                    seen_orgnr.add(orgnr)
+                    entry: dict[str, str | int | None] = {"orgnr": orgnr, "dato": update.dato}
+                    if year is not None:
+                        entry["year"] = year
+                    patch_entries.append(entry)
+
+            self._write_patch_file(today, patch_entries)
+            logger.info("patch_file_written", date=today, entries=len(patch_entries))
+
+        if not patch_entries:
+            logger.info("patch_empty", date=today)
+            return
+
+        if self._settings.shard is not None:
+            patch_entries = [
+                e for e in patch_entries
+                if int(e["orgnr"]) % 10 == self._settings.shard
+            ]
+
+        table = self._manifest.load()
+        existing_keys: set[tuple[str, int]] = set()
+        if table.num_rows > 0:
+            orgnr_col = table.column("orgnr").to_pylist()
+            year_col = table.column("year").to_pylist()
+            status_col = table.column("status").to_pylist()
+            pdf_col = table.column("pdf_path").to_pylist()
+            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col):
+                if s == "success" and p:
+                    existing_keys.add((o, y))
+
+        todo = []
+        for e in patch_entries:
+            orgnr = e["orgnr"]
+            year = e.get("year")
+            if year is not None and (orgnr, int(year)) in existing_keys:
+                continue
+            todo.append(orgnr)
+
+        todo = sorted(set(todo))
+        logger.info(
+            "patch_diff",
+            patch_total=len(patch_entries),
+            already_in_manifest=len(patch_entries) - len(todo),
+            to_process=len(todo),
+        )
+
+        if not todo:
+            logger.info("patch_nothing_to_do")
+            return
+
+        connector = aiohttp.TCPConnector(limit=self._settings.max_concurrent)
+        timeout = aiohttp.ClientTimeout(total=300)
+        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+            regnskap_client = RegnskapsregisteretClient(session=session)
+
+            checkpoint_every = self._settings.checkpoint_interval
+            records_buf: list[ManifestRecord] = []
+
+            for idx, orgnr in enumerate(sorted(todo)):
+                if self._should_shutdown():
+                    logger.info("graceful_shutdown", phase="patch", orgnr=orgnr)
+                    if records_buf:
+                        self._manifest.upsert(records_buf)
+                    self._checkpoint_mgr.save(state)
+                    return
+
+                records = await self._process_entity(orgnr, regnskap_client)
+                records_buf.extend(records)
+                state.last_orgnr_processed = orgnr
+                state.entities_processed += 1
+
+                if (idx + 1) % checkpoint_every == 0 or idx + 1 == len(todo):
+                    if records_buf:
+                        self._manifest.upsert(records_buf)
+                        records_buf = []
+                    self._checkpoint_mgr.save(state)
+                    logger.info(
+                        "patch_checkpoint",
+                        entities_processed=state.entities_processed,
+                        total=len(todo),
+                        **self._stats,
+                    )
+
+                await asyncio.sleep(0.5)
+
+        self._checkpoint_mgr.clear()
+        logger.info("patch_complete", **self._stats)
 
     # ── BACKFILL SCAN ──────────────────────────────────────────────────
 

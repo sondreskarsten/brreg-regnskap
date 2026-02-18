@@ -21,6 +21,7 @@ class StorageBackendType(StrEnum):
 class SyncMode(StrEnum):
     FULL = "full"
     INCREMENTAL = "incremental"
+    PATCH = "patch"
 
 
 class Settings(BaseSettings):
@@ -121,3 +122,10 @@ class Settings(BaseSettings):
     @property
     def backfill_db_path(self) -> str:
         return f"{self.storage_path}/metadata/backfill_years{self._shard_suffix}.json"
+
+    @property
+    def patches_dir(self) -> str:
+        return f"{self.storage_path}/patches"
+
+    def patch_file_path(self, date: str) -> str:
+        return f"{self.patches_dir}/{date}.jsonl"
