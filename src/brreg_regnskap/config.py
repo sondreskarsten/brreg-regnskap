@@ -21,6 +21,7 @@ class StorageBackendType(StrEnum):
 class SyncMode(StrEnum):
     FULL = "full"
     INCREMENTAL = "incremental"
+    PATCH = "patch"
 
 
 class Settings(BaseSettings):
@@ -57,6 +58,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     orgnr_range_start: str | None = None
     orgnr_range_end: str | None = None
+    shard: int | None = None
 
     @field_validator("storage_path")
     @classmethod
@@ -66,6 +68,19 @@ class Settings(BaseSettings):
         if not v:
             raise ValueError("storage_path cannot be empty")
         return v
+
+    @field_validator("shard")
+    @classmethod
+    def validate_shard(cls, v: int | None) -> int | None:
+        if v is not None and not (0 <= v <= 9):
+            raise ValueError("shard must be 0-9")
+        return v
+
+    @property
+    def _shard_suffix(self) -> str:
+        if self.shard is None:
+            return ""
+        return f"_shard_{self.shard}"
 
     @property
     def backend_type(self) -> StorageBackendType:
@@ -78,20 +93,22 @@ class Settings(BaseSettings):
 
     @property
     def manifest_path(self) -> str:
-        return f"{self.storage_path}/manifest.parquet"
+        return f"{self.storage_path}/manifest{self._shard_suffix}.parquet"
 
     @property
     def checkpoint_path(self) -> str:
-        return f"{self.storage_path}/checkpoint.json"
+        return f"{self.storage_path}/checkpoint{self._shard_suffix}.json"
 
     def shard_manifest_path(self, range_start: str, range_end: str) -> str:
         return f"{self.storage_path}/manifest-{range_start}-{range_end}.parquet"
 
-    def regnskap_json_path(self, orgnr: str, year: int) -> str:
-        return f"{self.storage_path}/regnskap/{orgnr}/regnskap_{year}.json"
+    def regnskap_json_path(self, orgnr: str, year: int, version: int = 1) -> str:
+        suffix = f"_v{version}" if version > 1 else ""
+        return f"{self.storage_path}/regnskap/{orgnr}/regnskap_{year}{suffix}.json"
 
-    def regnskap_pdf_path(self, orgnr: str, year: int) -> str:
-        return f"{self.storage_path}/regnskap/{orgnr}/aarsregnskap_{year}.pdf"
+    def regnskap_pdf_path(self, orgnr: str, year: int, version: int = 1) -> str:
+        suffix = f"_v{version}" if version > 1 else ""
+        return f"{self.storage_path}/regnskap/{orgnr}/aarsregnskap_{year}{suffix}.pdf"
 
     def correction_json_path(self, orgnr: str, year: int, journalnr: str, ts: str) -> str:
         return f"{self.storage_path}/corrections/{orgnr}/regnskap_{year}_{journalnr}_{ts}.json"
@@ -103,5 +120,12 @@ class Settings(BaseSettings):
         return f"{self.storage_path}/entities/enheter_dump_{date}.json.gz"
 
     @property
-    def available_years_path(self) -> str:
-        return f"{self.storage_path}/metadata/available_years.json"
+    def backfill_db_path(self) -> str:
+        return f"{self.storage_path}/metadata/backfill_years{self._shard_suffix}.json"
+
+    @property
+    def patches_dir(self) -> str:
+        return f"{self.storage_path}/patches"
+
+    def patch_file_path(self, date: str) -> str:
+        return f"{self.patches_dir}/{date}.jsonl"

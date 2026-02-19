@@ -75,6 +75,10 @@ def sync(
     range_end: str | None = typer.Option(
         None, "--range-end", help="End of orgnr range (for matrix jobs)"
     ),
+    shard: str | None = typer.Option(
+        None, "--shard", "-s",
+        help="Shard digit 0-9, or 'auto' to claim a free shard"
+    ),
     checkpoint_interval: int | None = typer.Option(
         None, "--checkpoint-interval", help="Save checkpoint every N entities"
     ),
@@ -83,6 +87,18 @@ def sync(
     """Run a full or incremental sync of BRREG regnskap data."""
     _configure_logging(log_level)
 
+    shard_digit: int | None = None
+    if shard is not None:
+        if shard == "auto":
+            from brreg_regnskap.shard import claim_shard
+            from brreg_regnskap.storage import StorageBackend
+
+            tmp_settings = Settings(storage_path=storage_path)
+            tmp_storage = StorageBackend.from_settings(tmp_settings)
+            shard_digit = claim_shard(tmp_storage, storage_path.rstrip("/"))
+        else:
+            shard_digit = int(shard)
+
     # Only pass CLI args that were explicitly provided, so that env vars
     # and Settings defaults are respected for unset options.
     overrides: dict[str, object] = {
@@ -90,6 +106,7 @@ def sync(
         "log_level": log_level,
         "orgnr_range_start": range_start,
         "orgnr_range_end": range_end,
+        "shard": shard_digit,
     }
     if max_concurrent is not None:
         overrides["max_concurrent"] = max_concurrent
@@ -227,8 +244,9 @@ def merge_manifests(
     all_files = storage.list_dir(storage_path)
     shard_paths = [
         f for f in all_files
-        if f.rsplit("/", 1)[-1].startswith("manifest-")
+        if f.rsplit("/", 1)[-1].startswith("manifest")
         and f.endswith(".parquet")
+        and f != settings.manifest_path
     ]
 
     if not shard_paths:

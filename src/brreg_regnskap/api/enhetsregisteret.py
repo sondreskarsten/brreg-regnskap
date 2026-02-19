@@ -140,3 +140,36 @@ class EnhetsregisteretClient:
                     if "sisteInnsendteAarsregnskap" in path:
                         yield update
                         break
+
+    async def poll_regnskap_updates_since_date(self, since_date: str) -> AsyncIterator[tuple[EnhetUpdate, int | None]]:
+        cursor = 0
+        while True:
+            params: dict[str, str] = {
+                "oppdateringsid": str(cursor),
+                "dato": since_date,
+                "includeChanges": "true",
+            }
+            url = f"{BASE_URL}/oppdateringer/enheter"
+            async with self.session.get(url, params=params) as resp:
+                resp.raise_for_status()
+                data = await resp.json()
+
+            updates_raw = data.get("_embedded", {}).get("oppdaterteEnheter", [])
+            if not updates_raw:
+                break
+
+            for u in updates_raw:
+                update = EnhetUpdate.model_validate(u)
+                cursor = update.oppdateringsid
+
+                if update.endringstype == "Ny":
+                    yield update, None
+                    continue
+                if update.endringer:
+                    for patch_op in update.endringer:
+                        path = patch_op.get("path", "")
+                        if "sisteInnsendteAarsregnskap" in path:
+                            raw_year = patch_op.get("value")
+                            year = int(raw_year) if raw_year and str(raw_year).isdigit() else None
+                            yield update, year
+                            break

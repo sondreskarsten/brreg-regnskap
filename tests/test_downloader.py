@@ -162,20 +162,22 @@ class TestProcessEntity:
 
 class TestCorrectionDetection:
     @pytest.mark.asyncio
-    async def test_correction_archives_old_files(
+    async def test_correction_creates_new_version(
         self,
         engine: SyncEngine,
         local_settings: Settings,
         regnskap_json_fixture: list,
     ) -> None:
-        old_json_path = local_settings.regnskap_json_path("964118191", 2024)
+        old_json_path = local_settings.regnskap_json_path("964118191", 2024, 1)
         engine._storage.write_bytes(old_json_path, b'{"old": true}')
         engine._manifest.upsert([
             ManifestRecord(
                 orgnr="964118191",
                 year=2024,
+                version=1,
                 download_timestamp="2025-01-01T00:00:00Z",
                 json_path=old_json_path,
+                file_hash="oldhash",
                 journalnr="OLD_JOURNALNR",
                 status="success",
             )
@@ -193,74 +195,92 @@ class TestCorrectionDetection:
         assert len(json_records) == 1
         assert json_records[0].is_correction is True
         assert json_records[0].journalnr == "2025741982"
+        assert json_records[0].version == 2
 
-        corrections = engine._storage.list_dir(f"{local_settings.storage_path}/corrections")
-        assert len(corrections) > 0
+        assert engine._storage.exists(old_json_path)
+        assert engine._storage.exists(local_settings.regnskap_json_path("964118191", 2024, 2))
 
 
-class TestProcessEntityYear:
+class TestDownloadFreshEntity:
     @pytest.mark.asyncio
-    async def test_latest_year_fetches_json_and_pdf(
+    async def test_downloads_pdf_and_json(
         self,
         engine: SyncEngine,
         local_settings: Settings,
         regnskap_json_fixture: list,
     ) -> None:
+        """Fresh entity download fetches both PDF and JSON."""
         with aioresponses() as m:
-            m.get(f"{BASE}/regnskap/964118191", payload=regnskap_json_fixture)
             m.get(f"{BASE}/regnskap/aarsregnskap/kopi/964118191/2024", body=b"%PDF-fake")
+            m.get(f"{BASE}/regnskap/964118191", payload=regnskap_json_fixture)
 
             async with RegnskapsregisteretClient() as client:
-                records = await engine._process_entity_year(
-                    "964118191", 2024, client, is_latest_year=True,
+                records = await engine._download_fresh_entity(
+                    "964118191", 2024, client,
                 )
 
         assert len(records) == 1
+        assert records[0].pdf_path is not None
         assert records[0].json_path is not None
-        assert records[0].pdf_path is not None
         assert records[0].status == "success"
 
     @pytest.mark.asyncio
-    async def test_historical_year_skips_json(
-        self,
-        engine: SyncEngine,
-        local_settings: Settings,
-    ) -> None:
-        """For non-latest years, only PDF should be downloaded (no JSON fetch)."""
-        with aioresponses() as m:
-            # No regnskap mock needed — it should not be called for historical year
-            m.get(f"{BASE}/regnskap/aarsregnskap/kopi/964118191/2021", body=b"%PDF-old")
-
-            async with RegnskapsregisteretClient() as client:
-                records = await engine._process_entity_year(
-                    "964118191", 2021, client, is_latest_year=False,
-                )
-
-        assert len(records) == 1
-        assert records[0].json_path is None
-        assert records[0].pdf_path is not None
-        assert records[0].status == "success"
-
-    @pytest.mark.asyncio
-    async def test_latest_year_json_only_sets_pdf_missing(
+    async def test_pdf_missing_returns_pdf_missing_status(
         self,
         engine: SyncEngine,
         regnskap_json_fixture: list,
     ) -> None:
-        """When JSON succeeds but PDF returns 404, status should be pdf_missing."""
+        """When PDF returns 404, status should be pdf_missing."""
         with aioresponses() as m:
-            m.get(f"{BASE}/regnskap/964118191", payload=regnskap_json_fixture)
             m.get(f"{BASE}/regnskap/aarsregnskap/kopi/964118191/2024", status=404)
 
             async with RegnskapsregisteretClient() as client:
-                records = await engine._process_entity_year(
-                    "964118191", 2024, client, is_latest_year=True,
+                records = await engine._download_fresh_entity(
+                    "964118191", 2024, client,
                 )
 
         assert len(records) == 1
-        assert records[0].json_path is not None
         assert records[0].pdf_path is None
         assert records[0].status == "pdf_missing"
+
+
+class TestDownloadBackfillPdf:
+    @pytest.mark.asyncio
+    async def test_downloads_pdf_only(
+        self,
+        engine: SyncEngine,
+        local_settings: Settings,
+    ) -> None:
+        """Backfill download fetches only PDF, no JSON."""
+        with aioresponses() as m:
+            m.get(f"{BASE}/regnskap/aarsregnskap/kopi/964118191/2021", body=b"%PDF-old")
+
+            async with RegnskapsregisteretClient() as client:
+                record = await engine._download_backfill_pdf(
+                    "964118191", 2021, client,
+                )
+
+        assert record is not None
+        assert record.pdf_path is not None
+        assert record.json_path is None
+        assert record.status == "success"
+
+    @pytest.mark.asyncio
+    async def test_pdf_missing_returns_pdf_missing_status(
+        self,
+        engine: SyncEngine,
+    ) -> None:
+        """When PDF returns 404, status should be pdf_missing."""
+        with aioresponses() as m:
+            m.get(f"{BASE}/regnskap/aarsregnskap/kopi/964118191/2021", status=404)
+
+            async with RegnskapsregisteretClient() as client:
+                record = await engine._download_backfill_pdf(
+                    "964118191", 2021, client,
+                )
+
+        assert record is not None
+        assert record.status == "pdf_missing"
 
 
 class TestProcessEntitySafe:

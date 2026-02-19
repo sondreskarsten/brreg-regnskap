@@ -22,6 +22,10 @@ concurrency:
   group: brreg-sync
   cancel-in-progress: false
 
+permissions:
+  id-token: write   # Required for OIDC (AWS and GCP Workload Identity)
+  contents: read
+
 env:
   STORAGE_PATH: ${{ vars.BRREG_STORAGE_PATH || 's3://brreg-regnskap/data' }}
 
@@ -31,20 +35,44 @@ jobs:
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
       mode: ${{ steps.gen.outputs.mode }}
+      provider: ${{ steps.detect.outputs.provider }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Detect storage provider
+        id: detect
+        run: |
+          if [[ "$STORAGE_PATH" == gs://* ]]; then
+            echo "provider=gcs" >> "$GITHUB_OUTPUT"
+          else
+            echo "provider=s3" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
+      # --- AWS ---
       - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.detect.outputs.provider == 's3'
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'eu-north-1' }}
 
+      # --- GCS ---
+      - uses: google-github-actions/auth@v2
+        if: steps.detect.outputs.provider == 'gcs'
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
       - name: Install
-        run: uv sync --frozen --extra s3
+        run: |
+          if [[ "${{ steps.detect.outputs.provider }}" == "gcs" ]]; then
+            uv sync --frozen --extra gcs
+          else
+            uv sync --frozen --extra s3
+          fi
 
       - name: Generate matrix
         id: gen
@@ -69,13 +97,27 @@ jobs:
         with:
           enable-cache: true
 
+      # --- AWS ---
       - uses: aws-actions/configure-aws-credentials@v4
+        if: needs.plan.outputs.provider == 's3'
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'eu-north-1' }}
 
+      # --- GCS ---
+      - uses: google-github-actions/auth@v2
+        if: needs.plan.outputs.provider == 'gcs'
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
       - name: Install
-        run: uv sync --frozen --extra s3
+        run: |
+          if [[ "${{ needs.plan.outputs.provider }}" == "gcs" ]]; then
+            uv sync --frozen --extra gcs
+          else
+            uv sync --frozen --extra s3
+          fi
 
       - name: Sync shard
         run: |
@@ -97,13 +139,27 @@ jobs:
         with:
           enable-cache: true
 
+      # --- AWS ---
       - uses: aws-actions/configure-aws-credentials@v4
+        if: needs.plan.outputs.provider == 's3'
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'eu-north-1' }}
 
+      # --- GCS ---
+      - uses: google-github-actions/auth@v2
+        if: needs.plan.outputs.provider == 'gcs'
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
       - name: Install
-        run: uv sync --frozen --extra s3
+        run: |
+          if [[ "${{ needs.plan.outputs.provider }}" == "gcs" ]]; then
+            uv sync --frozen --extra gcs
+          else
+            uv sync --frozen --extra s3
+          fi
 
       - name: Merge shard manifests
         run: uv run brreg-regnskap merge-manifests "$STORAGE_PATH"
