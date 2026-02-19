@@ -330,16 +330,20 @@ def status(
             if count:
                 console.print(f"  {s}: {count}")
 
-    # Manifest keys for orderflow anti-join
-    manifest_keys: set[tuple[str, int]] = set()
+    # Build manifest timestamps for orderflow anti-join
+    from brreg_regnskap.sync_engine import _iso_to_unix
+
+    manifest_ts: dict[tuple[str, int], int] = {}
     if table.num_rows > 0:
         orgnr_col = table.column("orgnr").to_pylist()
         year_col = table.column("year").to_pylist()
         status_list = table.column("status").to_pylist()
         pdf_col = table.column("pdf_path").to_pylist()
-        for o, y, s, p in zip(orgnr_col, year_col, status_list, pdf_col):
+        dl_col = table.column("download_timestamp").to_pylist()
+        for o, y, s, p, dl in zip(orgnr_col, year_col, status_list, pdf_col, dl_col):
             if s == "success" and p:
-                manifest_keys.add((o, y))
+                key = (o, y)
+                manifest_ts[key] = max(manifest_ts.get(key, 0), _iso_to_unix(dl))
 
     # Orderflow per shard
     console.print(f"\n[bold]Orderflow:[/bold]")
@@ -347,7 +351,7 @@ def status(
     total_slow = 0
     total_discovery = 0
     for digit in range(10):
-        stats = orderflow.shard_stats(digit, manifest_keys)
+        stats = orderflow.shard_stats(digit, manifest_ts)
         if stats["total_entries"] > 0:
             total_fast += stats["fast_lane_pending"]
             total_slow += stats["slow_lane_pending"]

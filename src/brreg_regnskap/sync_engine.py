@@ -5,16 +5,20 @@ Replaces the monolithic downloader.py with a two-lane architecture:
 1. **Fast lane** — ``(orgnr, year)`` pairs from the bulk dump or BRREG
    update patches.  Downloads JSON + PDF.  Processed first.
 2. **Slow lane** — historical years discovered via the ``/aar`` API.
-   Downloads PDF only.  Processed when the fast lane is empty for a shard.
+   Downloads PDF only.  Processed when *all* fast lanes are empty.
 
-Processing order within each shard (by ``orgnr % 10``):
+Processing order:
+    When running without ``--shard`` (single worker), the engine processes
+    **all 10 shards' fast lanes** before touching any slow lane.  This
+    prevents shard 0's slow-lane backlog from starving shard 9's fast lane.
 
-    fast-lane entries   (priority = unix-now, newest first)
-    slow-lane entries   (priority = unix(year-01-01), newest years first)
+    When running with ``--shard N``, only shard N is processed:
+    fast lane first, then slow lane.
 
-Completed downloads are recorded in the manifest.  The orderflow is
-never mutated on completion — the manifest anti-join determines what
-work remains.
+Correction handling:
+    If ``(orgnr, year)`` re-enters the fast lane after being downloaded,
+    the engine re-downloads JSON + PDF and compares hashes.  Only if the
+    content actually differs is a new version saved.
 """
 
 from __future__ import annotations
@@ -42,7 +46,7 @@ from brreg_regnskap.api.regnskapsregisteret import BrregRateLimitError, Regnskap
 from brreg_regnskap.checkpoint import CheckpointManager, CheckpointState
 from brreg_regnskap.config import Settings
 from brreg_regnskap.manifest import ManifestManager
-from brreg_regnskap.orderflow import OrderflowManager
+from brreg_regnskap.orderflow import ManifestTimestamps, OrderflowManager
 from brreg_regnskap.storage import StorageBackend
 
 logger = structlog.get_logger()
@@ -68,6 +72,16 @@ def _before_retry_log(retry_state: RetryCallState) -> None:
         attempt=retry_state.attempt_number,
         exception=str(retry_state.outcome.exception()) if retry_state.outcome else None,
     )
+
+
+def _iso_to_unix(ts: str | None) -> int:
+    """Convert an ISO timestamp string to unix seconds, or 0 if None."""
+    if not ts:
+        return 0
+    try:
+        return int(datetime.fromisoformat(ts).timestamp())
+    except (ValueError, TypeError):
+        return 0
 
 
 class SyncEngine:
@@ -99,7 +113,8 @@ class SyncEngine:
     async def run(self) -> dict[str, int]:
         """Process the orderflow: fast lane first, then slow lane.
 
-        Iterates over shards (0-9) or only the configured ``--shard``.
+        When ``--shard`` is set, processes only that shard sequentially.
+        When unset, processes **all fast lanes (0-9)** before any slow lane.
         Returns the stats dict.
         """
         self._storage.check_credentials()
@@ -108,7 +123,7 @@ class SyncEngine:
         state.run_started_at = self._now_iso()
 
         shards = [self._settings.shard] if self._settings.shard is not None else list(range(10))
-        manifest_keys = self._load_manifest_keys()
+        manifest_ts = self._load_manifest_timestamps()
 
         connector = aiohttp.TCPConnector(limit=self._settings.max_concurrent)
         timeout = aiohttp.ClientTimeout(total=300)
@@ -116,32 +131,46 @@ class SyncEngine:
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
             regnskap_client = RegnskapsregisteretClient(session=session)
 
+            # ── Phase 1: all fast lanes ──────────────────────────
             for digit in shards:
                 if self._should_shutdown():
                     break
-
-                logger.info("processing_shard", shard=digit)
-
-                # ── Fast lane ────────────────────────────────────
+                logger.info("processing_fast_lane", shard=digit)
                 await self._process_fast_lane(
-                    digit, regnskap_client, manifest_keys, state,
+                    digit, regnskap_client, manifest_ts, state,
                 )
-                if self._should_shutdown():
-                    break
 
-                # ── Slow lane discovery ──────────────────────────
-                fast_remaining = self._orderflow.fast_lane_pending(digit, manifest_keys)
-                if fast_remaining.num_rows == 0:
-                    await self._discover_slow_lane(
-                        digit, regnskap_client, manifest_keys,
-                    )
+            if self._should_shutdown():
+                self._checkpoint_mgr.save(state)
+                logger.info("sync_finished_early", **self._stats)
+                return dict(self._stats)
+
+            # ── Phase 2: slow-lane discovery (only if all fast done) ─
+            all_fast_done = all(
+                self._orderflow.fast_lane_pending(d, manifest_ts).num_rows == 0
+                for d in shards
+            )
+            if all_fast_done:
+                for digit in shards:
                     if self._should_shutdown():
                         break
-
-                    # ── Slow lane download ────────────────────────
-                    await self._process_slow_lane(
-                        digit, regnskap_client, manifest_keys, state,
+                    await self._discover_slow_lane(
+                        digit, regnskap_client, manifest_ts,
                     )
+
+                # ── Phase 3: slow-lane downloads ─────────────────
+                for digit in shards:
+                    if self._should_shutdown():
+                        break
+                    await self._process_slow_lane(
+                        digit, regnskap_client, manifest_ts, state,
+                    )
+
+            # ── Compact ──────────────────────────────────────────
+            for digit in shards:
+                removed = self._orderflow.compact(digit, manifest_ts)
+                if removed:
+                    logger.info("compacted_shard", shard=digit, removed=removed)
 
         self._checkpoint_mgr.save(state)
         logger.info("sync_finished", **self._stats)
@@ -153,10 +182,10 @@ class SyncEngine:
         self,
         digit: int,
         client: RegnskapsregisteretClient,
-        manifest_keys: set[tuple[str, int]],
+        manifest_ts: ManifestTimestamps,
         state: CheckpointState,
     ) -> None:
-        pending = self._orderflow.fast_lane_pending(digit, manifest_keys)
+        pending = self._orderflow.fast_lane_pending(digit, manifest_ts)
         if pending.num_rows == 0:
             logger.info("fast_lane_empty", shard=digit)
             return
@@ -174,9 +203,7 @@ class SyncEngine:
 
             records = await self._download_entity(orgnr, year, client, json_too=True)
             records_buf.extend(records)
-            for r in records:
-                if r.status == "success" and r.pdf_path:
-                    manifest_keys.add((r.orgnr, r.year))
+            self._update_manifest_ts(manifest_ts, records)
 
             state.last_orgnr_processed = orgnr
             state.entities_processed += 1
@@ -203,7 +230,7 @@ class SyncEngine:
         self,
         digit: int,
         client: RegnskapsregisteretClient,
-        manifest_keys: set[tuple[str, int]],
+        manifest_ts: ManifestTimestamps,
     ) -> None:
         stubs = self._orderflow.discovery_stubs(digit)
         if not stubs:
@@ -223,8 +250,11 @@ class SyncEngine:
                 logger.warning("years_api_failed", orgnr=orgnr, error=str(exc))
                 continue
 
+            # Only remove the stub if we got a real response (even if empty).
+            # An empty list means BRREG has no PDFs for this org — that's valid.
+            # Exceptions above (network error, rate limit) do NOT remove the stub.
             if years:
-                self._orderflow.enqueue_slow(orgnr, years, manifest_keys)
+                self._orderflow.enqueue_slow(orgnr, years, manifest_ts)
             discovered.add(orgnr)
             burst_count += 1
 
@@ -242,45 +272,41 @@ class SyncEngine:
         self,
         digit: int,
         client: RegnskapsregisteretClient,
-        manifest_keys: set[tuple[str, int]],
+        manifest_ts: ManifestTimestamps,
         state: CheckpointState,
     ) -> None:
-        pending = self._orderflow.pending(digit, manifest_keys)
-        # After fast lane is removed, remaining are slow lane
-        slow = pending
-        if slow.num_rows == 0:
+        pending = self._orderflow.pending(digit, manifest_ts)
+        if pending.num_rows == 0:
             logger.info("slow_lane_empty", shard=digit)
             return
 
-        logger.info("slow_lane_start", shard=digit, count=slow.num_rows)
+        logger.info("slow_lane_start", shard=digit, count=pending.num_rows)
         records_buf: list[ManifestRecord] = []
         checkpoint_every = self._settings.checkpoint_interval
         burst_count = 0
 
-        for idx in range(slow.num_rows):
+        for idx in range(pending.num_rows):
             if self._should_shutdown():
                 break
 
-            orgnr = slow.column("orgnr")[idx].as_py()
-            year = slow.column("year")[idx].as_py()
+            orgnr = pending.column("orgnr")[idx].as_py()
+            year = pending.column("year")[idx].as_py()
 
             records = await self._download_entity(orgnr, year, client, json_too=False)
             records_buf.extend(records)
-            for r in records:
-                if r.status == "success" and r.pdf_path:
-                    manifest_keys.add((r.orgnr, r.year))
+            self._update_manifest_ts(manifest_ts, records)
 
             state.entities_processed += 1
             burst_count += 1
 
-            if (idx + 1) % checkpoint_every == 0 or idx + 1 == slow.num_rows:
+            if (idx + 1) % checkpoint_every == 0 or idx + 1 == pending.num_rows:
                 if records_buf:
                     self._manifest.upsert(records_buf)
                     records_buf = []
                 self._checkpoint_mgr.save(state)
                 logger.info(
                     "slow_checkpoint", shard=digit,
-                    progress=idx + 1, total=slow.num_rows, **self._stats,
+                    progress=idx + 1, total=pending.num_rows, **self._stats,
                 )
 
             if burst_count >= 30:
@@ -301,6 +327,11 @@ class SyncEngine:
         *,
         json_too: bool,
     ) -> list[ManifestRecord]:
+        """Download PDF (and optionally JSON) for a single (orgnr, year).
+
+        For corrections (re-entries), compares hashes against existing
+        manifest entries.  Only saves a new version if content differs.
+        """
         self._stats["processed"] += 1
         now = self._now_iso()
 
@@ -323,18 +354,10 @@ class SyncEngine:
             )]
 
         pdf_hash = self._hash(pdf_data)
-        if self._manifest.has_hash(orgnr, year, file_hash=None, pdf_hash=pdf_hash):
-            self._stats["skipped"] += 1
-            return []
-
-        version = self._manifest.max_version(orgnr, year) + 1
-        pdf_path = self._settings.regnskap_pdf_path(orgnr, year, version)
-        self._storage.write_bytes(pdf_path, pdf_data)
-        self._stats["pdfs"] += 1
 
         # ── JSON (fast lane only) ────────────────────────────────
-        json_path = None
-        file_hash = None
+        raw_json = None
+        json_hash = None
         journalnr = None
         json_error = None
 
@@ -343,30 +366,43 @@ class SyncEngine:
                 raw_json = await self._throttled_request(client.fetch_regnskap_raw, orgnr)
             except Exception as exc:
                 logger.warning("json_failed", orgnr=orgnr, error=str(exc))
-                raw_json = None
                 json_error = str(exc)[:500]
 
             if raw_json is not None:
+                json_hash = self._hash(raw_json)
                 parsed = json.loads(raw_json)
                 regnskap = None
                 if isinstance(parsed, list) and parsed:
                     regnskap = Regnskap.model_validate(parsed[0])
                 elif isinstance(parsed, dict):
                     regnskap = Regnskap.model_validate(parsed)
-
                 if regnskap and regnskap.journalnr:
                     journalnr = str(regnskap.journalnr)
 
-                json_path = self._settings.regnskap_json_path(orgnr, year, version)
-                file_hash = self._hash(raw_json)
-                self._storage.write_bytes(json_path, raw_json)
-                self._stats["jsons"] += 1
+        # ── Correction check: compare hashes before saving ───────
+        if self._manifest.has_hash(orgnr, year, file_hash=json_hash, pdf_hash=pdf_hash):
+            self._stats["skipped"] += 1
+            logger.debug("unchanged_content", orgnr=orgnr, year=year)
+            return []
+
+        # ── Save files ───────────────────────────────────────────
+        version = self._manifest.max_version(orgnr, year) + 1
+
+        pdf_path = self._settings.regnskap_pdf_path(orgnr, year, version)
+        self._storage.write_bytes(pdf_path, pdf_data)
+        self._stats["pdfs"] += 1
+
+        json_path = None
+        if raw_json is not None:
+            json_path = self._settings.regnskap_json_path(orgnr, year, version)
+            self._storage.write_bytes(json_path, raw_json)
+            self._stats["jsons"] += 1
 
         self._stats["success"] += 1
         return [ManifestRecord(
             orgnr=orgnr, year=year, version=version,
             download_timestamp=now,
-            file_hash=file_hash, pdf_hash=pdf_hash,
+            file_hash=json_hash, pdf_hash=pdf_hash,
             json_path=json_path, pdf_path=pdf_path,
             file_size_bytes=len(pdf_data),
             is_correction=version > 1,
@@ -378,19 +414,39 @@ class SyncEngine:
 
     # ── Helpers ───────────────────────────────────────────────────
 
-    def _load_manifest_keys(self) -> set[tuple[str, int]]:
+    def _load_manifest_timestamps(self) -> ManifestTimestamps:
+        """Build {(orgnr, year): unix_ts} from the manifest.
+
+        Only includes entries with status=success and a pdf_path.
+        The timestamp is the download_timestamp converted to unix seconds.
+        """
         table = self._manifest.load()
-        keys: set[tuple[str, int]] = set()
+        ts: ManifestTimestamps = {}
         if table.num_rows == 0:
-            return keys
+            return ts
         orgnr_col = table.column("orgnr").to_pylist()
         year_col = table.column("year").to_pylist()
         status_col = table.column("status").to_pylist()
         pdf_col = table.column("pdf_path").to_pylist()
-        for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col):
+        dl_col = table.column("download_timestamp").to_pylist()
+        for o, y, s, p, dl in zip(orgnr_col, year_col, status_col, pdf_col, dl_col):
             if s == "success" and p:
-                keys.add((o, y))
-        return keys
+                unix_ts = _iso_to_unix(dl)
+                key = (o, y)
+                ts[key] = max(ts.get(key, 0), unix_ts)
+        return ts
+
+    @staticmethod
+    def _update_manifest_ts(
+        manifest_ts: ManifestTimestamps,
+        records: list[ManifestRecord],
+    ) -> None:
+        """Update the in-memory manifest timestamps with newly saved records."""
+        for r in records:
+            if r.status == "success" and r.pdf_path:
+                unix_ts = _iso_to_unix(r.download_timestamp)
+                key = (r.orgnr, r.year)
+                manifest_ts[key] = max(manifest_ts.get(key, 0), unix_ts)
 
     def _should_shutdown(self) -> bool:
         if self._shutdown:

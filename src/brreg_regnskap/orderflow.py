@@ -2,25 +2,33 @@
 
 The orderflow is a parquet-based queue partitioned into 10 shards by the
 last digit of the orgnr (``int(orgnr) % 10``).  Each entry carries a
-*processing_priority* that determines download order:
+*processing_priority* and *create_time*:
 
 Fast lane (high priority)
-    Entries created from the bulk dump or BRREG update patches.
     ``processing_priority = create_time = int(time.time())``
-    Always have a year.  We download both JSON and PDF.
+    Both fields are equal.  Downloads JSON + PDF.
 
 Slow lane (low priority / backlog)
-    Entries created by querying the ``/aar`` years API.
     ``processing_priority = int(datetime(year, 1, 1, tzinfo=UTC).timestamp())``
     ``create_time = int(time.time())``
-    We download PDF only.
+    Priority is less than create_time.  Downloads PDF only.
 
-An orgnr enters the slow-lane discovery set when it first enters the fast
-lane.  Slow-lane discovery (calling the years API) only happens when the
-fast lane for that shard is empty.
+Lane identity is encoded structurally: ``priority == create_time`` means
+fast lane, ``priority < create_time`` means slow lane.
 
-Completed work is tracked by the manifest (manifest.parquet).  To find
-pending work: ``orderflow LEFT ANTI JOIN manifest ON (orgnr, year)``.
+Correction handling:
+    When the same ``(orgnr, year)`` re-enters the fast lane via a patch,
+    ``enqueue_fast`` **upserts** — it updates the entry's create_time and
+    priority to *now*.  The ``pending()`` query uses a timestamp comparison
+    against the manifest: an entry is pending if its ``create_time`` is
+    greater than the manifest's ``download_timestamp`` for that key (or if
+    the key is not in the manifest at all).  This lets corrections flow
+    through naturally.  The download step then compares hashes and only
+    saves a new version if the content actually differs.
+
+Compaction:
+    ``compact()`` removes entries whose ``create_time`` is at or before the
+    manifest download timestamp.  Call periodically to keep shards small.
 """
 
 from __future__ import annotations
@@ -39,6 +47,9 @@ if TYPE_CHECKING:
     from brreg_regnskap.storage import StorageBackend
 
 logger = structlog.get_logger()
+
+# {(orgnr, year): unix_timestamp_of_latest_successful_download}
+ManifestTimestamps = dict[tuple[str, int], int]
 
 ORDERFLOW_SCHEMA = pa.schema(
     [
@@ -75,7 +86,7 @@ class OrderflowManager:
         of = OrderflowManager(storage, settings)
         of.enqueue_fast([("964118191", 2024), ("987654321", 2023)])
         of.enqueue_slow("964118191", [2022, 2021, 2020])
-        pending = of.pending(shard=1, manifest_keys={("987654321", 2023)})
+        pending = of.pending(shard=1, manifest_ts={("987654321", 2023): 1700000000})
     """
 
     def __init__(self, storage: StorageBackend, settings: Settings) -> None:
@@ -115,10 +126,14 @@ class OrderflowManager:
         entries: list[tuple[str, int]],
         source: str = "bulk_dump",
     ) -> int:
-        """Add fast-lane entries: ``(orgnr, year)`` pairs.
+        """Add or update fast-lane entries: ``(orgnr, year)`` pairs.
 
-        Deduplicates against existing entries in the same shard.
-        Returns the number of new entries actually added.
+        This is an **upsert**: if ``(orgnr, year)`` already exists in the
+        shard, its ``create_time`` and ``processing_priority`` are updated
+        to *now* so it will be re-processed (correction path).
+
+        Deduplicates *within* the incoming batch.
+        Returns the number of entries written (new + updated).
         """
         now = _now_ts()
         by_shard: dict[int, list[tuple[str, int]]] = {}
@@ -126,20 +141,36 @@ class OrderflowManager:
             digit = int(orgnr) % 10
             by_shard.setdefault(digit, []).append((orgnr, year))
 
-        added = 0
+        written = 0
         for digit, pairs in by_shard.items():
+            # Deduplicate incoming pairs (keep last occurrence)
+            seen: set[tuple[str, int]] = set()
+            unique: list[tuple[str, int]] = []
+            for o, y in reversed(pairs):
+                if (o, y) not in seen:
+                    seen.add((o, y))
+                    unique.append((o, y))
+            unique.reverse()
+
             table = self.load_shard(digit)
-            existing_keys = self._key_set(table)
-            new_pairs = [(o, y) for o, y in pairs if (o, y) not in existing_keys]
-            if not new_pairs:
-                continue
+            upsert_keys = seen  # all incoming keys
+
+            # Remove old rows for keys being upserted
+            if table.num_rows > 0 and upsert_keys:
+                orgnr_col = table.column("orgnr")
+                year_col = table.column("year")
+                keep = pa.array([
+                    (orgnr_col[i].as_py(), year_col[i].as_py()) not in upsert_keys
+                    for i in range(table.num_rows)
+                ])
+                table = table.filter(keep)
 
             rows = {
-                "orgnr": [o for o, _ in new_pairs],
-                "year": [y for _, y in new_pairs],
-                "processing_priority": [now] * len(new_pairs),
-                "create_time": [now] * len(new_pairs),
-                "source": [source] * len(new_pairs),
+                "orgnr": [o for o, _ in unique],
+                "year": [y for _, y in unique],
+                "processing_priority": [now] * len(unique),
+                "create_time": [now] * len(unique),
+                "source": [source] * len(unique),
             }
             new_table = pa.table(
                 {f.name: pa.array(rows[f.name], type=f.type) for f in ORDERFLOW_SCHEMA},
@@ -147,31 +178,31 @@ class OrderflowManager:
             )
             merged = pa.concat_tables([table, new_table], promote_options="none")
             self.save_shard(digit, merged)
-            added += len(new_pairs)
+            written += len(unique)
 
-        return added
+        return written
 
     def enqueue_slow(
         self,
         orgnr: str,
         years: list[int],
-        manifest_keys: set[tuple[str, int]] | None = None,
+        manifest_ts: ManifestTimestamps | None = None,
     ) -> int:
         """Add slow-lane entries for discovered years.
 
         Each year gets ``processing_priority = unix(year-01-01)``.
-        Skips years already in the manifest or already queued.
+        Skips years already queued or already successfully downloaded.
         Returns number of entries added.
         """
         digit = int(orgnr) % 10
         table = self.load_shard(digit)
         existing_keys = self._key_set(table)
-        manifest_keys = manifest_keys or set()
+        manifest_ts = manifest_ts or {}
         now = _now_ts()
 
         new_years = [
             y for y in years
-            if (orgnr, y) not in existing_keys and (orgnr, y) not in manifest_keys
+            if (orgnr, y) not in existing_keys and (orgnr, y) not in manifest_ts
         ]
         if not new_years:
             return 0
@@ -253,54 +284,57 @@ class OrderflowManager:
     def pending(
         self,
         digit: int,
-        manifest_keys: set[tuple[str, int]],
+        manifest_ts: ManifestTimestamps,
     ) -> pa.Table:
         """Return orderflow entries not yet completed, sorted by priority desc.
 
-        Excludes year=null discovery stubs (those need separate handling).
-        Anti-joins against manifest_keys ``{(orgnr, year)}``.
+        An entry with ``year`` set is pending if:
+        - ``(orgnr, year)`` is not in *manifest_ts*, **or**
+        - ``entry.create_time > manifest_ts[(orgnr, year)]``
+          (re-entered after last download — possible correction)
+
+        Excludes year=null discovery stubs.
         """
         table = self.load_shard(digit)
         if table.num_rows == 0:
             return _empty_table()
 
-        # Filter out discovery stubs
-        year_col = table.column("year")
-        has_year = pa.array([year_col[i].as_py() is not None for i in range(table.num_rows)])
-        table = table.filter(has_year)
-        if table.num_rows == 0:
-            return _empty_table()
-
-        # Anti-join with manifest
         orgnr_col = table.column("orgnr")
         year_col = table.column("year")
-        not_done = pa.array([
-            (orgnr_col[i].as_py(), year_col[i].as_py()) not in manifest_keys
+        create_col = table.column("create_time")
+
+        is_pending = pa.array([
+            year_col[i].as_py() is not None
+            and (
+                (orgnr_col[i].as_py(), year_col[i].as_py()) not in manifest_ts
+                or create_col[i].as_py() > manifest_ts[(orgnr_col[i].as_py(), year_col[i].as_py())]
+            )
             for i in range(table.num_rows)
         ])
-        table = table.filter(not_done)
+        table = table.filter(is_pending)
         if table.num_rows == 0:
             return _empty_table()
 
-        # Sort by processing_priority descending (fast lane first)
         indices = pc.sort_indices(table, sort_keys=[("processing_priority", "descending")])
         return table.take(indices)
 
     def fast_lane_pending(
         self,
         digit: int,
-        manifest_keys: set[tuple[str, int]],
+        manifest_ts: ManifestTimestamps,
     ) -> pa.Table:
         """Return only fast-lane entries not yet completed.
 
-        Fast lane = entries whose source is not 'years_api'.
+        Fast lane = entries where ``processing_priority == create_time``
+        (both set to *now* at enqueue time).
         """
-        all_pending = self.pending(digit, manifest_keys)
+        all_pending = self.pending(digit, manifest_ts)
         if all_pending.num_rows == 0:
             return _empty_table()
-        source_col = all_pending.column("source")
+        prio_col = all_pending.column("processing_priority")
+        create_col = all_pending.column("create_time")
         is_fast = pa.array([
-            source_col[i].as_py() != "years_api"
+            prio_col[i].as_py() == create_col[i].as_py()
             for i in range(all_pending.num_rows)
         ])
         return all_pending.filter(is_fast)
@@ -310,13 +344,13 @@ class OrderflowManager:
         table = self.load_shard(digit)
         return list(self._discovery_orgnrs(table))
 
-    def shard_stats(self, digit: int, manifest_keys: set[tuple[str, int]]) -> dict[str, int]:
+    def shard_stats(self, digit: int, manifest_ts: ManifestTimestamps) -> dict[str, int]:
         """Return counts for this shard."""
         table = self.load_shard(digit)
         total = table.num_rows
         discovery = len(self._discovery_orgnrs(table))
-        pend = self.pending(digit, manifest_keys)
-        fast = self.fast_lane_pending(digit, manifest_keys)
+        pend = self.pending(digit, manifest_ts)
+        fast = self.fast_lane_pending(digit, manifest_ts)
         return {
             "total_entries": total,
             "discovery_stubs": discovery,
@@ -324,6 +358,38 @@ class OrderflowManager:
             "fast_lane_pending": fast.num_rows,
             "slow_lane_pending": pend.num_rows - fast.num_rows,
         }
+
+    # ── Compaction ────────────────────────────────────────────────
+
+    def compact(self, digit: int, manifest_ts: ManifestTimestamps) -> int:
+        """Remove orderflow entries that are fully downloaded.
+
+        An entry is compactable when:
+        - It has a year (not a discovery stub), AND
+        - ``(orgnr, year)`` is in *manifest_ts*, AND
+        - ``entry.create_time <= manifest_ts[(orgnr, year)]``
+
+        Returns the number of rows removed.
+        """
+        table = self.load_shard(digit)
+        if table.num_rows == 0:
+            return 0
+
+        orgnr_col = table.column("orgnr")
+        year_col = table.column("year")
+        create_col = table.column("create_time")
+
+        keep = pa.array([
+            year_col[i].as_py() is None  # keep discovery stubs
+            or (orgnr_col[i].as_py(), year_col[i].as_py()) not in manifest_ts
+            or create_col[i].as_py() > manifest_ts[(orgnr_col[i].as_py(), year_col[i].as_py())]
+            for i in range(table.num_rows)
+        ])
+        filtered = table.filter(keep)
+        removed = table.num_rows - filtered.num_rows
+        if removed > 0:
+            self.save_shard(digit, filtered)
+        return removed
 
     # ── Internals ─────────────────────────────────────────────────
 
