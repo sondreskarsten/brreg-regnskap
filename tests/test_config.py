@@ -60,6 +60,14 @@ class TestSettings:
         s = Settings(storage_path="s3://b/p")
         assert s.shard_manifest_path("800000000", "850000000") == "s3://b/p/manifest-800000000-850000000.parquet"
 
+    def test_orderflow_shard_path(self) -> None:
+        s = Settings(storage_path="gs://b/p")
+        assert s.orderflow_shard_path(3) == "gs://b/p/orderflow/shard_3.parquet"
+
+    def test_etag_path(self) -> None:
+        s = Settings(storage_path="s3://b/p")
+        assert s.etag_path == "s3://b/p/metadata/etag.json"
+
     def test_env_override(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("BRREG_STORAGE_PATH", "s3://from-env/data")
         monkeypatch.setenv("BRREG_MAX_CONCURRENT", "100")

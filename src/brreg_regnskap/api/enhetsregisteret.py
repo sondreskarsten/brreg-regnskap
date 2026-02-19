@@ -66,18 +66,28 @@ class EnhetsregisteretClient:
         assert self._session is not None, "Client not initialized. Use async with."
         return self._session
 
-    async def download_bulk_dump(self) -> bytes:
+    async def download_bulk_dump(self, etag: str | None = None) -> tuple[bytes | None, str | None]:
         """Download the full entity dump as gzip bytes.
 
-        Returns raw gzip bytes. Caller is responsible for storage.
-        Use iter_entities_from_dump() to parse.
+        If *etag* is provided, sends ``If-None-Match`` and returns
+        ``(None, old_etag)`` when the dump has not changed (HTTP 304).
+
+        Returns ``(raw_gzip_bytes, new_etag)``.
         """
         url = f"{BASE_URL}/enheter/lastned"
-        headers = {"Accept": "application/vnd.brreg.enhetsregisteret.enhet.v2+gzip;charset=UTF-8"}
+        headers: dict[str, str] = {
+            "Accept": "application/vnd.brreg.enhetsregisteret.enhet.v2+gzip;charset=UTF-8",
+        }
+        if etag:
+            headers["If-None-Match"] = etag
         timeout = aiohttp.ClientTimeout(total=600)
         async with self.session.get(url, headers=headers, timeout=timeout) as resp:
+            if resp.status == 304:
+                return None, etag
             resp.raise_for_status()
-            return await resp.read()
+            data = await resp.read()
+            new_etag = resp.headers.get("ETag")
+            return data, new_etag
 
     def iter_entities_from_dump(self, raw_gzip: bytes) -> list[Enhet]:
         """Parse gzip bulk dump bytes into Enhet models.

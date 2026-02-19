@@ -127,6 +127,19 @@ class TestSyncCommandHelp:
     def test_sync_help(self) -> None:
         result = runner.invoke(app, ["sync", "--help"])
         assert result.exit_code == 0
-        assert "--mode" in result.stdout
         assert "--max-runtime" in result.stdout
-        assert "--range-start" in result.stdout
+        assert "--shard" in result.stdout
+
+
+class TestSetupCommandHelp:
+    def test_setup_help(self) -> None:
+        result = runner.invoke(app, ["setup", "--help"])
+        assert result.exit_code == 0
+        assert "bucket" in result.stdout.lower() or "dump" in result.stdout.lower()
+
+
+class TestPatchCommandHelp:
+    def test_patch_help(self) -> None:
+        result = runner.invoke(app, ["patch", "--help"])
+        assert result.exit_code == 0
+        assert "BRREG" in result.stdout or "update" in result.stdout.lower()
