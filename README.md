@@ -121,61 +121,50 @@ The sync workflow splits work across multiple parallel jobs (configurable shards
 
 ### Setup
 
-Use the interactive setup script or follow the manual steps below:
+The workflow auto-detects the provider from `BRREG_STORAGE_PATH`: `s3://` uses AWS, `gs://` uses GCS. To switch providers, just change the variable.
 
 ```bash
-# Interactive (requires gh CLI)
+# Interactive setup (requires gh CLI) — handles both AWS and GCS
+chmod +x scripts/setup_github_actions.sh
 ./scripts/setup_github_actions.sh
 ```
 
-**Manual steps:**
+**Required GitHub configuration by provider:**
 
-1. **Create an S3 bucket:**
-   ```bash
-   aws s3 mb s3://brreg-regnskap --region eu-north-1
-   ```
+| | AWS S3 (`s3://...`) | GCS (`gs://...`) |
+|---|---|---|
+| **Secrets** | `AWS_ROLE_ARN` | `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT` |
+| **Variables** | `BRREG_STORAGE_PATH`, `AWS_REGION` | `BRREG_STORAGE_PATH` |
 
-2. **Create an OIDC identity provider in AWS IAM** (one-time per AWS account):
-   ```bash
-   aws iam create-open-id-connect-provider \
-     --url https://token.actions.githubusercontent.com \
-     --client-id-list sts.amazonaws.com \
-     --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
-   ```
+**Quick manual setup (GCS):**
+```bash
+# Set secrets
+gh secret set GCP_WORKLOAD_IDENTITY_PROVIDER --repo sondreskarsten/brreg-regnskap \
+  --body "projects/123456/locations/global/workloadIdentityPools/github-actions/providers/github"
+gh secret set GCP_SERVICE_ACCOUNT --repo sondreskarsten/brreg-regnskap \
+  --body "brreg-regnskap-sync@my-project.iam.gserviceaccount.com"
 
-3. **Create an IAM role** with a trust policy for this repo and S3 permissions:
-   ```bash
-   # Create role with trust policy allowing GitHub OIDC
-   aws iam create-role \
-     --role-name brreg-regnskap-sync \
-     --assume-role-policy-document file://trust-policy.json
+# Set storage path
+gh variable set BRREG_STORAGE_PATH --repo sondreskarsten/brreg-regnskap \
+  --body "gs://my-bucket/data"
+```
 
-   # Attach S3 read/write policy
-   aws iam put-role-policy \
-     --role-name brreg-regnskap-sync \
-     --policy-name S3Access \
-     --policy-document file://s3-policy.json
-   ```
-   See `scripts/setup_github_actions.sh` for example policy documents.
+**Quick manual setup (AWS S3):**
+```bash
+gh secret set AWS_ROLE_ARN --repo sondreskarsten/brreg-regnskap \
+  --body "arn:aws:iam::123456789012:role/brreg-regnskap-sync"
+gh variable set BRREG_STORAGE_PATH --repo sondreskarsten/brreg-regnskap \
+  --body "s3://my-bucket/data"
+gh variable set AWS_REGION --repo sondreskarsten/brreg-regnskap \
+  --body "eu-north-1"
+```
 
-4. **Configure repository secrets** (via GitHub UI or `gh` CLI):
-   ```bash
-   gh secret set AWS_ROLE_ARN --repo sondreskarsten/brreg-regnskap \
-     --body "arn:aws:iam::123456789012:role/brreg-regnskap-sync"
-   ```
+**Trigger a sync:**
+```bash
+gh workflow run sync.yml -f mode=incremental
+```
 
-5. **Configure repository variables:**
-   ```bash
-   gh variable set BRREG_STORAGE_PATH --repo sondreskarsten/brreg-regnskap \
-     --body "s3://brreg-regnskap/data"
-   gh variable set AWS_REGION --repo sondreskarsten/brreg-regnskap \
-     --body "eu-north-1"
-   ```
-
-6. **Trigger a sync:**
-   ```bash
-   gh workflow run sync.yml -f mode=incremental
-   ```
+See `scripts/setup_github_actions.sh` for full OIDC/Workload Identity Federation setup instructions.
 
 ## Data Source
 
