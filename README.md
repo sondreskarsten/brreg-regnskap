@@ -121,13 +121,50 @@ The sync workflow splits work across multiple parallel jobs (configurable shards
 
 ### Setup
 
-1. Create an S3 bucket (or GCS equivalent)
-2. Set up OIDC authentication between GitHub and AWS/GCP
-3. Configure repository variables:
-   - `BRREG_STORAGE_PATH`: e.g. `s3://brreg-regnskap/data`
-   - `AWS_REGION`: e.g. `eu-north-1`
-4. Configure repository secrets:
-   - `AWS_ROLE_ARN`: IAM role ARN for OIDC
+The workflow auto-detects the provider from `BRREG_STORAGE_PATH`: `s3://` uses AWS, `gs://` uses GCS. To switch providers, just change the variable.
+
+```bash
+# Interactive setup (requires gh CLI) — handles both AWS and GCS
+chmod +x scripts/setup_github_actions.sh
+./scripts/setup_github_actions.sh
+```
+
+**Required GitHub configuration by provider:**
+
+| | AWS S3 (`s3://...`) | GCS (`gs://...`) |
+|---|---|---|
+| **Secrets** | `AWS_ROLE_ARN` | `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT` |
+| **Variables** | `BRREG_STORAGE_PATH`, `AWS_REGION` | `BRREG_STORAGE_PATH` |
+
+**Quick manual setup (GCS):**
+```bash
+# Set secrets
+gh secret set GCP_WORKLOAD_IDENTITY_PROVIDER --repo sondreskarsten/brreg-regnskap \
+  --body "projects/123456/locations/global/workloadIdentityPools/github-actions/providers/github"
+gh secret set GCP_SERVICE_ACCOUNT --repo sondreskarsten/brreg-regnskap \
+  --body "brreg-regnskap-sync@my-project.iam.gserviceaccount.com"
+
+# Set storage path
+gh variable set BRREG_STORAGE_PATH --repo sondreskarsten/brreg-regnskap \
+  --body "gs://my-bucket/data"
+```
+
+**Quick manual setup (AWS S3):**
+```bash
+gh secret set AWS_ROLE_ARN --repo sondreskarsten/brreg-regnskap \
+  --body "arn:aws:iam::123456789012:role/brreg-regnskap-sync"
+gh variable set BRREG_STORAGE_PATH --repo sondreskarsten/brreg-regnskap \
+  --body "s3://my-bucket/data"
+gh variable set AWS_REGION --repo sondreskarsten/brreg-regnskap \
+  --body "eu-north-1"
+```
+
+**Trigger a sync:**
+```bash
+gh workflow run sync.yml -f mode=incremental
+```
+
+See `scripts/setup_github_actions.sh` for full OIDC/Workload Identity Federation setup instructions.
 
 ## Data Source
 
