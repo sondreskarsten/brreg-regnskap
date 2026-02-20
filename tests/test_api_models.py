@@ -68,26 +68,30 @@ class TestRegnskapModel:
 
 class TestEnhetUpdate:
     def test_parse_update(self) -> None:
-        u = EnhetUpdate.model_validate({
-            "oppdateringsid": 12345,
-            "dato": "2025-02-01",
-            "organisasjonsnummer": "964118191",
-            "endringstype": "Endring",
-            "endringer": [
-                {"op": "replace", "path": "/sisteInnsendteAarsregnskap", "value": "2024"}
-            ],
-        })
+        u = EnhetUpdate.model_validate(
+            {
+                "oppdateringsid": 12345,
+                "dato": "2025-02-01",
+                "organisasjonsnummer": "964118191",
+                "endringstype": "Endring",
+                "endringer": [
+                    {"op": "replace", "path": "/sisteInnsendteAarsregnskap", "value": "2024"}
+                ],
+            }
+        )
         assert u.oppdateringsid == 12345
         assert u.endringstype == "Endring"
         assert len(u.endringer) == 1
 
     def test_update_without_changes(self) -> None:
-        u = EnhetUpdate.model_validate({
-            "oppdateringsid": 1,
-            "dato": "2025-01-01",
-            "organisasjonsnummer": "123456789",
-            "endringstype": "Ny",
-        })
+        u = EnhetUpdate.model_validate(
+            {
+                "oppdateringsid": 1,
+                "dato": "2025-01-01",
+                "organisasjonsnummer": "123456789",
+                "endringstype": "Ny",
+            }
+        )
         assert u.endringer is None
 
 

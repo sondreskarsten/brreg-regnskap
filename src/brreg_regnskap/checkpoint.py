@@ -17,7 +17,7 @@ Implementation notes:
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -45,7 +45,11 @@ class CheckpointState:
 
     @classmethod
     def from_json(cls, data: bytes) -> CheckpointState:
-        return cls(**json.loads(data))
+        raw = json.loads(data)
+        # Filter out unknown fields for forward compatibility — a newer
+        # version of the checkpoint may have added fields we don't know about.
+        known = {f.name for f in fields(cls)}
+        return cls(**{k: v for k, v in raw.items() if k in known})
 
 
 class CheckpointManager:

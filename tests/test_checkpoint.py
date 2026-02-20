@@ -37,6 +37,25 @@ class TestCheckpointState:
         assert restored.mode == "incremental"
         assert restored.entities_processed == 500
 
+    def test_from_json_ignores_unknown_fields(self) -> None:
+        """Extra fields from a newer checkpoint version should not crash."""
+        import json
+
+        data = json.dumps(
+            {
+                "last_oppdateringsid": 42,
+                "mode": "full",
+                "phase": "download",
+                "entities_processed": 0,
+                "errors": 0,
+                "future_field": "should_be_ignored",
+                "another_new_field": 123,
+            }
+        ).encode("utf-8")
+        restored = CheckpointState.from_json(data)
+        assert restored.last_oppdateringsid == 42
+        assert restored.mode == "full"
+
 
 class TestCheckpointManager:
     def test_load_default_when_missing(self, tmp_path: Path) -> None:

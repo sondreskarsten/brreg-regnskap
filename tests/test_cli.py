@@ -27,14 +27,16 @@ class TestStatusCommand:
         storage = StorageBackend.from_settings(settings)
         storage.check_credentials()
         manifest = ManifestManager(storage, settings.manifest_path)
-        manifest.upsert([
-            ManifestRecord(
-                orgnr="964118191",
-                year=2024,
-                download_timestamp="2025-01-01T00:00:00Z",
-                status="success",
-            )
-        ])
+        manifest.upsert(
+            [
+                ManifestRecord(
+                    orgnr="964118191",
+                    year=2024,
+                    download_timestamp="2025-01-01T00:00:00Z",
+                    status="success",
+                )
+            ]
+        )
 
         result = runner.invoke(app, ["status", store])
         assert result.exit_code == 0
@@ -58,15 +60,17 @@ class TestVerifyCommand:
         storage.write_bytes(json_path, b'{"data": true}')
 
         manifest = ManifestManager(storage, settings.manifest_path)
-        manifest.upsert([
-            ManifestRecord(
-                orgnr="964118191",
-                year=2024,
-                download_timestamp="2025-01-01T00:00:00Z",
-                json_path=json_path,
-                status="success",
-            )
-        ])
+        manifest.upsert(
+            [
+                ManifestRecord(
+                    orgnr="964118191",
+                    year=2024,
+                    download_timestamp="2025-01-01T00:00:00Z",
+                    json_path=json_path,
+                    status="success",
+                )
+            ]
+        )
 
         result = runner.invoke(app, ["verify", store])
         assert result.exit_code == 0
@@ -79,15 +83,17 @@ class TestVerifyCommand:
         storage.check_credentials()
 
         manifest = ManifestManager(storage, settings.manifest_path)
-        manifest.upsert([
-            ManifestRecord(
-                orgnr="964118191",
-                year=2024,
-                download_timestamp="2025-01-01T00:00:00Z",
-                json_path=settings.regnskap_json_path("964118191", 2024),
-                status="success",
-            )
-        ])
+        manifest.upsert(
+            [
+                ManifestRecord(
+                    orgnr="964118191",
+                    year=2024,
+                    download_timestamp="2025-01-01T00:00:00Z",
+                    json_path=settings.regnskap_json_path("964118191", 2024),
+                    status="success",
+                )
+            ]
+        )
 
         result = runner.invoke(app, ["verify", store])
         assert result.exit_code == 0
@@ -108,14 +114,16 @@ class TestMergeManifestsCommand:
 
         shard_path = settings.shard_manifest_path("800000000", "850000000")
         m = ManifestManager(storage, shard_path)
-        m.upsert([
-            ManifestRecord(
-                orgnr="811111111",
-                year=2024,
-                download_timestamp="2025-01-01T00:00:00Z",
-                status="success",
-            )
-        ])
+        m.upsert(
+            [
+                ManifestRecord(
+                    orgnr="811111111",
+                    year=2024,
+                    download_timestamp="2025-01-01T00:00:00Z",
+                    status="success",
+                )
+            ]
+        )
 
         result = runner.invoke(app, ["merge-manifests", store])
         assert result.exit_code == 0
@@ -127,6 +135,19 @@ class TestSyncCommandHelp:
     def test_sync_help(self) -> None:
         result = runner.invoke(app, ["sync", "--help"])
         assert result.exit_code == 0
-        assert "--mode" in result.stdout
         assert "--max-runtime" in result.stdout
-        assert "--range-start" in result.stdout
+        assert "--shard" in result.stdout
+
+
+class TestSetupCommandHelp:
+    def test_setup_help(self) -> None:
+        result = runner.invoke(app, ["setup", "--help"])
+        assert result.exit_code == 0
+        assert "bucket" in result.stdout.lower() or "dump" in result.stdout.lower()
+
+
+class TestPatchCommandHelp:
+    def test_patch_help(self) -> None:
+        result = runner.invoke(app, ["patch", "--help"])
+        assert result.exit_code == 0
+        assert "BRREG" in result.stdout or "update" in result.stdout.lower()

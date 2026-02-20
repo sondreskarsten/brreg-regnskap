@@ -2,6 +2,14 @@
 
 Settings are loaded with this priority: CLI args > env vars > .env file > defaults.
 The storage_path prefix determines the backend: s3://, gs://, or local filesystem.
+
+Storage layout:
+    orderflow/shard_{0-9}.parquet    - two-lane work queue (fast + slow)
+    metadata/etag.json               - bulk dump ETag for conditional fetches
+    metadata/checkpoint.json         - sync cursor state
+    regnskap/{orgnr}/...             - downloaded JSON and PDF files
+    manifest.parquet                 - source of truth for completed downloads
+    entities/enheter_dump_{date}.json.gz - cached bulk dumps
 """
 
 from __future__ import annotations
@@ -129,3 +137,14 @@ class Settings(BaseSettings):
 
     def patch_file_path(self, date: str) -> str:
         return f"{self.patches_dir}/{date}.jsonl"
+
+    # ── Orderflow paths ──────────────────────────────────────────────
+
+    def orderflow_shard_path(self, digit: int) -> str:
+        """Parquet file for one orderflow shard (digit 0-9)."""
+        return f"{self.storage_path}/orderflow/shard_{digit}.parquet"
+
+    @property
+    def etag_path(self) -> str:
+        """JSON file storing the bulk-dump ETag and last-processed date."""
+        return f"{self.storage_path}/metadata/etag.json"

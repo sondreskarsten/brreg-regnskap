@@ -69,9 +69,7 @@ RETRYABLE_HTTP_STATUSES = {429, 502, 503, 504}
 def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, RETRYABLE_ERRORS):
         return True
-    if isinstance(exc, aiohttp.ClientResponseError) and exc.status in RETRYABLE_HTTP_STATUSES:
-        return True
-    return False
+    return isinstance(exc, aiohttp.ClientResponseError) and exc.status in RETRYABLE_HTTP_STATUSES
 
 
 def _before_retry_log(retry_state: RetryCallState) -> None:
@@ -151,7 +149,14 @@ class SyncEngine:
         self._limiter = AsyncLimiter(settings.requests_per_second, 1)
         self._start_time = time.monotonic()
         self._shutdown_requested = False
-        self._stats = {"processed": 0, "success": 0, "failed": 0, "skipped": 0, "pdfs": 0, "jsons": 0}
+        self._stats = {
+            "processed": 0,
+            "success": 0,
+            "failed": 0,
+            "skipped": 0,
+            "pdfs": 0,
+            "jsons": 0,
+        }
 
     def _time_remaining(self) -> float | None:
         if self._settings.max_runtime_minutes <= 0:
@@ -172,7 +177,12 @@ class SyncEngine:
         state.mode = mode.value
         state.run_started_at = self._now_iso()
 
-        logger.info("sync_started", mode=mode.value, storage=self._settings.storage_path, shard=self._settings.shard)
+        logger.info(
+            "sync_started",
+            mode=mode.value,
+            storage=self._settings.storage_path,
+            shard=self._settings.shard,
+        )
 
         if mode == SyncMode.FULL:
             await self._run_full(state)
@@ -212,18 +222,15 @@ class SyncEngine:
 
             if self._settings.orgnr_range_start:
                 entities = [
-                    e for e in entities
-                    if e.organisasjonsnummer >= self._settings.orgnr_range_start
+                    e for e in entities if e.organisasjonsnummer >= self._settings.orgnr_range_start
                 ]
             if self._settings.orgnr_range_end:
                 entities = [
-                    e for e in entities
-                    if e.organisasjonsnummer <= self._settings.orgnr_range_end
+                    e for e in entities if e.organisasjonsnummer <= self._settings.orgnr_range_end
                 ]
             if self._settings.shard is not None:
                 entities = [
-                    e for e in entities
-                    if int(e.organisasjonsnummer) % 10 == self._settings.shard
+                    e for e in entities if int(e.organisasjonsnummer) % 10 == self._settings.shard
                 ]
 
             orgnr_to_year: dict[str, int] = {}
@@ -261,7 +268,7 @@ class SyncEngine:
             year_col = table.column("year").to_pylist()
             status_col = table.column("status").to_pylist()
             pdf_col = table.column("pdf_path").to_pylist()
-            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col):
+            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col, strict=False):
                 if s == "success" and p:
                     existing_keys.add((o, y))
 
@@ -326,17 +333,26 @@ class SyncEngine:
         except Exception as exc:
             logger.warning("pdf_download_failed", orgnr=orgnr, year=year, error=str(exc))
             self._stats["failed"] += 1
-            return [ManifestRecord(
-                orgnr=orgnr, year=year, download_timestamp=now,
-                status="pdf_failed", error_detail=str(exc)[:500],
-            )]
+            return [
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=year,
+                    download_timestamp=now,
+                    status="pdf_failed",
+                    error_detail=str(exc)[:500],
+                )
+            ]
 
         if pdf_data is None:
             self._stats["skipped"] += 1
-            return [ManifestRecord(
-                orgnr=orgnr, year=year, download_timestamp=now,
-                status="pdf_missing",
-            )]
+            return [
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=year,
+                    download_timestamp=now,
+                    status="pdf_missing",
+                )
+            ]
 
         pdf_hash_val = self._hash_content(pdf_data)
 
@@ -381,16 +397,24 @@ class SyncEngine:
             self._stats["jsons"] += 1
 
         self._stats["success"] += 1
-        return [ManifestRecord(
-            orgnr=orgnr, year=year, version=version, download_timestamp=now,
-            file_hash=file_hash, pdf_hash=pdf_hash_val,
-            json_path=json_path, pdf_path=pdf_path,
-            file_size_bytes=len(pdf_data), is_correction=is_correction,
-            journalnr=journalnr,
-            source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
-            status="success",
-            error_detail=json_error,
-        )]
+        return [
+            ManifestRecord(
+                orgnr=orgnr,
+                year=year,
+                version=version,
+                download_timestamp=now,
+                file_hash=file_hash,
+                pdf_hash=pdf_hash_val,
+                json_path=json_path,
+                pdf_path=pdf_path,
+                file_size_bytes=len(pdf_data),
+                is_correction=is_correction,
+                journalnr=journalnr,
+                source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
+                status="success",
+                error_detail=json_error,
+            )
+        ]
 
     # ── PATCH SYNC ─────────────────────────────────────────────────────
 
@@ -457,8 +481,7 @@ class SyncEngine:
 
         if self._settings.shard is not None:
             patch_entries = [
-                e for e in patch_entries
-                if int(e["orgnr"]) % 10 == self._settings.shard
+                e for e in patch_entries if int(str(e["orgnr"])) % 10 == self._settings.shard
             ]
 
         table = self._manifest.load()
@@ -468,15 +491,15 @@ class SyncEngine:
             year_col = table.column("year").to_pylist()
             status_col = table.column("status").to_pylist()
             pdf_col = table.column("pdf_path").to_pylist()
-            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col):
+            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col, strict=False):
                 if s == "success" and p:
                     existing_keys.add((o, y))
 
         todo = []
         for e in patch_entries:
-            orgnr = e["orgnr"]
-            year = e.get("year")
-            if year is not None and (orgnr, int(year)) in existing_keys:
+            orgnr = str(e["orgnr"])
+            year_val = e.get("year")
+            if year_val is not None and (orgnr, int(str(year_val))) in existing_keys:
                 continue
             todo.append(orgnr)
 
@@ -545,7 +568,7 @@ class SyncEngine:
             orgnr_col = table.column("orgnr").to_pylist()
             pdf_col = table.column("pdf_path").to_pylist()
             status_col = table.column("status").to_pylist()
-            for o, p, s in zip(orgnr_col, pdf_col, status_col):
+            for o, p, s in zip(orgnr_col, pdf_col, status_col, strict=False):
                 if s == "success" and p:
                     orgnr_with_pdfs.add(o)
 
@@ -562,8 +585,8 @@ class SyncEngine:
 
         checkpoint_every = self._settings.checkpoint_interval
         burst_count = 0
-        BURST_SIZE = 30
-        BURST_PAUSE = 30
+        burst_size = 30
+        burst_pause = 30
 
         for idx, orgnr in enumerate(todo):
             if self._should_shutdown():
@@ -590,9 +613,9 @@ class SyncEngine:
                     db_size=len(self._backfill_db),
                 )
 
-            if burst_count >= BURST_SIZE and idx + 1 < len(todo):
+            if burst_count >= burst_size and idx + 1 < len(todo):
                 burst_count = 0
-                await asyncio.sleep(BURST_PAUSE)
+                await asyncio.sleep(burst_pause)
 
         self._backfill_db.save()
         logger.info("backfill_scan_complete", db_size=len(self._backfill_db))
@@ -653,12 +676,16 @@ class SyncEngine:
             year_col = table.column("year").to_pylist()
             status_col = table.column("status").to_pylist()
             pdf_col = table.column("pdf_path").to_pylist()
-            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col):
+            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col, strict=False):
                 if s == "success" and p:
                     completed_keys.add((o, y))
 
         all_years = sorted(self._backfill_db.all_years(), reverse=True)
-        logger.info("backfill_download_start", years=all_years, db_size=len(self._backfill_db))
+        logger.info(
+            "backfill_download_start",
+            years=all_years,
+            db_size=len(self._backfill_db),
+        )
 
         if state.current_year:
             all_years = [y for y in all_years if y <= state.current_year]
@@ -681,7 +708,12 @@ class SyncEngine:
 
             state.current_year = year
             state.entities_processed = 0
-            logger.info("backfill_year_start", year=year, todo=len(todo), already_done=len(candidates) - len(todo))
+            logger.info(
+                "backfill_year_start",
+                year=year,
+                todo=len(todo),
+                already_done=len(candidates) - len(todo),
+            )
 
             await self._download_backfill_year(todo, year, regnskap_client, state, completed_keys)
 
@@ -702,12 +734,17 @@ class SyncEngine:
         checkpoint_every = self._settings.checkpoint_interval
         records_buf: list[ManifestRecord] = []
         burst_count = 0
-        BURST_SIZE = 30
-        BURST_PAUSE = 30
+        burst_size = 30
+        burst_pause = 30
 
         for idx, orgnr in enumerate(orgnr_list):
             if self._should_shutdown():
-                logger.info("graceful_shutdown", phase="backfill_download", year=year, orgnr=orgnr)
+                logger.info(
+                    "graceful_shutdown",
+                    phase="backfill_download",
+                    year=year,
+                    orgnr=orgnr,
+                )
                 if records_buf:
                     self._manifest.upsert(records_buf)
                 self._checkpoint_mgr.save(state)
@@ -736,9 +773,9 @@ class SyncEngine:
                     **self._stats,
                 )
 
-            if burst_count >= BURST_SIZE and idx + 1 < len(orgnr_list):
+            if burst_count >= burst_size and idx + 1 < len(orgnr_list):
                 burst_count = 0
-                await asyncio.sleep(BURST_PAUSE)
+                await asyncio.sleep(burst_pause)
 
         if records_buf:
             self._manifest.upsert(records_buf)
@@ -761,14 +798,19 @@ class SyncEngine:
             logger.warning("backfill_pdf_failed", orgnr=orgnr, year=year, error=str(exc))
             self._stats["failed"] += 1
             return ManifestRecord(
-                orgnr=orgnr, year=year, download_timestamp=now,
-                status="pdf_failed", error_detail=str(exc)[:500],
+                orgnr=orgnr,
+                year=year,
+                download_timestamp=now,
+                status="pdf_failed",
+                error_detail=str(exc)[:500],
             )
 
         if pdf_data is None:
             self._stats["skipped"] += 1
             return ManifestRecord(
-                orgnr=orgnr, year=year, download_timestamp=now,
+                orgnr=orgnr,
+                year=year,
+                download_timestamp=now,
                 status="pdf_missing",
             )
 
@@ -787,9 +829,13 @@ class SyncEngine:
         self._stats["success"] += 1
 
         return ManifestRecord(
-            orgnr=orgnr, year=year, version=version, download_timestamp=now,
+            orgnr=orgnr,
+            year=year,
+            version=version,
+            download_timestamp=now,
             pdf_hash=pdf_hash_val,
-            pdf_path=pdf_path, file_size_bytes=len(pdf_data),
+            pdf_path=pdf_path,
+            file_size_bytes=len(pdf_data),
             is_correction=version > 1,
             status="success",
         )
@@ -837,7 +883,11 @@ class SyncEngine:
 
         for i in range(0, total, batch_size):
             if self._should_shutdown():
-                logger.info("graceful_shutdown", reason="time_limit", entities_processed=state.entities_processed)
+                logger.info(
+                    "graceful_shutdown",
+                    reason="time_limit",
+                    entities_processed=state.entities_processed,
+                )
                 self._checkpoint_mgr.save(state)
                 return
 
@@ -864,8 +914,10 @@ class SyncEngine:
                 **self._stats,
             )
 
-        self._checkpoint_mgr.clear()
-        logger.info("sync_complete", entities_processed=state.entities_processed)
+        # Note: checkpoint is NOT cleared here — the caller (_run_incremental)
+        # saves the final state with updated last_oppdateringsid. Clearing here
+        # would risk data loss if the process crashes before the caller saves.
+        logger.info("batch_processing_complete", processed=state.entities_processed)
 
     async def _process_entity_safe(
         self,
@@ -877,10 +929,15 @@ class SyncEngine:
         except Exception as exc:
             logger.error("entity_failed", orgnr=orgnr, error=str(exc))
             self._stats["failed"] += 1
-            return [ManifestRecord(
-                orgnr=orgnr, year=0, download_timestamp=self._now_iso(),
-                status="failed", error_detail=str(exc)[:500],
-            )]
+            return [
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=0,
+                    download_timestamp=self._now_iso(),
+                    status="failed",
+                    error_detail=str(exc)[:500],
+                )
+            ]
 
     async def _process_entity(
         self,
@@ -895,13 +952,23 @@ class SyncEngine:
             raw_json = await self._throttled_request(regnskap_client.fetch_regnskap_raw, orgnr)
         except aiohttp.ClientResponseError as exc:
             error_detail = f"HTTP {exc.status}: {exc.message} url={exc.request_info.real_url}"
-            logger.warning("regnskap_server_error", orgnr=orgnr, status=exc.status, error=error_detail)
+            logger.warning(
+                "regnskap_server_error",
+                orgnr=orgnr,
+                status=exc.status,
+                error=error_detail,
+            )
             self._stats["failed"] += 1
-            return [ManifestRecord(
-                orgnr=orgnr, year=0, download_timestamp=now,
-                source_url=str(exc.request_info.real_url),
-                status="server_error", error_detail=error_detail,
-            )]
+            return [
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=0,
+                    download_timestamp=now,
+                    source_url=str(exc.request_info.real_url),
+                    status="server_error",
+                    error_detail=error_detail,
+                )
+            ]
 
         if raw_json is None:
             self._stats["skipped"] += 1
@@ -933,15 +1000,22 @@ class SyncEngine:
             json_path = self._settings.regnskap_json_path(orgnr, regnskap_year, version)
             self._storage.write_bytes(json_path, raw_json)
 
-            records.append(ManifestRecord(
-                orgnr=orgnr, year=regnskap_year, version=version,
-                download_timestamp=now,
-                file_hash=file_hash, json_path=json_path, pdf_path=None,
-                file_size_bytes=len(raw_json), is_correction=is_correction,
-                journalnr=journalnr,
-                source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
-                status="success",
-            ))
+            records.append(
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=regnskap_year,
+                    version=version,
+                    download_timestamp=now,
+                    file_hash=file_hash,
+                    json_path=json_path,
+                    pdf_path=None,
+                    file_size_bytes=len(raw_json),
+                    is_correction=is_correction,
+                    journalnr=journalnr,
+                    source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
+                    status="success",
+                )
+            )
 
         available_years = []
         try:
@@ -961,18 +1035,27 @@ class SyncEngine:
             except Exception as exc:
                 logger.warning("pdf_download_failed", orgnr=orgnr, year=year, error=str(exc))
                 if not any(r.year == year for r in records):
-                    records.append(ManifestRecord(
-                        orgnr=orgnr, year=year, download_timestamp=now,
-                        status="pdf_failed", error_detail=str(exc)[:500],
-                    ))
+                    records.append(
+                        ManifestRecord(
+                            orgnr=orgnr,
+                            year=year,
+                            download_timestamp=now,
+                            status="pdf_failed",
+                            error_detail=str(exc)[:500],
+                        )
+                    )
                 continue
 
             if pdf_data is None:
                 if not any(r.year == year for r in records):
-                    records.append(ManifestRecord(
-                        orgnr=orgnr, year=year, download_timestamp=now,
-                        status="pdf_missing",
-                    ))
+                    records.append(
+                        ManifestRecord(
+                            orgnr=orgnr,
+                            year=year,
+                            download_timestamp=now,
+                            status="pdf_missing",
+                        )
+                    )
                 continue
 
             pdf_hash_val = self._hash_content(pdf_data)
@@ -990,17 +1073,27 @@ class SyncEngine:
                 existing_record.pdf_hash = pdf_hash_val
                 existing_record.version = pdf_version
             else:
-                records.append(ManifestRecord(
-                    orgnr=orgnr, year=year, version=pdf_version,
-                    download_timestamp=now,
-                    pdf_hash=pdf_hash_val,
-                    pdf_path=pdf_path, file_size_bytes=len(pdf_data),
-                    status="success",
-                ))
+                records.append(
+                    ManifestRecord(
+                        orgnr=orgnr,
+                        year=year,
+                        version=pdf_version,
+                        download_timestamp=now,
+                        pdf_hash=pdf_hash_val,
+                        pdf_path=pdf_path,
+                        file_size_bytes=len(pdf_data),
+                        status="success",
+                    )
+                )
 
-        if records:
-            self._stats["success"] += 1
-        else:
+        # Count per-record success/failure rather than per-entity
+        success_count = sum(1 for r in records if r.status == "success")
+        failed_count = sum(1 for r in records if r.status in ("failed", "pdf_failed"))
+        if success_count:
+            self._stats["success"] += success_count
+        if failed_count:
+            self._stats["failed"] += failed_count
+        if not records:
             self._stats["skipped"] += 1
 
         return records

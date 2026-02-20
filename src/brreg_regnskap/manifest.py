@@ -20,9 +20,9 @@ from __future__ import annotations
 import io
 from typing import TYPE_CHECKING
 
-import pyarrow as pa
-import pyarrow.compute as pc
-import pyarrow.parquet as pq
+import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
+import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     from brreg_regnskap.storage import StorageBackend
@@ -56,7 +56,7 @@ def _empty_table() -> pa.Table:
     )
 
 
-def _record_to_dict(r: ManifestRecord) -> dict:
+def _record_to_dict(r: ManifestRecord) -> dict[str, object]:
     return {
         "orgnr": r.orgnr,
         "year": r.year,
@@ -97,12 +97,16 @@ class ManifestManager:
     def __init__(self, storage: StorageBackend, manifest_path: str) -> None:
         self._storage = storage
         self._manifest_path = manifest_path
+        self._cache: pa.Table | None = None
 
     def load(self) -> pa.Table:
         """Load the manifest from storage. Returns empty table if not found.
 
+        Uses an in-memory cache to avoid repeated Parquet deserialization.
         Returns a pyarrow Table with MANIFEST_SCHEMA.
         """
+        if self._cache is not None:
+            return self._cache
         if not self._storage.exists(self._manifest_path):
             return _empty_table()
         raw = self._storage.read_bytes(self._manifest_path)
@@ -110,21 +114,29 @@ class ManifestManager:
         table = pq.read_table(buf)
         if "version" not in table.column_names:
             version_col = pa.array([1] * table.num_rows, type=pa.int32())
-            table = table.append_column(pa.field("version", pa.int32(), nullable=False), version_col)
+            version_field = pa.field("version", pa.int32(), nullable=False)
+            table = table.append_column(version_field, version_col)
         if "pdf_hash" not in table.column_names:
             pdf_hash_col = pa.array([None] * table.num_rows, type=pa.string())
             table = table.append_column(pa.field("pdf_hash", pa.string()), pdf_hash_col)
         table = table.select([f.name for f in MANIFEST_SCHEMA])
-        return table.cast(MANIFEST_SCHEMA)
+        self._cache = table.cast(MANIFEST_SCHEMA)
+        return self._cache
 
     def save(self, table: pa.Table) -> None:
         """Write the manifest table to storage atomically.
 
         Uses zstd compression. Overwrites the existing manifest.
+        Updates the in-memory cache.
         """
         sink = io.BytesIO()
         pq.write_table(table, sink, compression="zstd")
         self._storage.write_bytes(self._manifest_path, sink.getvalue())
+        self._cache = table
+
+    def invalidate_cache(self) -> None:
+        """Clear the in-memory cache, forcing next load() to read from storage."""
+        self._cache = None
 
     def upsert(self, records: list[ManifestRecord]) -> None:
         """Insert or update records in the manifest.
@@ -145,13 +157,18 @@ class ManifestManager:
             version_col = existing.column("version")
             keep_mask = pa.array(
                 [
-                    (orgnr_col[i].as_py(), year_col[i].as_py(), version_col[i].as_py()) not in new_keys
+                    (
+                        orgnr_col[i].as_py(),
+                        year_col[i].as_py(),
+                        version_col[i].as_py(),
+                    )
+                    not in new_keys
                     for i in range(existing.num_rows)
                 ]
             )
             existing = existing.filter(keep_mask)
 
-        new_rows = {f.name: [] for f in MANIFEST_SCHEMA}
+        new_rows: dict[str, list[object]] = {f.name: [] for f in MANIFEST_SCHEMA}
         for r in records:
             d = _record_to_dict(r)
             for col in new_rows:
@@ -168,7 +185,7 @@ class ManifestManager:
     def get(self, orgnr: str, year: int, version: int = 1) -> ManifestRecord | None:
         """Look up a single manifest entry by (orgnr, year, version).
 
-        Returns None if not found.
+        Uses the in-memory cache. Returns None if not found.
         """
         table = self.load()
         if table.num_rows == 0:
@@ -247,10 +264,7 @@ class ManifestManager:
         versions = self.get_versions(orgnr, year)
         if not versions:
             return False
-        for v in versions:
-            if v.journalnr and v.journalnr != new_journalnr:
-                return True
-        return False
+        return any(v.journalnr and v.journalnr != new_journalnr for v in versions)
 
     @staticmethod
     def merge_shards(storage: StorageBackend, shard_paths: list[str], output_path: str) -> None:

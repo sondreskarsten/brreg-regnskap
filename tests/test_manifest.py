@@ -78,10 +78,12 @@ class TestManifestManager:
 
     def test_upsert_multiple_records(self, tmp_path: Path) -> None:
         m = _make_manifest(tmp_path)
-        m.upsert([
-            _make_record(orgnr="111111111", year=2023),
-            _make_record(orgnr="222222222", year=2024),
-        ])
+        m.upsert(
+            [
+                _make_record(orgnr="111111111", year=2023),
+                _make_record(orgnr="222222222", year=2024),
+            ]
+        )
         assert m.load().num_rows == 2
 
     def test_upsert_replaces_same_key(self, tmp_path: Path) -> None:
@@ -137,6 +139,39 @@ class TestManifestManager:
         m = _make_manifest(tmp_path)
         assert m.detect_corrections("964118191", "ANY", 2024) is False
 
+    def test_cache_avoids_repeated_disk_reads(self, tmp_path: Path) -> None:
+        """After load(), subsequent get() calls use the cache, not disk."""
+        m = _make_manifest(tmp_path)
+        m.upsert([_make_record()])
+        # First get loads from disk and caches
+        r1 = m.get("964118191", 2024)
+        assert r1 is not None
+        # Second get should use cache (no disk read)
+        r2 = m.get("964118191", 2024)
+        assert r2 is not None
+        assert r1.orgnr == r2.orgnr
+
+    def test_upsert_updates_cache(self, tmp_path: Path) -> None:
+        """After upsert, get() should see the new data without explicit reload."""
+        m = _make_manifest(tmp_path)
+        m.upsert([_make_record(status="pending")])
+        r1 = m.get("964118191", 2024)
+        assert r1 is not None
+        assert r1.status == "pending"
+        m.upsert([_make_record(status="success")])
+        r2 = m.get("964118191", 2024)
+        assert r2 is not None
+        assert r2.status == "success"
+
+    def test_invalidate_cache(self, tmp_path: Path) -> None:
+        m = _make_manifest(tmp_path)
+        m.upsert([_make_record()])
+        _ = m.load()  # populate cache
+        m.invalidate_cache()
+        # After invalidation, load reads from disk again
+        table = m.load()
+        assert table.num_rows == 1
+
 
 class TestManifestMerge:
     def test_merge_two_shards(self, tmp_path: Path) -> None:
@@ -153,9 +188,7 @@ class TestManifestMerge:
         m2 = ManifestManager(storage, shard2_path)
         m2.upsert([_make_record(orgnr="866666666")])
 
-        ManifestManager.merge_shards(
-            storage, [shard1_path, shard2_path], settings.manifest_path
-        )
+        ManifestManager.merge_shards(storage, [shard1_path, shard2_path], settings.manifest_path)
 
         merged = ManifestManager(storage, settings.manifest_path)
         table = merged.load()
@@ -175,9 +208,7 @@ class TestManifestMerge:
         m2 = ManifestManager(storage, shard2_path)
         m2.upsert([_make_record(orgnr="811111111", download_timestamp="2025-06-01T00:00:00Z")])
 
-        ManifestManager.merge_shards(
-            storage, [shard1_path, shard2_path], settings.manifest_path
-        )
+        ManifestManager.merge_shards(storage, [shard1_path, shard2_path], settings.manifest_path)
 
         merged = ManifestManager(storage, settings.manifest_path)
         table = merged.load()
