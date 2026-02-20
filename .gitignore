@@ -26,4 +26,3 @@ data/
 .vscode/
 *.swp
 
-uv.lock
