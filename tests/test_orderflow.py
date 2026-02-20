@@ -163,7 +163,9 @@ class TestFastLanePending:
         assert fast.num_rows == 1
         assert fast.column("year")[0].as_py() == 2024
         # Verify the structural identity: priority == create_time
-        assert fast.column("processing_priority")[0].as_py() == fast.column("create_time")[0].as_py()
+        prio = fast.column("processing_priority")[0].as_py()
+        ctime = fast.column("create_time")[0].as_py()
+        assert prio == ctime
 
 
 class TestCompact:

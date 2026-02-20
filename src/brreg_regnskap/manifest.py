@@ -261,10 +261,7 @@ class ManifestManager:
         versions = self.get_versions(orgnr, year)
         if not versions:
             return False
-        for v in versions:
-            if v.journalnr and v.journalnr != new_journalnr:
-                return True
-        return False
+        return any(v.journalnr and v.journalnr != new_journalnr for v in versions)
 
     @staticmethod
     def merge_shards(storage: StorageBackend, shard_paths: list[str], output_path: str) -> None:

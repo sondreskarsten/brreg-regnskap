@@ -20,12 +20,16 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import TYPE_CHECKING
 
 import structlog
 import typer
 from rich.console import Console
 
 from brreg_regnskap.config import Settings
+
+if TYPE_CHECKING:
+    from brreg_regnskap.storage import StorageBackend
 
 app = typer.Typer(
     name="brreg-regnskap",
@@ -150,9 +154,9 @@ async def _setup_async(settings: Settings, storage: StorageBackend) -> None:
     console.print(f"  Saved ETag: {etag}")
 
     # ── Parse entities ────────────────────────────────────────────
-    from brreg_regnskap.api.enhetsregisteret import EnhetsregisteretClient as EC
+    from brreg_regnskap.api.enhetsregisteret import EnhetsregisteretClient
 
-    entities = EC().iter_entities_from_dump(raw_dump)
+    entities = EnhetsregisteretClient().iter_entities_from_dump(raw_dump)
     console.print(f"  Entities with regnskap: {len(entities)}")
 
     # ── Seed orderflow ────────────────────────────────────────────
@@ -168,7 +172,7 @@ async def _setup_async(settings: Settings, storage: StorageBackend) -> None:
     added_fast = orderflow.enqueue_fast(fast_entries, source="bulk_dump")
     added_slow = orderflow.enqueue_slow_discovery(slow_orgnrs)
 
-    console.print(f"\n[green]Orderflow seeded:[/green]")
+    console.print("\n[green]Orderflow seeded:[/green]")
     console.print(f"  Fast-lane entries: {added_fast}")
     console.print(f"  Slow-lane discovery stubs: {added_slow}")
     console.print("\nRun [bold]brreg-regnskap sync[/bold] to start processing.")
@@ -340,13 +344,13 @@ def status(
         status_list = table.column("status").to_pylist()
         pdf_col = table.column("pdf_path").to_pylist()
         dl_col = table.column("download_timestamp").to_pylist()
-        for o, y, s, p, dl in zip(orgnr_col, year_col, status_list, pdf_col, dl_col):
+        for o, y, s, p, dl in zip(orgnr_col, year_col, status_list, pdf_col, dl_col, strict=False):
             if s == "success" and p:
                 key = (o, y)
                 manifest_ts[key] = max(manifest_ts.get(key, 0), _iso_to_unix(dl))
 
     # Orderflow per shard
-    console.print(f"\n[bold]Orderflow:[/bold]")
+    console.print("\n[bold]Orderflow:[/bold]")
     total_fast = 0
     total_slow = 0
     total_discovery = 0
@@ -370,7 +374,7 @@ def status(
     if storage.exists(settings.etag_path):
         raw = storage.read_bytes(settings.etag_path)
         etag_info = json.loads(raw)
-        console.print(f"\n[bold]ETag:[/bold]")
+        console.print("\n[bold]ETag:[/bold]")
         console.print(f"  Dump date: {etag_info.get('dump_date', 'unknown')}")
         console.print(f"  ETag: {etag_info.get('etag', 'none')}")
 

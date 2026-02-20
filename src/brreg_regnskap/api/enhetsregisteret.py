@@ -151,7 +151,9 @@ class EnhetsregisteretClient:
                         yield update
                         break
 
-    async def poll_regnskap_updates_since_date(self, since_date: str) -> AsyncIterator[tuple[EnhetUpdate, int | None]]:
+    async def poll_regnskap_updates_since_date(
+        self, since_date: str,
+    ) -> AsyncIterator[tuple[EnhetUpdate, int | None]]:
         cursor = 0
         while True:
             params: dict[str, str] = {

@@ -44,7 +44,7 @@ from tenacity import (
 from brreg_regnskap.api.models import ManifestRecord, Regnskap
 from brreg_regnskap.api.regnskapsregisteret import BrregRateLimitError, RegnskapsregisteretClient
 from brreg_regnskap.checkpoint import CheckpointManager, CheckpointState
-from brreg_regnskap.config import Settings
+from brreg_regnskap.config import Settings  # noqa: TC001
 from brreg_regnskap.manifest import ManifestManager
 from brreg_regnskap.orderflow import ManifestTimestamps, OrderflowManager
 from brreg_regnskap.storage import StorageBackend
@@ -429,7 +429,7 @@ class SyncEngine:
         status_col = table.column("status").to_pylist()
         pdf_col = table.column("pdf_path").to_pylist()
         dl_col = table.column("download_timestamp").to_pylist()
-        for o, y, s, p, dl in zip(orgnr_col, year_col, status_col, pdf_col, dl_col):
+        for o, y, s, p, dl in zip(orgnr_col, year_col, status_col, pdf_col, dl_col, strict=False):
             if s == "success" and p:
                 unix_ts = _iso_to_unix(dl)
                 key = (o, y)
@@ -452,9 +452,7 @@ class SyncEngine:
         if self._shutdown:
             return True
         remaining = self._time_remaining()
-        if remaining is not None and remaining < 120:
-            return True
-        return False
+        return bool(remaining is not None and remaining < 120)
 
     def _time_remaining(self) -> float | None:
         if self._settings.max_runtime_minutes <= 0:

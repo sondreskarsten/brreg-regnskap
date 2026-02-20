@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import random
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import structlog
 
-from brreg_regnskap.storage import StorageBackend
+if TYPE_CHECKING:
+    from brreg_regnskap.storage import StorageBackend
 
 logger = structlog.get_logger()
 

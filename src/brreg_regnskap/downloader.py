@@ -149,7 +149,10 @@ class SyncEngine:
         self._limiter = AsyncLimiter(settings.requests_per_second, 1)
         self._start_time = time.monotonic()
         self._shutdown_requested = False
-        self._stats = {"processed": 0, "success": 0, "failed": 0, "skipped": 0, "pdfs": 0, "jsons": 0}
+        self._stats = {
+            "processed": 0, "success": 0, "failed": 0,
+            "skipped": 0, "pdfs": 0, "jsons": 0,
+        }
 
     def _time_remaining(self) -> float | None:
         if self._settings.max_runtime_minutes <= 0:
@@ -262,7 +265,7 @@ class SyncEngine:
             year_col = table.column("year").to_pylist()
             status_col = table.column("status").to_pylist()
             pdf_col = table.column("pdf_path").to_pylist()
-            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col):
+            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col, strict=False):
                 if s == "success" and p:
                     existing_keys.add((o, y))
 
@@ -469,7 +472,7 @@ class SyncEngine:
             year_col = table.column("year").to_pylist()
             status_col = table.column("status").to_pylist()
             pdf_col = table.column("pdf_path").to_pylist()
-            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col):
+            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col, strict=False):
                 if s == "success" and p:
                     existing_keys.add((o, y))
 
@@ -546,7 +549,7 @@ class SyncEngine:
             orgnr_col = table.column("orgnr").to_pylist()
             pdf_col = table.column("pdf_path").to_pylist()
             status_col = table.column("status").to_pylist()
-            for o, p, s in zip(orgnr_col, pdf_col, status_col):
+            for o, p, s in zip(orgnr_col, pdf_col, status_col, strict=False):
                 if s == "success" and p:
                     orgnr_with_pdfs.add(o)
 
@@ -563,8 +566,8 @@ class SyncEngine:
 
         checkpoint_every = self._settings.checkpoint_interval
         burst_count = 0
-        BURST_SIZE = 30
-        BURST_PAUSE = 30
+        burst_size = 30
+        burst_pause = 30
 
         for idx, orgnr in enumerate(todo):
             if self._should_shutdown():
@@ -591,9 +594,9 @@ class SyncEngine:
                     db_size=len(self._backfill_db),
                 )
 
-            if burst_count >= BURST_SIZE and idx + 1 < len(todo):
+            if burst_count >= burst_size and idx + 1 < len(todo):
                 burst_count = 0
-                await asyncio.sleep(BURST_PAUSE)
+                await asyncio.sleep(burst_pause)
 
         self._backfill_db.save()
         logger.info("backfill_scan_complete", db_size=len(self._backfill_db))
@@ -654,7 +657,7 @@ class SyncEngine:
             year_col = table.column("year").to_pylist()
             status_col = table.column("status").to_pylist()
             pdf_col = table.column("pdf_path").to_pylist()
-            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col):
+            for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col, strict=False):
                 if s == "success" and p:
                     completed_keys.add((o, y))
 
@@ -709,8 +712,8 @@ class SyncEngine:
         checkpoint_every = self._settings.checkpoint_interval
         records_buf: list[ManifestRecord] = []
         burst_count = 0
-        BURST_SIZE = 30
-        BURST_PAUSE = 30
+        burst_size = 30
+        burst_pause = 30
 
         for idx, orgnr in enumerate(orgnr_list):
             if self._should_shutdown():
@@ -746,9 +749,9 @@ class SyncEngine:
                     **self._stats,
                 )
 
-            if burst_count >= BURST_SIZE and idx + 1 < len(orgnr_list):
+            if burst_count >= burst_size and idx + 1 < len(orgnr_list):
                 burst_count = 0
-                await asyncio.sleep(BURST_PAUSE)
+                await asyncio.sleep(burst_pause)
 
         if records_buf:
             self._manifest.upsert(records_buf)
