@@ -78,10 +78,12 @@ class TestManifestManager:
 
     def test_upsert_multiple_records(self, tmp_path: Path) -> None:
         m = _make_manifest(tmp_path)
-        m.upsert([
-            _make_record(orgnr="111111111", year=2023),
-            _make_record(orgnr="222222222", year=2024),
-        ])
+        m.upsert(
+            [
+                _make_record(orgnr="111111111", year=2023),
+                _make_record(orgnr="222222222", year=2024),
+            ]
+        )
         assert m.load().num_rows == 2
 
     def test_upsert_replaces_same_key(self, tmp_path: Path) -> None:
@@ -186,9 +188,7 @@ class TestManifestMerge:
         m2 = ManifestManager(storage, shard2_path)
         m2.upsert([_make_record(orgnr="866666666")])
 
-        ManifestManager.merge_shards(
-            storage, [shard1_path, shard2_path], settings.manifest_path
-        )
+        ManifestManager.merge_shards(storage, [shard1_path, shard2_path], settings.manifest_path)
 
         merged = ManifestManager(storage, settings.manifest_path)
         table = merged.load()
@@ -208,9 +208,7 @@ class TestManifestMerge:
         m2 = ManifestManager(storage, shard2_path)
         m2.upsert([_make_record(orgnr="811111111", download_timestamp="2025-06-01T00:00:00Z")])
 
-        ManifestManager.merge_shards(
-            storage, [shard1_path, shard2_path], settings.manifest_path
-        )
+        ManifestManager.merge_shards(storage, [shard1_path, shard2_path], settings.manifest_path)
 
         merged = ManifestManager(storage, settings.manifest_path)
         table = merged.load()

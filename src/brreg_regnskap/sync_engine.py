@@ -104,8 +104,12 @@ class SyncEngine:
         self._start_time = time.monotonic()
         self._shutdown = False
         self._stats = {
-            "processed": 0, "success": 0, "failed": 0,
-            "skipped": 0, "pdfs": 0, "jsons": 0,
+            "processed": 0,
+            "success": 0,
+            "failed": 0,
+            "skipped": 0,
+            "pdfs": 0,
+            "jsons": 0,
         }
 
     # ── Public entry point ────────────────────────────────────────
@@ -137,7 +141,10 @@ class SyncEngine:
                     break
                 logger.info("processing_fast_lane", shard=digit)
                 await self._process_fast_lane(
-                    digit, regnskap_client, manifest_ts, state,
+                    digit,
+                    regnskap_client,
+                    manifest_ts,
+                    state,
                 )
 
             if self._should_shutdown():
@@ -147,15 +154,16 @@ class SyncEngine:
 
             # ── Phase 2: slow-lane discovery (only if all fast done) ─
             all_fast_done = all(
-                self._orderflow.fast_lane_pending(d, manifest_ts).num_rows == 0
-                for d in shards
+                self._orderflow.fast_lane_pending(d, manifest_ts).num_rows == 0 for d in shards
             )
             if all_fast_done:
                 for digit in shards:
                     if self._should_shutdown():
                         break
                     await self._discover_slow_lane(
-                        digit, regnskap_client, manifest_ts,
+                        digit,
+                        regnskap_client,
+                        manifest_ts,
                     )
 
                 # ── Phase 3: slow-lane downloads ─────────────────
@@ -163,7 +171,10 @@ class SyncEngine:
                     if self._should_shutdown():
                         break
                     await self._process_slow_lane(
-                        digit, regnskap_client, manifest_ts, state,
+                        digit,
+                        regnskap_client,
+                        manifest_ts,
+                        state,
                     )
 
             # ── Compact ──────────────────────────────────────────
@@ -214,8 +225,11 @@ class SyncEngine:
                     records_buf = []
                 self._checkpoint_mgr.save(state)
                 logger.info(
-                    "fast_checkpoint", shard=digit,
-                    progress=idx + 1, total=pending.num_rows, **self._stats,
+                    "fast_checkpoint",
+                    shard=digit,
+                    progress=idx + 1,
+                    total=pending.num_rows,
+                    **self._stats,
                 )
 
             await asyncio.sleep(0.5)
@@ -305,8 +319,11 @@ class SyncEngine:
                     records_buf = []
                 self._checkpoint_mgr.save(state)
                 logger.info(
-                    "slow_checkpoint", shard=digit,
-                    progress=idx + 1, total=pending.num_rows, **self._stats,
+                    "slow_checkpoint",
+                    shard=digit,
+                    progress=idx + 1,
+                    total=pending.num_rows,
+                    **self._stats,
                 )
 
             if burst_count >= 30:
@@ -341,17 +358,26 @@ class SyncEngine:
         except Exception as exc:
             logger.warning("pdf_failed", orgnr=orgnr, year=year, error=str(exc))
             self._stats["failed"] += 1
-            return [ManifestRecord(
-                orgnr=orgnr, year=year, download_timestamp=now,
-                status="pdf_failed", error_detail=str(exc)[:500],
-            )]
+            return [
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=year,
+                    download_timestamp=now,
+                    status="pdf_failed",
+                    error_detail=str(exc)[:500],
+                )
+            ]
 
         if pdf_data is None:
             self._stats["skipped"] += 1
-            return [ManifestRecord(
-                orgnr=orgnr, year=year, download_timestamp=now,
-                status="pdf_missing",
-            )]
+            return [
+                ManifestRecord(
+                    orgnr=orgnr,
+                    year=year,
+                    download_timestamp=now,
+                    status="pdf_missing",
+                )
+            ]
 
         pdf_hash = self._hash(pdf_data)
 
@@ -399,18 +425,24 @@ class SyncEngine:
             self._stats["jsons"] += 1
 
         self._stats["success"] += 1
-        return [ManifestRecord(
-            orgnr=orgnr, year=year, version=version,
-            download_timestamp=now,
-            file_hash=json_hash, pdf_hash=pdf_hash,
-            json_path=json_path, pdf_path=pdf_path,
-            file_size_bytes=len(pdf_data),
-            is_correction=version > 1,
-            journalnr=journalnr,
-            source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
-            status="success",
-            error_detail=json_error,
-        )]
+        return [
+            ManifestRecord(
+                orgnr=orgnr,
+                year=year,
+                version=version,
+                download_timestamp=now,
+                file_hash=json_hash,
+                pdf_hash=pdf_hash,
+                json_path=json_path,
+                pdf_path=pdf_path,
+                file_size_bytes=len(pdf_data),
+                is_correction=version > 1,
+                journalnr=journalnr,
+                source_url=f"https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}",
+                status="success",
+                error_detail=json_error,
+            )
+        ]
 
     # ── Helpers ───────────────────────────────────────────────────
 

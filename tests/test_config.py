@@ -45,11 +45,17 @@ class TestSettings:
 
     def test_regnskap_json_path(self) -> None:
         s = Settings(storage_path="s3://b/p")
-        assert s.regnskap_json_path("964118191", 2024) == "s3://b/p/regnskap/964118191/regnskap_2024.json"
+        assert (
+            s.regnskap_json_path("964118191", 2024)
+            == "s3://b/p/regnskap/964118191/regnskap_2024.json"
+        )
 
     def test_regnskap_pdf_path(self) -> None:
         s = Settings(storage_path="gs://b/p")
-        assert s.regnskap_pdf_path("964118191", 2024) == "gs://b/p/regnskap/964118191/aarsregnskap_2024.pdf"
+        assert (
+            s.regnskap_pdf_path("964118191", 2024)
+            == "gs://b/p/regnskap/964118191/aarsregnskap_2024.pdf"
+        )
 
     def test_correction_json_path(self) -> None:
         s = Settings(storage_path="./data")
@@ -58,7 +64,10 @@ class TestSettings:
 
     def test_shard_manifest_path(self) -> None:
         s = Settings(storage_path="s3://b/p")
-        assert s.shard_manifest_path("800000000", "850000000") == "s3://b/p/manifest-800000000-850000000.parquet"
+        assert (
+            s.shard_manifest_path("800000000", "850000000")
+            == "s3://b/p/manifest-800000000-850000000.parquet"
+        )
 
     def test_orderflow_shard_path(self) -> None:
         s = Settings(storage_path="gs://b/p")

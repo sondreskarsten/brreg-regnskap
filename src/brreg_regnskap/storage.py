@@ -69,7 +69,7 @@ class StorageBackend:
         """
         for prefix in ("s3://", "gs://", "gcs://"):
             if path.startswith(prefix):
-                return path[len(prefix):]
+                return path[len(prefix) :]
         return path
 
     def check_credentials(self) -> None:

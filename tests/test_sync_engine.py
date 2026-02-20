@@ -55,7 +55,10 @@ class TestDownloadEntity:
 
             async with RegnskapsregisteretClient() as client:
                 records = await engine._download_entity(
-                    "964118191", 2024, client, json_too=True,
+                    "964118191",
+                    2024,
+                    client,
+                    json_too=True,
                 )
 
         assert len(records) == 1
@@ -76,7 +79,10 @@ class TestDownloadEntity:
 
             async with RegnskapsregisteretClient() as client:
                 records = await engine._download_entity(
-                    "964118191", 2020, client, json_too=False,
+                    "964118191",
+                    2020,
+                    client,
+                    json_too=False,
                 )
 
         assert len(records) == 1
@@ -91,7 +97,10 @@ class TestDownloadEntity:
 
             async with RegnskapsregisteretClient() as client:
                 records = await engine._download_entity(
-                    "964118191", 2024, client, json_too=True,
+                    "964118191",
+                    2024,
+                    client,
+                    json_too=True,
                 )
 
         assert len(records) == 1
@@ -107,7 +116,10 @@ class TestDownloadEntity:
 
             async with RegnskapsregisteretClient() as client:
                 records = await engine._download_entity(
-                    "964118191", 2024, client, json_too=True,
+                    "964118191",
+                    2024,
+                    client,
+                    json_too=True,
                 )
 
         assert len(records) == 1
@@ -118,23 +130,28 @@ class TestDownloadEntity:
         """If PDF hash matches existing manifest entry, skip saving."""
         pdf_data = b"%PDF-fake"
         pdf_hash = hashlib.sha256(pdf_data).hexdigest()
-        engine._manifest.upsert([
-            ManifestRecord(
-                orgnr="964118191",
-                year=2024,
-                download_timestamp="2025-01-01T00:00:00Z",
-                pdf_hash=pdf_hash,
-                pdf_path="some/path.pdf",
-                status="success",
-            )
-        ])
+        engine._manifest.upsert(
+            [
+                ManifestRecord(
+                    orgnr="964118191",
+                    year=2024,
+                    download_timestamp="2025-01-01T00:00:00Z",
+                    pdf_hash=pdf_hash,
+                    pdf_path="some/path.pdf",
+                    status="success",
+                )
+            ]
+        )
 
         with aioresponses() as m:
             m.get(f"{BASE}/regnskap/aarsregnskap/kopi/964118191/2024", body=pdf_data)
 
             async with RegnskapsregisteretClient() as client:
                 records = await engine._download_entity(
-                    "964118191", 2024, client, json_too=True,
+                    "964118191",
+                    2024,
+                    client,
+                    json_too=True,
                 )
 
         assert len(records) == 0
@@ -148,17 +165,19 @@ class TestDownloadEntity:
         regnskap_json_fixture: list,
     ) -> None:
         """If hash differs from existing, save as new version (correction)."""
-        engine._manifest.upsert([
-            ManifestRecord(
-                orgnr="964118191",
-                year=2024,
-                version=1,
-                download_timestamp="2025-01-01T00:00:00Z",
-                pdf_hash="oldhash",
-                pdf_path=local_settings.regnskap_pdf_path("964118191", 2024, 1),
-                status="success",
-            )
-        ])
+        engine._manifest.upsert(
+            [
+                ManifestRecord(
+                    orgnr="964118191",
+                    year=2024,
+                    version=1,
+                    download_timestamp="2025-01-01T00:00:00Z",
+                    pdf_hash="oldhash",
+                    pdf_path=local_settings.regnskap_pdf_path("964118191", 2024, 1),
+                    status="success",
+                )
+            ]
+        )
         engine._storage.write_bytes(
             local_settings.regnskap_pdf_path("964118191", 2024, 1), b"%PDF-old"
         )
@@ -169,7 +188,10 @@ class TestDownloadEntity:
 
             async with RegnskapsregisteretClient() as client:
                 records = await engine._download_entity(
-                    "964118191", 2024, client, json_too=True,
+                    "964118191",
+                    2024,
+                    client,
+                    json_too=True,
                 )
 
         assert len(records) == 1

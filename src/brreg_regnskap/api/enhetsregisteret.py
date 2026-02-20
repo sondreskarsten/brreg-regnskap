@@ -123,9 +123,7 @@ class EnhetsregisteretClient:
                 resp.raise_for_status()
                 data = await resp.json()
 
-            updates_raw = (
-                data.get("_embedded", {}).get("oppdaterteEnheter", [])
-            )
+            updates_raw = data.get("_embedded", {}).get("oppdaterteEnheter", [])
             if not updates_raw:
                 break
 
@@ -152,7 +150,8 @@ class EnhetsregisteretClient:
                         break
 
     async def poll_regnskap_updates_since_date(
-        self, since_date: str,
+        self,
+        since_date: str,
     ) -> AsyncIterator[tuple[EnhetUpdate, int | None]]:
         cursor = 0
         while True:

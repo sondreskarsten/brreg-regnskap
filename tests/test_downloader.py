@@ -132,16 +132,18 @@ class TestProcessEntity:
         local_settings: Settings,
         regnskap_json_fixture: list,
     ) -> None:
-        engine._manifest.upsert([
-            ManifestRecord(
-                orgnr="964118191",
-                year=2023,
-                download_timestamp="2025-01-01T00:00:00Z",
-                journalnr="2025741982",
-                pdf_path=local_settings.regnskap_pdf_path("964118191", 2023),
-                status="success",
-            )
-        ])
+        engine._manifest.upsert(
+            [
+                ManifestRecord(
+                    orgnr="964118191",
+                    year=2023,
+                    download_timestamp="2025-01-01T00:00:00Z",
+                    journalnr="2025741982",
+                    pdf_path=local_settings.regnskap_pdf_path("964118191", 2023),
+                    status="success",
+                )
+            ]
+        )
         engine._storage.write_bytes(
             local_settings.regnskap_pdf_path("964118191", 2023), b"%PDF-old"
         )
@@ -170,18 +172,20 @@ class TestCorrectionDetection:
     ) -> None:
         old_json_path = local_settings.regnskap_json_path("964118191", 2024, 1)
         engine._storage.write_bytes(old_json_path, b'{"old": true}')
-        engine._manifest.upsert([
-            ManifestRecord(
-                orgnr="964118191",
-                year=2024,
-                version=1,
-                download_timestamp="2025-01-01T00:00:00Z",
-                json_path=old_json_path,
-                file_hash="oldhash",
-                journalnr="OLD_JOURNALNR",
-                status="success",
-            )
-        ])
+        engine._manifest.upsert(
+            [
+                ManifestRecord(
+                    orgnr="964118191",
+                    year=2024,
+                    version=1,
+                    download_timestamp="2025-01-01T00:00:00Z",
+                    json_path=old_json_path,
+                    file_hash="oldhash",
+                    journalnr="OLD_JOURNALNR",
+                    status="success",
+                )
+            ]
+        )
 
         with aioresponses() as m:
             m.get(f"{BASE}/regnskap/964118191", payload=regnskap_json_fixture)
@@ -216,7 +220,9 @@ class TestDownloadFreshEntity:
 
             async with RegnskapsregisteretClient() as client:
                 records = await engine._download_fresh_entity(
-                    "964118191", 2024, client,
+                    "964118191",
+                    2024,
+                    client,
                 )
 
         assert len(records) == 1
@@ -236,7 +242,9 @@ class TestDownloadFreshEntity:
 
             async with RegnskapsregisteretClient() as client:
                 records = await engine._download_fresh_entity(
-                    "964118191", 2024, client,
+                    "964118191",
+                    2024,
+                    client,
                 )
 
         assert len(records) == 1
@@ -257,7 +265,9 @@ class TestDownloadBackfillPdf:
 
             async with RegnskapsregisteretClient() as client:
                 record = await engine._download_backfill_pdf(
-                    "964118191", 2021, client,
+                    "964118191",
+                    2021,
+                    client,
                 )
 
         assert record is not None
@@ -276,7 +286,9 @@ class TestDownloadBackfillPdf:
 
             async with RegnskapsregisteretClient() as client:
                 record = await engine._download_backfill_pdf(
-                    "964118191", 2021, client,
+                    "964118191",
+                    2021,
+                    client,
                 )
 
         assert record is not None

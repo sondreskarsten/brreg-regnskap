@@ -155,14 +155,17 @@ class ManifestManager:
             orgnr_col = existing.column("orgnr")
             year_col = existing.column("year")
             version_col = existing.column("version")
-            keep_mask = pa.array([
-                (
-                    orgnr_col[i].as_py(),
-                    year_col[i].as_py(),
-                    version_col[i].as_py(),
-                ) not in new_keys
-                for i in range(existing.num_rows)
-            ])
+            keep_mask = pa.array(
+                [
+                    (
+                        orgnr_col[i].as_py(),
+                        year_col[i].as_py(),
+                        version_col[i].as_py(),
+                    )
+                    not in new_keys
+                    for i in range(existing.num_rows)
+                ]
+            )
             existing = existing.filter(keep_mask)
 
         new_rows = {f.name: [] for f in MANIFEST_SCHEMA}

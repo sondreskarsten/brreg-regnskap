@@ -159,10 +159,12 @@ class OrderflowManager:
             if table.num_rows > 0 and upsert_keys:
                 orgnr_col = table.column("orgnr")
                 year_col = table.column("year")
-                keep = pa.array([
-                    (orgnr_col[i].as_py(), year_col[i].as_py()) not in upsert_keys
-                    for i in range(table.num_rows)
-                ])
+                keep = pa.array(
+                    [
+                        (orgnr_col[i].as_py(), year_col[i].as_py()) not in upsert_keys
+                        for i in range(table.num_rows)
+                    ]
+                )
                 table = table.filter(keep)
 
             rows = {
@@ -201,8 +203,7 @@ class OrderflowManager:
         now = _now_ts()
 
         new_years = [
-            y for y in years
-            if (orgnr, y) not in existing_keys and (orgnr, y) not in manifest_ts
+            y for y in years if (orgnr, y) not in existing_keys and (orgnr, y) not in manifest_ts
         ]
         if not new_years:
             return 0
@@ -271,10 +272,12 @@ class OrderflowManager:
 
         year_col = table.column("year")
         orgnr_col = table.column("orgnr")
-        keep = pa.array([
-            not (year_col[i].as_py() is None and orgnr_col[i].as_py() in orgnrs)
-            for i in range(table.num_rows)
-        ])
+        keep = pa.array(
+            [
+                not (year_col[i].as_py() is None and orgnr_col[i].as_py() in orgnrs)
+                for i in range(table.num_rows)
+            ]
+        )
         filtered = table.filter(keep)
         if filtered.num_rows != table.num_rows:
             self.save_shard(digit, filtered)
@@ -303,14 +306,17 @@ class OrderflowManager:
         year_col = table.column("year")
         create_col = table.column("create_time")
 
-        is_pending = pa.array([
-            year_col[i].as_py() is not None
-            and (
-                (orgnr_col[i].as_py(), year_col[i].as_py()) not in manifest_ts
-                or create_col[i].as_py() > manifest_ts[(orgnr_col[i].as_py(), year_col[i].as_py())]
-            )
-            for i in range(table.num_rows)
-        ])
+        is_pending = pa.array(
+            [
+                year_col[i].as_py() is not None
+                and (
+                    (orgnr_col[i].as_py(), year_col[i].as_py()) not in manifest_ts
+                    or create_col[i].as_py()
+                    > manifest_ts[(orgnr_col[i].as_py(), year_col[i].as_py())]
+                )
+                for i in range(table.num_rows)
+            ]
+        )
         table = table.filter(is_pending)
         if table.num_rows == 0:
             return _empty_table()
@@ -333,10 +339,9 @@ class OrderflowManager:
             return _empty_table()
         prio_col = all_pending.column("processing_priority")
         create_col = all_pending.column("create_time")
-        is_fast = pa.array([
-            prio_col[i].as_py() == create_col[i].as_py()
-            for i in range(all_pending.num_rows)
-        ])
+        is_fast = pa.array(
+            [prio_col[i].as_py() == create_col[i].as_py() for i in range(all_pending.num_rows)]
+        )
         return all_pending.filter(is_fast)
 
     def discovery_stubs(self, digit: int) -> list[str]:
@@ -379,12 +384,14 @@ class OrderflowManager:
         year_col = table.column("year")
         create_col = table.column("create_time")
 
-        keep = pa.array([
-            year_col[i].as_py() is None  # keep discovery stubs
-            or (orgnr_col[i].as_py(), year_col[i].as_py()) not in manifest_ts
-            or create_col[i].as_py() > manifest_ts[(orgnr_col[i].as_py(), year_col[i].as_py())]
-            for i in range(table.num_rows)
-        ])
+        keep = pa.array(
+            [
+                year_col[i].as_py() is None  # keep discovery stubs
+                or (orgnr_col[i].as_py(), year_col[i].as_py()) not in manifest_ts
+                or create_col[i].as_py() > manifest_ts[(orgnr_col[i].as_py(), year_col[i].as_py())]
+                for i in range(table.num_rows)
+            ]
+        )
         filtered = table.filter(keep)
         removed = table.num_rows - filtered.num_rows
         if removed > 0:
@@ -414,8 +421,4 @@ class OrderflowManager:
             return set()
         orgnr_col = table.column("orgnr")
         year_col = table.column("year")
-        return {
-            orgnr_col[i].as_py()
-            for i in range(table.num_rows)
-            if year_col[i].as_py() is None
-        }
+        return {orgnr_col[i].as_py() for i in range(table.num_rows) if year_col[i].as_py() is None}

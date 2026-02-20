@@ -102,9 +102,7 @@ def _build_settings(
 
 @app.command()
 def setup(
-    storage_path: str = typer.Argument(
-        ..., help="Root storage path (local, s3://, or gs://)"
-    ),
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
     log_level: str = typer.Option("INFO", "--log-level", "-l"),
 ) -> None:
     """One-time bucket initialisation.
@@ -183,9 +181,7 @@ async def _setup_async(settings: Settings, storage: StorageBackend) -> None:
 
 @app.command()
 def sync(
-    storage_path: str = typer.Argument(
-        ..., help="Root storage path (local, s3://, or gs://)"
-    ),
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
     max_concurrent: int | None = typer.Option(
         None, "--max-concurrent", "-c", help="Max simultaneous HTTP connections"
     ),
@@ -196,8 +192,7 @@ def sync(
         None, "--max-runtime", help="Max runtime in minutes (0=unlimited)"
     ),
     shard: str | None = typer.Option(
-        None, "--shard", "-s",
-        help="Shard digit 0-9, or 'auto' to claim a free shard"
+        None, "--shard", "-s", help="Shard digit 0-9, or 'auto' to claim a free shard"
     ),
     checkpoint_interval: int | None = typer.Option(
         None, "--checkpoint-interval", help="Save checkpoint every N entities"
@@ -211,8 +206,13 @@ def sync(
     _configure_logging(log_level)
 
     settings = _build_settings(
-        storage_path, log_level, shard,
-        max_concurrent, requests_per_second, max_runtime, checkpoint_interval,
+        storage_path,
+        log_level,
+        shard,
+        max_concurrent,
+        requests_per_second,
+        max_runtime,
+        checkpoint_interval,
     )
 
     from brreg_regnskap.sync_engine import SyncEngine
@@ -226,9 +226,7 @@ def sync(
 
 @app.command()
 def patch(
-    storage_path: str = typer.Argument(
-        ..., help="Root storage path (local, s3://, or gs://)"
-    ),
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
     log_level: str = typer.Option("INFO", "--log-level", "-l"),
 ) -> None:
     """Fetch BRREG updates since last ETag and add changed entities to the fast lane.
@@ -301,9 +299,7 @@ def _last_patch_date(storage: StorageBackend, settings: Settings) -> str:
 
 @app.command()
 def status(
-    storage_path: str = typer.Argument(
-        ..., help="Root storage path (local, s3://, or gs://)"
-    ),
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
 ) -> None:
     """Show manifest and orderflow statistics."""
     settings = Settings(storage_path=storage_path)
@@ -384,9 +380,7 @@ def status(
 
 @app.command()
 def verify(
-    storage_path: str = typer.Argument(
-        ..., help="Root storage path (local, s3://, or gs://)"
-    ),
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
 ) -> None:
     """Verify manifest entries against actual files in storage."""
     settings = Settings(storage_path=storage_path)
@@ -435,9 +429,7 @@ def verify(
 
 @app.command(name="merge-manifests")
 def merge_manifests(
-    storage_path: str = typer.Argument(
-        ..., help="Root storage path (local, s3://, or gs://)"
-    ),
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
 ) -> None:
     """Merge shard manifests from matrix jobs into the global manifest."""
     settings = Settings(storage_path=storage_path)
@@ -451,7 +443,8 @@ def merge_manifests(
 
     all_files = storage.list_dir(storage_path)
     shard_paths = [
-        f for f in all_files
+        f
+        for f in all_files
         if f.rsplit("/", 1)[-1].startswith("manifest")
         and f.endswith(".parquet")
         and f != settings.manifest_path
