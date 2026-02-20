@@ -14,6 +14,8 @@ Implementation notes for agents:
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -85,7 +87,7 @@ class EnhetUpdate(BaseModel):
     dato: str
     organisasjonsnummer: str
     endringstype: str  # Ny, Endring, Sletting, Fjernet
-    endringer: list[dict] | None = None  # JSON Patch operations when includeChanges=true
+    endringer: list[dict[str, Any]] | None = None  # JSON Patch operations when includeChanges=true
 
 
 class Regnskapsperiode(BaseModel):
@@ -123,11 +125,11 @@ class Regnskap(BaseModel):
     valuta: str | None = None
     avviklingsregnskap: bool | None = None
     oppstillingsplan: str | None = None
-    resultatregnskapResultat: dict | None = None
-    eiendeler: dict | None = None
-    egenkapitalGjeld: dict | None = None
-    revisjon: dict | None = None
-    regnkapsprinsipper: dict | None = None
+    resultatregnskapResultat: dict[str, Any] | None = None
+    eiendeler: dict[str, Any] | None = None
+    egenkapitalGjeld: dict[str, Any] | None = None
+    revisjon: dict[str, Any] | None = None
+    regnkapsprinsipper: dict[str, Any] | None = None
 
 
 class ManifestRecord(BaseModel):

@@ -290,7 +290,7 @@ def _last_patch_date(storage: StorageBackend, settings: Settings) -> str:
     if storage.exists(settings.etag_path):
         raw = storage.read_bytes(settings.etag_path)
         data = json.loads(raw)
-        return data.get("dump_date", datetime.now(UTC).strftime("%Y-%m-%d"))
+        return str(data.get("dump_date", datetime.now(UTC).strftime("%Y-%m-%d")))
     return datetime.now(UTC).strftime("%Y-%m-%d")
 
 
@@ -318,7 +318,7 @@ def status(
     table = manifest.load()
     state = checkpoint.load()
 
-    import pyarrow.compute as pc
+    import pyarrow.compute as pc  # type: ignore[import-untyped]
 
     # Manifest
     console.print(f"[bold]Manifest:[/bold] {settings.manifest_path}")

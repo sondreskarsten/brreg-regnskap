@@ -37,9 +37,9 @@ import time
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-import pyarrow as pa
-import pyarrow.compute as pc
-import pyarrow.parquet as pq
+import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
+import pyarrow.parquet as pq  # type: ignore[import-untyped]
 import structlog
 
 if TYPE_CHECKING:
@@ -393,7 +393,7 @@ class OrderflowManager:
             ]
         )
         filtered = table.filter(keep)
-        removed = table.num_rows - filtered.num_rows
+        removed: int = table.num_rows - filtered.num_rows
         if removed > 0:
             self.save_shard(digit, filtered)
         return removed

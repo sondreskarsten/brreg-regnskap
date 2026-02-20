@@ -22,7 +22,7 @@ import os
 import uuid
 from datetime import UTC, datetime
 
-import fsspec
+import fsspec  # type: ignore[import-untyped]
 
 from brreg_regnskap.config import Settings, StorageBackendType
 
@@ -126,12 +126,12 @@ class StorageBackend:
         if not self._fs.exists(fs_path):
             raise FileNotFoundError(f"No such file: {path}")
         with self._fs.open(fs_path, "rb") as f:
-            return f.read()
+            return bytes(f.read())
 
     def exists(self, path: str) -> bool:
         """Check if a file exists at the given path."""
         fs_path = self._to_fs_path(path)
-        return self._fs.exists(fs_path)
+        return bool(self._fs.exists(fs_path))
 
     def list_dir(self, prefix: str) -> list[str]:
         """List all files under the given prefix.

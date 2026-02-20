@@ -481,7 +481,7 @@ class SyncEngine:
 
         if self._settings.shard is not None:
             patch_entries = [
-                e for e in patch_entries if int(e["orgnr"]) % 10 == self._settings.shard
+                e for e in patch_entries if int(str(e["orgnr"])) % 10 == self._settings.shard
             ]
 
         table = self._manifest.load()
@@ -497,9 +497,9 @@ class SyncEngine:
 
         todo = []
         for e in patch_entries:
-            orgnr = e["orgnr"]
-            year = e.get("year")
-            if year is not None and (orgnr, int(year)) in existing_keys:
+            orgnr = str(e["orgnr"])
+            year_val = e.get("year")
+            if year_val is not None and (orgnr, int(str(year_val))) in existing_keys:
                 continue
             todo.append(orgnr)
 

@@ -20,9 +20,9 @@ from __future__ import annotations
 import io
 from typing import TYPE_CHECKING
 
-import pyarrow as pa
-import pyarrow.compute as pc
-import pyarrow.parquet as pq
+import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
+import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     from brreg_regnskap.storage import StorageBackend
@@ -56,7 +56,7 @@ def _empty_table() -> pa.Table:
     )
 
 
-def _record_to_dict(r: ManifestRecord) -> dict:
+def _record_to_dict(r: ManifestRecord) -> dict[str, object]:
     return {
         "orgnr": r.orgnr,
         "year": r.year,
@@ -168,7 +168,7 @@ class ManifestManager:
             )
             existing = existing.filter(keep_mask)
 
-        new_rows = {f.name: [] for f in MANIFEST_SCHEMA}
+        new_rows: dict[str, list[object]] = {f.name: [] for f in MANIFEST_SCHEMA}
         for r in records:
             d = _record_to_dict(r)
             for col in new_rows:
