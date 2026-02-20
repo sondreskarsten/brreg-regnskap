@@ -20,9 +20,9 @@ from __future__ import annotations
 import io
 from typing import TYPE_CHECKING
 
-import pyarrow as pa  # type: ignore[import-untyped]
-import pyarrow.compute as pc  # type: ignore[import-untyped]
-import pyarrow.parquet as pq  # type: ignore[import-untyped]
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.parquet as pq
 
 if TYPE_CHECKING:
     from brreg_regnskap.storage import StorageBackend

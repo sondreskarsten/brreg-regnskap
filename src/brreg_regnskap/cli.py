@@ -318,7 +318,7 @@ def status(
     table = manifest.load()
     state = checkpoint.load()
 
-    import pyarrow.compute as pc  # type: ignore[import-untyped]
+    import pyarrow.compute as pc
 
     # Manifest
     console.print(f"[bold]Manifest:[/bold] {settings.manifest_path}")

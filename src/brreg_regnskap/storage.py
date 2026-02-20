@@ -22,7 +22,7 @@ import os
 import uuid
 from datetime import UTC, datetime
 
-import fsspec  # type: ignore[import-untyped]
+import fsspec
 
 from brreg_regnskap.config import Settings, StorageBackendType
 
