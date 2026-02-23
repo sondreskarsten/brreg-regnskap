@@ -1,0 +1,11 @@
+# Bulk extraction outputs
+*.json
+*.csv
+*.parquet
+
+# Keep sample outputs for comparison
+!sample_*.json
+!sample_*.csv
+
+# Keep the gitkeep
+!.gitkeep
