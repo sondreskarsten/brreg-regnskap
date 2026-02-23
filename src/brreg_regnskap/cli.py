@@ -469,5 +469,65 @@ def merge_manifests(
         console.print(f"  Deleted shard: {sp}")
 
 
+# ── compact ────────────────────────────────────────────────────
+
+
+@app.command()
+def compact(
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
+    shard: str | None = typer.Option(
+        None, "--shard", "-s", help="Compact only this shard digit (0-9). Default: all shards."
+    ),
+    log_level: str = typer.Option("INFO", "--log-level", "-l"),
+) -> None:
+    """Remove completed entries from orderflow shards.
+
+    Entries are removed when their (orgnr, year) appears in the manifest
+    with a download_timestamp newer than the entry's create_time.
+    Discovery stubs (year=null) are kept.
+    """
+    _configure_logging(log_level)
+    settings = Settings(storage_path=storage_path, log_level=log_level)
+
+    from brreg_regnskap.orderflow import OrderflowManager
+    from brreg_regnskap.storage import StorageBackend
+    from brreg_regnskap.sync_engine import _iso_to_unix
+
+    storage = StorageBackend.from_settings(settings)
+    storage.check_credentials()
+
+    from brreg_regnskap.manifest import ManifestManager
+
+    manifest = ManifestManager(storage, settings.manifest_path)
+    table = manifest.load()
+
+    manifest_ts: dict[tuple[str, int], int] = {}
+    if table.num_rows > 0:
+        orgnr_col = table.column("orgnr").to_pylist()
+        year_col = table.column("year").to_pylist()
+        status_list = table.column("status").to_pylist()
+        pdf_col = table.column("pdf_path").to_pylist()
+        dl_col = table.column("download_timestamp").to_pylist()
+        for o, y, s, p, dl in zip(orgnr_col, year_col, status_list, pdf_col, dl_col, strict=False):
+            if s == "success" and p:
+                key = (o, y)
+                manifest_ts[key] = max(manifest_ts.get(key, 0), _iso_to_unix(dl))
+
+    orderflow = OrderflowManager(storage, settings)
+    digits = [int(shard)] if shard is not None else list(range(10))
+    total_removed = 0
+
+    for digit in digits:
+        removed = orderflow.compact(digit, manifest_ts)
+        if removed:
+            console.print(f"  Shard {digit}: removed {removed} entries")
+            total_removed += removed
+
+    if total_removed == 0:
+        console.print("[yellow]No entries to compact.[/yellow]")
+    else:
+        console.print(f"\n[green]Compacted {total_removed} entries total.[/green]")
+
+
 if __name__ == "__main__":
     app()

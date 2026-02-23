@@ -26,12 +26,6 @@ class StorageBackendType(StrEnum):
     GCS = "gcs"
 
 
-class SyncMode(StrEnum):
-    FULL = "full"
-    INCREMENTAL = "incremental"
-    PATCH = "patch"
-
-
 class Settings(BaseSettings):
     """All configuration for brreg-regnskap.
 
@@ -42,12 +36,13 @@ class Settings(BaseSettings):
             - GCS: gs://bucket-name/prefix
 
     Optional:
-        max_concurrent: Max simultaneous HTTP connections (default 50).
-        requests_per_second: Rate limit for BRREG API calls (default 10.0).
+        max_concurrent: Max simultaneous HTTP connections (default 5).
+        requests_per_second: Rate limit for BRREG API calls (default 3.0).
         max_retries: Max retry attempts per failed request (default 5).
         checkpoint_interval: Save checkpoint every N entities processed (default 1000).
         max_runtime_minutes: Graceful shutdown after N minutes. 0 = unlimited (default 0).
         log_level: Logging verbosity (default INFO).
+        shard: Shard digit 0-9 for parallel workers (default None = all shards).
     """
 
     model_config = SettingsConfigDict(
@@ -64,8 +59,6 @@ class Settings(BaseSettings):
     checkpoint_interval: int = 1000
     max_runtime_minutes: int = 0
     log_level: str = "INFO"
-    orgnr_range_start: str | None = None
-    orgnr_range_end: str | None = None
     shard: int | None = None
 
     @field_validator("storage_path")
@@ -118,25 +111,8 @@ class Settings(BaseSettings):
         suffix = f"_v{version}" if version > 1 else ""
         return f"{self.storage_path}/regnskap/{orgnr}/aarsregnskap_{year}{suffix}.pdf"
 
-    def correction_json_path(self, orgnr: str, year: int, journalnr: str, ts: str) -> str:
-        return f"{self.storage_path}/corrections/{orgnr}/regnskap_{year}_{journalnr}_{ts}.json"
-
-    def correction_pdf_path(self, orgnr: str, year: int, ts: str) -> str:
-        return f"{self.storage_path}/corrections/{orgnr}/aarsregnskap_{year}_{ts}.pdf"
-
     def entity_dump_path(self, date: str) -> str:
         return f"{self.storage_path}/entities/enheter_dump_{date}.json.gz"
-
-    @property
-    def backfill_db_path(self) -> str:
-        return f"{self.storage_path}/metadata/backfill_years{self._shard_suffix}.json"
-
-    @property
-    def patches_dir(self) -> str:
-        return f"{self.storage_path}/patches"
-
-    def patch_file_path(self, date: str) -> str:
-        return f"{self.patches_dir}/{date}.jsonl"
 
     # ── Orderflow paths ──────────────────────────────────────────────
 

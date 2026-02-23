@@ -2,16 +2,15 @@
 
 Stores a small JSON file in the storage backend tracking:
     - last_oppdateringsid: cursor for the Enhetsregisteret updates API
-    - last_orgnr_processed: for resuming full syncs from where they stopped
+    - last_orgnr_processed: for resuming syncs from where they stopped
     - run_started_at: ISO timestamp of current/last run start
-    - mode: "full" or "incremental"
-    - shard_range: optional (start, end) orgnr range for matrix jobs
+    - entities_processed: count of entities processed in this run
 
 Implementation notes:
     - The checkpoint file is tiny (<1KB) — read-modify-write is fine.
     - Save after every checkpoint_interval entities processed.
     - On startup, load checkpoint and resume from stored position.
-    - For matrix jobs, each shard has its own checkpoint (derived from shard manifest path).
+    - For matrix jobs, each shard has its own checkpoint (checkpoint_shard_N.json).
 """
 
 from __future__ import annotations
@@ -31,14 +30,7 @@ class CheckpointState:
     last_oppdateringsid: int = 0
     last_orgnr_processed: str | None = None
     run_started_at: str | None = None
-    mode: str = "full"
-    phase: str = "fresh"
-    current_year: int | None = None
-    shard_range_start: str | None = None
-    shard_range_end: str | None = None
     entities_processed: int = 0
-    entities_total: int | None = None
-    errors: int = 0
 
     def to_json(self) -> bytes:
         return json.dumps(asdict(self), indent=2).encode("utf-8")

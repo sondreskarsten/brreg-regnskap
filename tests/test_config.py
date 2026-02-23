@@ -57,11 +57,6 @@ class TestSettings:
             == "gs://b/p/regnskap/964118191/aarsregnskap_2024.pdf"
         )
 
-    def test_correction_json_path(self) -> None:
-        s = Settings(storage_path="./data")
-        path = s.correction_json_path("964118191", 2024, "123456", "20250101T120000")
-        assert path == "./data/corrections/964118191/regnskap_2024_123456_20250101T120000.json"
-
     def test_shard_manifest_path(self) -> None:
         s = Settings(storage_path="s3://b/p")
         assert (

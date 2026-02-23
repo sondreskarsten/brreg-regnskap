@@ -21,20 +21,17 @@ class TestCheckpointState:
         s = CheckpointState()
         assert s.last_oppdateringsid == 0
         assert s.last_orgnr_processed is None
-        assert s.mode == "full"
 
     def test_roundtrip_json(self) -> None:
         s = CheckpointState(
             last_oppdateringsid=12345,
             last_orgnr_processed="964118191",
-            mode="incremental",
             entities_processed=500,
         )
         data = s.to_json()
         restored = CheckpointState.from_json(data)
         assert restored.last_oppdateringsid == 12345
         assert restored.last_orgnr_processed == "964118191"
-        assert restored.mode == "incremental"
         assert restored.entities_processed == 500
 
     def test_from_json_ignores_unknown_fields(self) -> None:
@@ -44,17 +41,13 @@ class TestCheckpointState:
         data = json.dumps(
             {
                 "last_oppdateringsid": 42,
-                "mode": "full",
-                "phase": "download",
                 "entities_processed": 0,
-                "errors": 0,
                 "future_field": "should_be_ignored",
                 "another_new_field": 123,
             }
         ).encode("utf-8")
         restored = CheckpointState.from_json(data)
         assert restored.last_oppdateringsid == 42
-        assert restored.mode == "full"
 
 
 class TestCheckpointManager:
@@ -62,14 +55,12 @@ class TestCheckpointManager:
         cp = _make_checkpoint(tmp_path)
         state = cp.load()
         assert state.last_oppdateringsid == 0
-        assert state.mode == "full"
 
     def test_save_and_load(self, tmp_path: Path) -> None:
         cp = _make_checkpoint(tmp_path)
         state = CheckpointState(
             last_oppdateringsid=999,
             last_orgnr_processed="811111111",
-            mode="full",
             entities_processed=42,
         )
         cp.save(state)
