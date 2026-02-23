@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -11,6 +12,10 @@ from brreg_regnskap.cli import app
 from brreg_regnskap.config import Settings
 from brreg_regnskap.manifest import ManifestManager
 from brreg_regnskap.storage import StorageBackend
+
+
+def _strip_ansi(text: str) -> str:
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
 runner = CliRunner()
 
@@ -135,8 +140,9 @@ class TestSyncCommandHelp:
     def test_sync_help(self) -> None:
         result = runner.invoke(app, ["sync", "--help"])
         assert result.exit_code == 0
-        assert "--max-runtime" in result.stdout
-        assert "--shard" in result.stdout
+        out = _strip_ansi(result.stdout)
+        assert "--max-runtime" in out
+        assert "--shard" in out
 
 
 class TestSetupCommandHelp:
