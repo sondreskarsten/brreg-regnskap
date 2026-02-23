@@ -1,6 +1,6 @@
 # Extraction Reference: Norwegian Årsregnskap Notes
 
-Compiled from structural audit, note compilations (FY2022–FY2024), glossary, terminology lists, bankinnskudd survey, verdipapirer compilation, table type taxonomy, union/labor disclosure audit, and note cross-reference index. Intended to inform field mapping, validation logic, and edge-case handling in the Pydantic extraction schema.
+Compiled from structural audit, note compilations (FY2022–FY2024), glossary, terminology lists, bankinnskudd survey, verdipapirer compilation, table type taxonomy, union/labor disclosure audit, note cross-reference index, related-party transaction extraction results, and NGAAP/IFRS regulatory analysis. Intended to inform field mapping, validation logic, and edge-case handling in the Pydantic extraction schema.
 
 ---
 
@@ -40,6 +40,24 @@ Beyond note-level structure classes, the following table archetypes appear acros
 | Administrativ | Vedlegg/Saksdokumenter | Nr \| Beskrivelse \| Avsender \| Dato | Hans Nordahls Gate 68-70 SE |
 
 **Key structural observation:** The resultatregnskap and balanse follow a strict hierarchical layout where driftsrelaterte poster appear first, then finansposter, then skatt — producing a trinnvis (step-wise) derivation of årsresultat. The balanse enforces the accounting equation (Eiendeler = Egenkapital + Gjeld) as a structural invariant. All downstream note tables provide detail for specific line items in these two hovedregnskap tables.
+
+### 1.2 NGAAP vs IFRS: Note Depth Expectations
+
+The reporting standard declared in Regnskapsprinsipper (Note 1) determines the expected volume and complexity of all subsequent notes. The pipeline must identify the standard early to calibrate extraction expectations.
+
+| Dimension | NGAAP / NRS 8 (Small) | IFRS (Listed / Large) |
+|-----------|----------------------|----------------------|
+| Measurement focus | Historical cost, nominal value, conservatism | Fair value, balance sheet orientation |
+| Note volume | 3–15 notes, 1–5 pages | 20–50+ notes, 10–100+ pages |
+| Cash flow statement | Exempt (small) | Mandatory |
+| Segment reporting | Not required | Mandatory (IFRS 8, management approach) |
+| Fair value hierarchy | Not applicable | Required (IFRS 13, Level 1/2/3 classification) |
+| Intangible assets / R&D | Restrictive — generally expensed | Broader capitalization, complex amortization |
+| Sustainability reporting | Not required (NRS 8) | Required from FY2024 for PIEs (IFRS S2, double materiality) |
+| Related party depth | Minimal — often single sentence or absent | Detailed: counterparty, terms, interest rate, principal amount |
+| Risk disclosures | Brief or absent | Mandatory: financial risk, market risk, credit risk, liquidity risk |
+
+**Pipeline implication:** If regnskapsregler = "IFRS" or "Forenklet IFRS", expect IFRS-specific note types absent from NRS 8 reports: segment reporting, fair value hierarchy tables, financial instrument disclosures, detailed risk narratives. Do not flag absence of these notes as extraction errors for NRS 8 entities.
 
 ---
 
@@ -518,6 +536,58 @@ Multi-paragraph narrative explaining:
 - Upcoming IFRS Sustainability Disclosure Standards (IFRS S2 / N_ESG) will formalize union cooperation and social metrics as verified statutory disclosures for large entities from FY2024 onward
 - For the extraction pipeline: treat union/collective agreement data as an **årsberetning-only** extraction target, not a note-level target, for NRS 8 entities
 
+### 2.19 Nærstående Parter / Transaksjoner med Nærstående (Related Party Transactions)
+
+**Structure:** Type A/C (Mixed). Medium frequency. Ranges from single-sentence declarations to structured transaction tables.
+
+**Regulatory basis:** Regnskapsloven Chapter 7, Securities Trading Act (for listed entities). Mandatory disclosure when material transactions occur with related parties (management, shareholders, subsidiaries, parent companies).
+
+**Observed patterns:**
+
+**Pattern 1: Intercompany trading table (konsernselskap)**
+GL-Bygg AS (916350279) Note 2/Note 4 — structured transaction lists:
+- "Kjøp fra konsernselskap: Leie av lager og kontorlokaler 600 000"
+- "Salg til konsernselskap: Administrasjonstjenester 600 000, Salg entreprise 15 735 000"
+- FY2023 variant includes named counterparties: "Leie av lager og kontorlokaler (Motpart: GLB Eiendom AS) 1 280 000"
+
+**Pattern 2: Debt to shareholder (gjeld til aksjonær)**
+Camilla Lyngstad Holding (916347200) Note 5:
+- "Kortsiktig gjeld til aksjonær inngår i annen kortsiktig gjeld. Det er ikke beregnet renter på fordring og gjeld."
+- Key signals: no interest calculated, embedded in annen kortsiktig gjeld
+
+**Pattern 3: Leverandørgjeld to parent company**
+Eurovema Mobility (916347561) Note 5:
+- "Selskapet har leverandørgjeld til morselskapet Eurovema Mobility AB på kr 518 090."
+- Identifies the parent company by name and specifies the amount
+
+**Pattern 4: Negative receivable / reclassification signal**
+DANINOR AS (916347243) Note 2:
+- "Fordringer på personlige eiere, styremedlemmer mv.: -1 022 566"
+- Negative receivable from related party indicates this is actually a liability — reclassification needed
+
+**Required data fields for extraction:**
+- Counterparty name (person or company)
+- Relationship type (aksjonær, morselskap, konsernselskap, daglig leder, styremedlem)
+- Transaction type (kjøp, salg, leie, lån, gjeld, fordring)
+- Amount (NOK)
+- Terms (interest rate, maturity) — often "Det er ikke beregnet renter" for shareholder loans
+- Direction: kjøp fra (purchase from) vs salg til (sale to)
+
+**Common note titles:**
+- "Transaksjoner med nærstående parter"
+- "Mellomværende med selskap i samme konsern"
+- "Konsernmellomværende"
+- "Nærstående parter"
+- "Lån og fordringer til nærstående"
+- Sometimes embedded within Gjeld (2.7), Fordringer (2.8), or Konsernforhold (2.12) rather than standalone
+
+**Extraction-relevant observations:**
+- NRS 8 entities often have minimal or absent related-party notes — a single sentence or nothing
+- Intercompany trading tables may appear under different note numbers across years for the same entity (GL-Bygg: Note 2 in FY2023, Note 4 in FY2022)
+- The "no interest" declaration on shareholder loans is a common pattern and a credit risk signal — interest-free loans to/from shareholders may indicate non-arm's-length terms
+- Kassekreditt disclosures (e.g., "Ubenyttet kassekreditt pr 31.12.2022 er NOK 10 000 000") sometimes appear in the same note as intercompany debt
+- For IFRS reporters: expect significantly more detail — counterparty relationship classification, interest rate, largest outstanding principal during period, explicit arm's-length assessment
+
 ---
 
 ## 3. Number Format Patterns
@@ -559,7 +629,7 @@ No standardized note numbering exists. The same disclosure type gets different n
 | Verdipapirer | Note 4, Note 7 |
 | Fordringer | Note 2, Note 4, Note 5 |
 | Bankinnskudd/Bundne midler | Note 3, Note 4, Note 5, Note 6, Note 7, Note 8, Note 9 |
-| Nærstående/Konsern | Note 4, Note 5 |
+| Nærstående/Konsern | Note 2, Note 4, Note 5 |
 | Salgsinntekt | Note 1 |
 | Annen kortsiktig gjeld | Note 10 |
 
@@ -572,6 +642,14 @@ No standardized note numbering exists. The same disclosure type gets different n
 - "Lønnskostnader, ingen ansatte"
 - "Lønnskostnader etc"
 - "Antall årsverk i regnskapsåret" (standalone)
+
+**Nærstående title variants:**
+- "Transaksjoner med nærstående parter"
+- "Mellomværende med selskap i samme konsern"
+- "Konsernmellomværende"
+- "Nærstående parter"
+- "Lån og fordringer til nærstående"
+- May also appear embedded within Gjeld, Fordringer, or Konsernforhold notes
 
 ### 4.1 Note Cross-Reference Index (Note → Regnskapspost Mapping)
 
@@ -686,6 +764,10 @@ The following index maps observed note disclosures to their primary regnskapspos
 
 **Going concern:** Fortsatt drift
 
+**Related parties / Nærstående:** Nærstående parter, Transaksjoner med nærstående, Mellomværende med selskap i samme konsern, Konsernmellomværende, Kjøp fra konsernselskap, Salg til konsernselskap, Gjeld til aksjonær, Leverandørgjeld til morselskap, Fordringer på personlige eiere, Kortsiktig gjeld til aksjonær, Ikke beregnet renter (no interest calculated), Armlengdes avstand (arm's length)
+
+**Foreign currency / Valuta:** Valutakurs, Transaksjonstidspunktet (transaction date rate), Balansedagens kurs (balance sheet date rate), Omregningsdifferanser, Netto valutagevinst/-tap, Agio/Disagio
+
 ### 6.4 Årsberetning Terminology
 
 **Strategi/drift:** Virksomhetens art, Markedsutvikling, Resultat og finansiell stilling, Fremtidig utvikling/Fremtidsutsikter, Styrets arbeid
@@ -734,6 +816,9 @@ Cross-checks derivable from extracted note data:
 | OTP obligation | Antall ansatte > 0 | OTP statement | If employees > 0, OTP should be declared |
 | Feriepenger vs lønn | Skyldige feriepenger in annen kortsiktig gjeld note | Lønnskostnader sum | Feriepenger typically ~12% of gross salary |
 | Personnel chain | Daglig leder employment disclosure | Årsverk count | If "ansatt i [other entity]" then 0 årsverk is valid |
+| Related-party debt sign | Fordringer på nærstående amount | Sign (positive/negative) | Negative receivable = actually a liability — reclassification signal |
+| Intercompany balance symmetry | Salg til konsernselskap in resultatregnskap | Kjøp fra konsernselskap in counterparty's report | Amounts should match (if both entities in scope) |
+| Shareholder loan terms | Gjeld til aksjonær amount | "Ikke beregnet renter" declaration | Interest-free shareholder loans are credit risk signal — flag for analyst review |
 
 ---
 

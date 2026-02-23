@@ -11,7 +11,7 @@ extraction/
 ├── INDEX.md                            ← this file
 ├── README.md                           ← human-readable overview
 ├── reference/
-│   ├── extraction_reference.md         ← field patterns, validation, terminology (751 lines)
+│   ├── extraction_reference.md         ← field patterns, validation, terminology (836 lines)
 │   └── aarsregnskap_schema.py          ← Pydantic v2 target schema (472 lines, 43 classes)
 ├── scripts/                            ← experimental extraction & evaluation scripts
 └── outputs/                            ← run outputs (gitignored; sample_* committed)
@@ -29,7 +29,8 @@ Compiled from structural audit of 32+ entities across FY2022–2024. Source of t
 |---|---------|-------|---------|
 | 1 | Note Structure Classes | 7–19 | 4 structure types (A: Narrative, B: Key-Value, C: Standard Grid, D: Complex Matrix) |
 | 1.1 | Table Type Taxonomy | 20–44 | 15 table archetypes mapped to 6 document zones |
-| 2 | Note-by-Note Extraction Patterns | 46–521 | 18 note types with observed row labels, column variants, edge cases |
+| 1.2 | NGAAP vs IFRS Note Depth | 44–60 | Reporting standard → expected note volume/complexity table |
+| 2 | Note-by-Note Extraction Patterns | 62–605 | 19 note types with observed row labels, column variants, edge cases |
 | 3 | Number Format Patterns | 523–543 | 11 Norwegian number formatting variants with examples |
 | 4 | Note Title/Number Conventions | 545–595 | Note number → disclosure type mapping; no standard numbering exists |
 | 4.1 | Note Cross-Reference Index | 576–595 | 10-row bidirectional lookup: note number → title → regnskapspost |
@@ -60,6 +61,7 @@ Compiled from structural audit of 32+ entities across FY2022–2024. Source of t
 | 2.16 | Salgsinntekt (Revenue) | A/B | Low-medium |
 | 2.17 | Annen kortsiktig gjeld (Other Current Liabilities) | C | Medium |
 | 2.18 | Fagforeninger og Tariffavtaler (Unions) | A | Low (NRS 8) |
+| 2.19 | Nærstående Parter (Related Party Transactions) | A/C mixed | Medium |
 
 ---
 
