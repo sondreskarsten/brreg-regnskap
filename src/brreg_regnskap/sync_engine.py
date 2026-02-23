@@ -177,12 +177,6 @@ class SyncEngine:
                         state,
                     )
 
-            # ── Compact ──────────────────────────────────────────
-            for digit in shards:
-                removed = self._orderflow.compact(digit, manifest_ts)
-                if removed:
-                    logger.info("compacted_shard", shard=digit, removed=removed)
-
         self._checkpoint_mgr.save(state)
         logger.info("sync_finished", **self._stats)
         return dict(self._stats)

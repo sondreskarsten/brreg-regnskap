@@ -25,109 +25,124 @@ uv sync --all-extras
 ## Usage
 
 ```bash
-# Full sync to local directory
-brreg-regnskap sync ./data --mode full
+# 1. One-time setup: download bulk dump, seed orderflow
+brreg-regnskap setup ./data
 
-# Full sync to S3
-brreg-regnskap sync s3://my-bucket/brreg --mode full
+# 2. Process the orderflow queue (fast lane then slow lane)
+brreg-regnskap sync ./data
 
-# Incremental sync (only new/changed since last run)
-brreg-regnskap sync s3://my-bucket/brreg --mode incremental
+# 3. Fetch BRREG updates and add to fast lane
+brreg-regnskap patch ./data
 
 # Check status
-brreg-regnskap status s3://my-bucket/brreg
+brreg-regnskap status ./data
+
+# Compact completed entries from orderflow
+brreg-regnskap compact ./data
+
+# Verify manifest files exist on disk
+brreg-regnskap verify ./data
 
 # Merge shard manifests after parallel GitHub Actions run
-brreg-regnskap merge-manifests s3://my-bucket/brreg
+brreg-regnskap merge-manifests ./data
 ```
 
-### CLI Options
+### Commands
+
+**`setup STORAGE_PATH`** — One-time initialisation. Downloads the BRREG bulk entity dump, saves the ETag, and seeds the orderflow with fast-lane entries for every entity that has a `sisteInnsendteAarsregnskap`. Also creates slow-lane discovery stubs for historical year back-fill.
+
+**`sync STORAGE_PATH [OPTIONS]`** — Process the orderflow queue. Fast lane (JSON+PDF) is processed first across all shards, then slow lane (PDF only) when the fast lane is empty.
 
 ```
-brreg-regnskap sync STORAGE_PATH [OPTIONS]
-
-  --mode              full | incremental (default: full)
-  --max-concurrent    Max simultaneous HTTP connections (default: 50)
-  --rps               Max requests per second (default: 10.0)
-  --max-runtime       Max runtime in minutes, 0=unlimited (default: 0)
-  --range-start       Start of orgnr range (for parallel jobs)
-  --range-end         End of orgnr range (for parallel jobs)
-  --checkpoint-interval  Save state every N entities (default: 1000)
-  --log-level         DEBUG | INFO | WARNING | ERROR (default: INFO)
+  --shard, -s           Shard digit 0-9, or 'auto' to claim a free shard
+  --max-concurrent, -c  Max simultaneous HTTP connections (default: 5)
+  --rps                 Max requests per second (default: 3.0)
+  --max-runtime         Max runtime in minutes, 0=unlimited (default: 0)
+  --checkpoint-interval Save state every N entities (default: 1000)
+  --log-level, -l       DEBUG | INFO | WARNING | ERROR (default: INFO)
 ```
+
+**`patch STORAGE_PATH`** — Fetch BRREG updates since the last run and add changed entities to the fast lane.
+
+**`compact STORAGE_PATH`** — Remove completed entries from orderflow shards. Entries are removed when their `(orgnr, year)` has been successfully downloaded since the entry was created.
+
+**`status STORAGE_PATH`** — Show manifest and orderflow statistics.
+
+**`verify STORAGE_PATH`** — Check that all files referenced in the manifest actually exist in storage.
+
+**`merge-manifests STORAGE_PATH`** — Merge shard manifests from parallel workers into the global manifest.
 
 ## Configuration
 
-All settings can be set via environment variables with the `BRREG_` prefix. See [.env.example](.env.example).
+All settings can be set via environment variables with the `BRREG_` prefix.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `BRREG_STORAGE_PATH` | `./data` | Root storage path (local, `s3://`, or `gs://`) |
-| `BRREG_MAX_CONCURRENT` | `50` | Max simultaneous HTTP connections |
-| `BRREG_REQUESTS_PER_SECOND` | `10.0` | Rate limit for BRREG API calls |
+| `BRREG_MAX_CONCURRENT` | `5` | Max simultaneous HTTP connections |
+| `BRREG_REQUESTS_PER_SECOND` | `3.0` | Rate limit for BRREG API calls |
 | `BRREG_MAX_RETRIES` | `5` | Max retry attempts per failed request |
 | `BRREG_CHECKPOINT_INTERVAL` | `1000` | Save checkpoint every N entities |
 | `BRREG_MAX_RUNTIME_MINUTES` | `0` | Graceful shutdown timer (0=unlimited) |
 | `BRREG_LOG_LEVEL` | `INFO` | Log verbosity |
+| `BRREG_SHARD` | — | Shard digit 0-9 (for parallel workers) |
 
 ## Architecture
 
 ```
 CLI (typer)
-  → SyncEngine (downloader.py)
-    → EnhetsregisteretClient    — discovers entities with regnskap
+  → setup     — downloads bulk dump, seeds orderflow
+  → patch     — polls BRREG updates API, adds to fast lane
+  → sync      — processes orderflow via SyncEngine
+    → OrderflowManager      — two-lane parquet work queue (10 shards)
     → RegnskapsregisteretClient  — fetches JSON + PDF per entity
     → StorageBackend (fsspec)    — writes to S3/GCS/local
     → ManifestManager            — Parquet manifest tracking downloads
     → CheckpointManager          — resume state between runs
 ```
 
+### Two-Lane Orderflow
+
+The orderflow is a parquet-based work queue partitioned into 10 shards by `orgnr % 10`:
+
+- **Fast lane**: `(orgnr, year)` pairs from the bulk dump or BRREG update patches. Priority = now. Downloads JSON + PDF. Processed first.
+- **Slow lane**: Historical years discovered via the `/aar` API. Priority = `unix(year-01-01)`. Downloads PDF only. Processed when all fast lanes are empty.
+
 ### Storage Layout
 
 ```
 {storage_path}/
-├── manifest.parquet
-├── checkpoint.json
+├── manifest.parquet                    # source of truth for downloads
+├── checkpoint.json                     # sync cursor state
+├── orderflow/
+│   └── shard_{0-9}.parquet             # two-lane work queue
+├── metadata/
+│   └── etag.json                       # bulk dump ETag
 ├── entities/
-│   └── enheter_dump_{date}.json.gz
-├── regnskap/
-│   └── {orgnr}/
-│       ├── regnskap_{year}.json
-│       └── aarsregnskap_{year}.pdf
-└── corrections/
+│   └── enheter_dump_{date}.json.gz     # cached bulk dumps
+└── regnskap/
     └── {orgnr}/
-        ├── regnskap_{year}_{journalnr}_{timestamp}.json
-        └── aarsregnskap_{year}_{timestamp}.pdf
+        ├── regnskap_{year}.json        # JSON financial data
+        ├── aarsregnskap_{year}.pdf     # PDF annual report
+        ├── regnskap_{year}_v2.json     # correction (version 2+)
+        └── aarsregnskap_{year}_v2.pdf  # correction (version 2+)
 ```
-
-### Sync Modes
-
-**Full sync**: Downloads the nightly entity bulk dump, filters to entities with `sisteInnsendteAarsregnskap` set, and processes each one. Skips entities already in the manifest (unless a correction is detected).
-
-**Incremental sync**: Polls the BRREG updates API from the last stored cursor (`oppdateringsid`), filters for entities where `sisteInnsendteAarsregnskap` changed, and processes only those.
 
 ### Correction Handling
 
-When BRREG receives a corrected regnskap for a company, the `journalnr` changes for the same `(orgnr, year)`. The sync engine detects this by comparing against the manifest, archives the old files under `corrections/`, downloads the new version, and updates the manifest with `is_correction=True`.
+When BRREG receives a corrected regnskap, the `(orgnr, year)` re-enters the fast lane via `enqueue_fast` (upsert). The sync engine re-downloads and compares hashes. If the content differs, a new version is saved (`_v2`, `_v3`, etc.) and the manifest records `is_correction=True`.
 
 ## GitHub Actions
 
 The included workflows support automated syncing:
 
-- **ci.yml** — Lint + test on push/PR
-- **sync.yml** — Scheduled sync with dynamic matrix parallelization
-
-The sync workflow splits work across multiple parallel jobs (configurable shards), each with a 5.5-hour timeout and checkpointing. A merge job combines shard manifests after completion.
+- **ci.yml** — Lint + type check + test on push/PR
+- **sync.yml** — Supports `setup`, `patch`, and `sync` commands. Sync runs in parallel across 10 shards.
+- **gcs-sync.yml** — GCS bucket mirroring via `gsutil rsync`
 
 ### Setup
 
-The workflow auto-detects the provider from `BRREG_STORAGE_PATH`: `s3://` uses AWS, `gs://` uses GCS. To switch providers, just change the variable.
-
-```bash
-# Interactive setup (requires gh CLI) — handles both AWS and GCS
-chmod +x scripts/setup_github_actions.sh
-./scripts/setup_github_actions.sh
-```
+The workflow auto-detects the provider from `BRREG_STORAGE_PATH`: `s3://` uses AWS, `gs://` uses GCS.
 
 **Required GitHub configuration by provider:**
 
@@ -136,41 +151,21 @@ chmod +x scripts/setup_github_actions.sh
 | **Secrets** | `AWS_ROLE_ARN` | `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT` |
 | **Variables** | `BRREG_STORAGE_PATH`, `AWS_REGION` | `BRREG_STORAGE_PATH` |
 
-**Quick manual setup (GCS):**
+**Trigger a workflow:**
 ```bash
-# Set secrets
-gh secret set GCP_WORKLOAD_IDENTITY_PROVIDER --repo sondreskarsten/brreg-regnskap \
-  --body "projects/123456/locations/global/workloadIdentityPools/github-actions/providers/github"
-gh secret set GCP_SERVICE_ACCOUNT --repo sondreskarsten/brreg-regnskap \
-  --body "brreg-regnskap-sync@my-project.iam.gserviceaccount.com"
+# First-time setup (downloads bulk dump, seeds orderflow)
+gh workflow run sync.yml -f command=setup
 
-# Set storage path
-gh variable set BRREG_STORAGE_PATH --repo sondreskarsten/brreg-regnskap \
-  --body "gs://my-bucket/data"
+# Process the queue
+gh workflow run sync.yml -f command=sync
+
+# Fetch updates and add to fast lane
+gh workflow run sync.yml -f command=patch
 ```
-
-**Quick manual setup (AWS S3):**
-```bash
-gh secret set AWS_ROLE_ARN --repo sondreskarsten/brreg-regnskap \
-  --body "arn:aws:iam::123456789012:role/brreg-regnskap-sync"
-gh variable set BRREG_STORAGE_PATH --repo sondreskarsten/brreg-regnskap \
-  --body "s3://my-bucket/data"
-gh variable set AWS_REGION --repo sondreskarsten/brreg-regnskap \
-  --body "eu-north-1"
-```
-
-**Trigger a sync:**
-```bash
-gh workflow run sync.yml -f mode=incremental
-```
-
-See `scripts/setup_github_actions.sh` for full OIDC/Workload Identity Federation setup instructions.
 
 ## Data Source
 
-All data is from [Brønnøysundregistrene](https://data.brreg.no/) open APIs under the [NLOD 2.0](https://data.norge.no/nlod/en/2.0) license. No authentication required. No documented rate limits (the package self-throttles to 10 req/s by default).
-
-The free API provides key financial figures from the most recent annual account per company. Full historical data with all line items requires a paid subscription (~NOK 400K/yr).
+All data is from [Brønnøysundregistrene](https://data.brreg.no/) open APIs under the [NLOD 2.0](https://data.norge.no/nlod/en/2.0) license. No authentication required. The package self-throttles to 3 req/s by default.
 
 ## Development
 

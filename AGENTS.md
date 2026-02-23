@@ -10,41 +10,60 @@ This file provides context for Codex, Claude Code, or any AI agent working on th
 
 ```
 CLI (typer)
-  → SyncEngine (downloader.py)
-    → EnhetsregisteretClient (api/enhetsregisteret.py)   # discovers which companies have regnskap
-    → RegnskapsregisteretClient (api/regnskapsregisteret.py)  # fetches JSON + PDF
-    → StorageBackend (storage.py)                         # writes to S3/GCS/local via fsspec
-    → ManifestManager (manifest.py)                       # tracks what's been downloaded
-    → CheckpointManager (checkpoint.py)                   # resume state between runs
+  → setup     — downloads bulk dump, seeds orderflow
+  → patch     — polls BRREG updates API, adds to fast lane
+  → sync      — processes orderflow via SyncEngine
+  → compact   — manual compaction of completed orderflow entries
+  → status    — show manifest + orderflow stats
+  → verify    — check manifest files exist in storage
+  → merge-manifests — merge shard manifests from parallel workers
+
+Modules:
+  cli.py                   — typer CLI wiring
+  sync_engine.py           — orderflow-driven download engine
+  orderflow.py             — two-lane parquet work queue (10 shards)
+  api/enhetsregisteret.py  — discovers which companies have regnskap
+  api/regnskapsregisteret.py — fetches JSON + PDF per entity
+  storage.py               — writes to S3/GCS/local via fsspec
+  manifest.py              — Parquet manifest tracking downloads
+  checkpoint.py            — resume state between runs
+  shard.py                 — shard assignment for parallel workers
+  config.py                — pydantic-settings configuration
 ```
 
-## Implementation Guide
+## Key Concepts
 
-Read `PLAN.md` for the full task breakdown. **Phases 1-3 are complete.** All modules are implemented, 73 tests pass, linting is clean.
+### Two-Lane Orderflow
 
-### Current State (Phase 4 — Production Readiness)
+The orderflow is a parquet-based work queue partitioned into 10 shards by `int(orgnr) % 10`:
 
-All source modules have full implementations with no stubs. The package is ready for local testing against real BRREG APIs. Remaining work:
+- **Fast lane**: `(orgnr, year)` pairs from bulk dump or BRREG update patches. Priority = now. Downloads JSON + PDF.
+- **Slow lane**: Historical years from `/aar` API. Priority = `unix(year-01-01)`. Downloads PDF only.
+- **Discovery stubs**: `year=null` entries marking orgnrs that need a years-API call.
 
-1. **Local full sync test** — run `brreg-regnskap sync ./local-test --mode full --rps 5` and tune rate limits based on real API behavior
-2. **Structured logging polish** — structlog is wired up; review log output during real sync runs and adjust log levels/fields
-3. **GitHub Actions deployment** — set up the S3 bucket, OIDC role, and repository secrets per the workflow files
-4. **Contact opendata@brreg.no** — inform BRREG before large-scale operation (good API citizenship)
-5. **Edge cases** — the async download engine handles 404s and retries, but real-world runs may reveal additional edge cases in BRREG's API responses
+Fast lane is always processed first across all shards before any slow lane work begins.
+
+### Workflow
+
+1. `brreg-regnskap setup gs://bucket/data` — One-time: download bulk dump, seed orderflow
+2. `brreg-regnskap sync gs://bucket/data --shard N` — Process orderflow (parallel across 10 shards)
+3. `brreg-regnskap merge-manifests gs://bucket/data` — Merge shard manifests
+4. `brreg-regnskap patch gs://bucket/data` — Periodic: fetch updates, add to fast lane
+5. `brreg-regnskap compact gs://bucket/data` — Periodic: remove completed orderflow entries
 
 ### Key Principles
 
 1. **All HTTP calls are async** using `aiohttp`. The CLI bridges sync/async via `asyncio.run()`.
-2. **Storage is abstracted** via fsspec. Never import `boto3` or `google.cloud.storage` directly — use `fsspec` and let `s3fs`/`gcsfs` handle the backends.
-3. **The manifest is the source of truth** for what has been downloaded. If a file exists in storage but not in the manifest, it's orphaned. If it's in the manifest but not in storage, it needs re-downloading.
-4. **Corrections**: When BRREG replaces a regnskap (new `journalnr` for same orgnr+year), preserve the old file under `corrections/` and download the new one. The manifest tracks both via `is_correction` and `journalnr`.
-5. **Checkpointing**: The `SyncEngine` must checkpoint every N items (configurable, default 1000). On restart, it resumes from the checkpoint. This enables safe operation under GitHub Actions' 6-hour time limit.
+2. **Storage is abstracted** via fsspec. Never import `boto3` or `google.cloud.storage` directly.
+3. **The manifest is the source of truth** for what has been downloaded.
+4. **Corrections**: When `(orgnr, year)` re-enters the fast lane (via patch), the engine re-downloads and compares hashes. If different, saves as a new version (`_v2`, `_v3`).
+5. **Compaction is manual**: Call `compact` to clean up completed orderflow entries. This is not done automatically during sync.
+6. **Checkpointing**: The `SyncEngine` checkpoints every N items (configurable). On restart, it resumes from the checkpoint.
 
 ### Coding Standards
 
 - Python 3.11+
 - Type hints on all public functions
-- No comments in code — use descriptive names and docstrings
 - `ruff` for linting, `mypy --strict` for type checking
 - Tests use `pytest` with `pytest-asyncio` and `aioresponses` for HTTP mocking
 - No `print()` — use `structlog` for all output
@@ -52,34 +71,22 @@ All source modules have full implementations with no stubs. The package is ready
 ### Running
 
 ```bash
-# Install with uv
 uv sync --frozen
-
-# Run tests
 uv run pytest
-
-# Run CLI
 uv run brreg-regnskap --help
-uv run brreg-regnskap sync ./local-mirror
-uv run brreg-regnskap sync s3://my-bucket/brreg
-uv run brreg-regnskap sync gs://my-bucket/brreg
-uv run brreg-regnskap status s3://my-bucket/brreg
 ```
 
 ### BRREG API Quick Reference
 
-No authentication required. No documented rate limits. Be conservative (10 req/s).
+No authentication required. Be conservative with rate limits (3 req/s default).
 
 | What | URL |
 |------|-----|
 | Bulk entity dump | `GET https://data.brreg.no/enhetsregisteret/api/enheter/lastned` |
-| Single entity | `GET https://data.brreg.no/enhetsregisteret/api/enheter/{orgnr}` |
-| Entity updates | `GET https://data.brreg.no/enhetsregisteret/api/oppdateringer/enheter?oppdateringsid={id}&includeChanges=true` |
+| Entity updates | `GET https://data.brreg.no/enhetsregisteret/api/oppdateringer/enheter?dato={date}&includeChanges=true` |
 | Latest regnskap JSON | `GET https://data.brreg.no/regnskapsregisteret/regnskap/{orgnr}` |
 | Available years | `GET https://data.brreg.no/regnskapsregisteret/regnskap/aarsregnskap/kopi/{orgnr}/aar` |
 | PDF annual report | `GET https://data.brreg.no/regnskapsregisteret/regnskap/aarsregnskap/kopi/{orgnr}/{year}` |
-
-Entity dump Accept header: `application/vnd.brreg.enhetsregisteret.enhet.v2+json`
 
 ### Test Fixtures
 
@@ -88,16 +95,9 @@ Place real BRREG API response samples in `tests/fixtures/`:
 - `regnskap_964118191.json` — Mowi ASA regnskap response
 - `years_964118191.json` — `["2011","2012",...,"2024"]`
 
-Use these for model parsing tests. Do NOT make live API calls in tests.
-
-### Environment Variables
-
-See `.env.example` for all configurable values. The `BRREG_STORAGE_PATH` variable is required — everything else has sensible defaults.
-
 ### GitHub Actions
 
-Two workflows:
-- `ci.yml` — runs on PR/push, lints and tests
-- `sync.yml` — runs on schedule or manual dispatch, executes the sync
-
-The sync workflow uses a dynamic matrix strategy. See `scripts/generate_matrix.py` for the planning logic.
+Three workflows:
+- `ci.yml` — runs on PR/push, lints + type checks + tests
+- `sync.yml` — supports `setup`, `patch`, and `sync` commands; sync runs in parallel across 10 shards
+- `gcs-sync.yml` — GCS bucket mirroring via `gsutil rsync`

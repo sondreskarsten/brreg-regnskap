@@ -5,17 +5,14 @@ on:
     - cron: '0 3 * * 1'  # Weekly Monday 03:00 UTC
   workflow_dispatch:
     inputs:
-      mode:
-        description: 'Sync mode'
+      command:
+        description: 'Command to run'
         type: choice
         options:
-          - full
-          - incremental
-        default: incremental
-      max_parallel:
-        description: 'Max parallel jobs'
-        type: number
-        default: 5
+          - sync
+          - setup
+          - patch
+        default: sync
 
 # Ensure only one sync runs at a time
 concurrency:
@@ -27,15 +24,15 @@ permissions:
   contents: read
 
 env:
-  STORAGE_PATH: ${{ vars.BRREG_STORAGE_PATH || 's3://brreg-regnskap/data' }}
+  STORAGE_PATH: ${{ vars.BRREG_STORAGE_PATH || 'gs://brreg-regnskap/data' }}
 
 jobs:
   plan:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
-      mode: ${{ steps.gen.outputs.mode }}
       provider: ${{ steps.detect.outputs.provider }}
+      command: ${{ steps.cmd.outputs.command }}
     steps:
       - uses: actions/checkout@v4
 
@@ -48,51 +45,106 @@ jobs:
             echo "provider=s3" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Set command
+        id: cmd
+        run: echo "command=${{ inputs.command || 'sync' }}" >> "$GITHUB_OUTPUT"
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Generate matrix
+        id: gen
+        run: |
+          uv sync --frozen
+          uv run python scripts/generate_matrix.py --storage-path "$STORAGE_PATH"
+
+  # Setup runs as a single job (downloads bulk dump, seeds orderflow)
+  setup:
+    needs: plan
+    if: needs.plan.outputs.command == 'setup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
       # --- AWS ---
       - uses: aws-actions/configure-aws-credentials@v4
-        if: steps.detect.outputs.provider == 's3'
+        if: needs.plan.outputs.provider == 's3'
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'eu-north-1' }}
 
       # --- GCS ---
       - uses: google-github-actions/auth@v2
-        if: steps.detect.outputs.provider == 'gcs'
+        if: needs.plan.outputs.provider == 'gcs'
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Install
         run: |
-          if [[ "${{ steps.detect.outputs.provider }}" == "gcs" ]]; then
+          if [[ "${{ needs.plan.outputs.provider }}" == "gcs" ]]; then
             uv sync --frozen --extra gcs
           else
             uv sync --frozen --extra s3
           fi
 
-      - name: Generate matrix
-        id: gen
-        run: |
-          uv run python scripts/generate_matrix.py \
-            --storage-path "$STORAGE_PATH" \
-            --mode "${{ inputs.mode || 'incremental' }}"
+      - name: Run setup
+        run: uv run brreg-regnskap setup "$STORAGE_PATH"
 
-  process:
+  # Patch runs as a single job (polls BRREG updates API)
+  patch:
     needs: plan
-    if: needs.plan.outputs.matrix != '{"include":[]}'
+    if: needs.plan.outputs.command == 'patch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      # --- AWS ---
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: needs.plan.outputs.provider == 's3'
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'eu-north-1' }}
+
+      # --- GCS ---
+      - uses: google-github-actions/auth@v2
+        if: needs.plan.outputs.provider == 'gcs'
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install
+        run: |
+          if [[ "${{ needs.plan.outputs.provider }}" == "gcs" ]]; then
+            uv sync --frozen --extra gcs
+          else
+            uv sync --frozen --extra s3
+          fi
+
+      - name: Run patch
+        run: uv run brreg-regnskap patch "$STORAGE_PATH"
+
+  # Sync runs in parallel across 10 shards
+  sync:
+    needs: plan
+    if: needs.plan.outputs.command == 'sync'
     runs-on: ubuntu-latest
     timeout-minutes: 330
     strategy:
       fail-fast: false
-      max-parallel: ${{ fromJSON(inputs.max_parallel || '5') }}
+      max-parallel: 5
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
@@ -122,19 +174,17 @@ jobs:
       - name: Sync shard
         run: |
           uv run brreg-regnskap sync "$STORAGE_PATH" \
-            --mode ${{ needs.plan.outputs.mode }} \
-            --range-start "${{ matrix.start }}" \
-            --range-end "${{ matrix.end }}" \
+            --shard ${{ matrix.shard }} \
             --max-runtime 300 \
             --log-level INFO
 
+  # Merge shard manifests after all sync jobs complete
   merge:
-    needs: [plan, process]
-    if: always() && needs.plan.result == 'success'
+    needs: [plan, sync]
+    if: always() && needs.plan.result == 'success' && needs.plan.outputs.command == 'sync'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
