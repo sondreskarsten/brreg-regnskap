@@ -101,7 +101,7 @@ jobs:
     needs: plan
     if: needs.plan.outputs.command == 'patch'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v7
