@@ -153,7 +153,7 @@ class EnhetsregisteretClient:
         self,
         since_date: str,
     ) -> AsyncIterator[tuple[EnhetUpdate, int | None]]:
-        cursor = 0
+        cursor = 1
         while True:
             params: dict[str, str] = {
                 "oppdateringsid": str(cursor),
@@ -161,7 +161,8 @@ class EnhetsregisteretClient:
                 "includeChanges": "true",
             }
             url = f"{BASE_URL}/oppdateringer/enheter"
-            async with self.session.get(url, params=params) as resp:
+            headers = {"Accept": "application/json"}
+            async with self.session.get(url, params=params, headers=headers) as resp:
                 resp.raise_for_status()
                 data = await resp.json()
 

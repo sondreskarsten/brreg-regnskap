@@ -284,14 +284,24 @@ async def _patch_async(settings: Settings, storage: StorageBackend) -> None:
 
 
 def _last_patch_date(storage: StorageBackend, settings: Settings) -> str:
-    """Determine the date to poll updates from."""
+    """Determine the date to poll updates from.
+
+    BRREG requires ISO format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
+    """
     from datetime import UTC, datetime
 
     if storage.exists(settings.etag_path):
         raw = storage.read_bytes(settings.etag_path)
         data = json.loads(raw)
-        return str(data.get("dump_date", datetime.now(UTC).strftime("%Y-%m-%d")))
-    return datetime.now(UTC).strftime("%Y-%m-%d")
+        dump_date = data.get("dump_date", "")
+        if dump_date:
+            # dump_date is YYYYMMDD format from setup
+            try:
+                dt = datetime.strptime(dump_date, "%Y%m%d").replace(tzinfo=UTC)
+                return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            except ValueError:
+                pass
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
 # ── status ────────────────────────────────────────────────────────
