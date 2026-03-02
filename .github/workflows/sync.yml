@@ -2,7 +2,8 @@ name: BRREG Sync
 
 on:
   schedule:
-    - cron: '0 3 * * 1'  # Weekly Monday 03:00 UTC
+    - cron: '0 2 * * 1'  # Weekly Monday 02:00 UTC — patch (discover new filings)
+    - cron: '0 5 * * 1'  # Weekly Monday 05:00 UTC — sync (download + merge)
   workflow_dispatch:
     inputs:
       command:
@@ -47,7 +48,14 @@ jobs:
 
       - name: Set command
         id: cmd
-        run: echo "command=${{ inputs.command || 'sync' }}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ -n "${{ inputs.command }}" ]]; then
+            echo "command=${{ inputs.command }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event.schedule }}" == "0 2 * * 1" ]]; then
+            echo "command=patch" >> "$GITHUB_OUTPUT"
+          else
+            echo "command=sync" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -183,6 +191,7 @@ jobs:
     needs: [plan, sync]
     if: always() && needs.plan.result == 'success' && needs.plan.outputs.command == 'sync'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v7
