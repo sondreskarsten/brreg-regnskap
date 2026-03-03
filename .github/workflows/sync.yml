@@ -2,8 +2,8 @@ name: BRREG Sync
 
 on:
   schedule:
-    - cron: '0 2 * * 1'  # Weekly Monday 02:00 UTC — patch (discover new filings)
-    - cron: '0 5 * * 1'  # Weekly Monday 05:00 UTC — sync (download + merge)
+    - cron: '0 2 * * 1'  # Weekly Monday 02:00 UTC - patch (discover new filings)
+    - cron: '0 5 * * 1'  # Weekly Monday 05:00 UTC - sync (download + merge)
   workflow_dispatch:
     inputs:
       command:
