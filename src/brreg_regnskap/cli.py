@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from typing import TYPE_CHECKING
 
 import structlog
@@ -80,6 +81,8 @@ def _build_settings(
             shard_digit = claim_shard(tmp_storage, storage_path.rstrip("/"))
         else:
             shard_digit = int(shard)
+    elif (cr_idx := os.environ.get("CLOUD_RUN_TASK_INDEX")) is not None:
+        shard_digit = int(cr_idx)
 
     overrides: dict[str, object] = {
         "storage_path": storage_path,
