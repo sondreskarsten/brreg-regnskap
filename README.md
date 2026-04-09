@@ -163,6 +163,33 @@ gh workflow run sync.yml -f command=sync
 gh workflow run sync.yml -f command=patch
 ```
 
+## Cloud Run Deployment
+
+```bash
+# Build and push image
+gcloud builds submit --tag europe-north1-docker.pkg.dev/sondreskarsten-d7d14/r-images/brreg-regnskap:latest
+
+# Jobs reference this image:
+#   regnskap-sync-{0-9}   — sharded sync workers (0,12 or 6,18 UTC)
+#   regnskap-backfill      — backfill dissolved/historical entities
+```
+
+## Known Issues
+
+### BRREG HTTP 406 on PDF download (March 2026+)
+
+BRREG started returning HTTP 406 for `Accept: application/pdf` on the PDF copy endpoint. Fix: use `Accept: application/octet-stream` instead — response `content-type` is still `application/pdf`. Omitting the Accept header entirely also works. Fixed in `regnskapsregisteret.py` as of 2026-04-09.
+
+## Note Extraction
+
+The `note_extraction` module extracts structured disclosures from parsed annual accounts text (via ParseExtract API). Currently targets klientkonto/klientmidler identification but detects bundne midler, nettopresentasjon, inkasso forskrift, felleskostnader, and forretningsfører notes.
+
+```bash
+python -m brreg_regnskap.extract_notes --orgnrs 984272170 --years 2023,2024 --output notes.parquet
+```
+
+Requires `PARSEEXTRACT_API_KEY` environment variable. Note: `requests` package is an undeclared runtime dependency for this module.
+
 ## Data Source
 
 All data is from [Brønnøysundregistrene](https://data.brreg.no/) open APIs under the [NLOD 2.0](https://data.norge.no/nlod/en/2.0) license. No authentication required. The package self-throttles to 3 req/s by default.
