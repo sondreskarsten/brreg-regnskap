@@ -35,7 +35,7 @@ class NoteExtraction:
 
 
 _SEPARATORS = re.compile(r"[\s\xa0]")
-_TABLE_ROW_RE = re.compile(r"\|\s*(.+?)\s*\|\s*([\d\s]{4,})\s*\|")
+_TABLE_ROW_RE = re.compile(r"\|\s*(.+?)\s*\|\s*(-?[\d\s]{4,})\s*\|")
 _LARGE_NUM_RE = re.compile(r"(?<!\d)([\d]{4,}(?:[\s\xa0]\d{3})*)\b")
 
 
@@ -49,12 +49,12 @@ def _clean_amount(raw: str) -> float | None:
     return val
 
 
-def _find_table_amount(text: str, row_label: str) -> float | None:
+def _find_table_amount(text: str, row_label: str, signed: bool = False) -> float | None:
     for m in _TABLE_ROW_RE.finditer(text):
         if row_label.lower() in m.group(1).lower():
             val = _clean_amount(m.group(2))
             if val is not None and abs(val) > 5000 and not (1990 <= abs(val) <= 2030):
-                return abs(val)
+                return val if signed else abs(val)
     return None
 
 
@@ -99,8 +99,8 @@ def extract_notes(orgnr: str, year: int, pages: list[str] | str) -> NoteExtracti
             or _find_table_amount(full, "Klientmidler")
         )
         result.klientansvar_amount = (
-            _find_table_amount(full, "Klientansvar")
-            or _find_table_amount(full, "Klientgjeld")
+            _find_table_amount(full, "Klientansvar", signed=True)
+            or _find_table_amount(full, "Klientgjeld", signed=True)
         )
         if result.klientmidler_amount and result.klientansvar_amount:
             result.klientkonto_balance = result.klientmidler_amount - abs(result.klientansvar_amount)
