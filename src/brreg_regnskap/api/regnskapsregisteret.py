@@ -15,6 +15,8 @@ Implementation notes:
     - PDF download: GET https://data.brreg.no/regnskapsregisteret/regnskap/aarsregnskap/kopi/{orgnr}/{year}
       Returns binary PDF. May return 404 if the year is not available.
       Not all years listed in the years endpoint have PDFs available.
+      NOTE: As of ~March 2026, BRREG returns HTTP 406 for Accept: application/pdf.
+      Use Accept: application/octet-stream instead (response content-type is still application/pdf).
     - All methods are async using aiohttp.
     - HTTP 404 on PDF means the PDF is not (yet) available — return None, don't raise.
     - HTTP 404 on regnskap JSON means the company has no registered accounts — return None.
@@ -123,7 +125,7 @@ class RegnskapsregisteretClient:
         Returns raw PDF bytes on success.
         """
         url = f"{BASE_URL}/regnskap/aarsregnskap/kopi/{orgnr}/{year}"
-        headers = {"Accept": "application/pdf"}
+        headers = {"Accept": "application/octet-stream"}
         async with self.session.get(url, headers=headers) as resp:
             if resp.status == 404:
                 return None
