@@ -26,9 +26,10 @@ _AMOUNT_RE = re.compile(r"(-?\d[\d\s\xa0]{2,})")
 _SEPARATORS = re.compile(r"[\s\xa0]")
 
 SECTION_MARKERS = {
-    "pnl": ["RESULTATREGNSKAP"],
-    "assets": ["BALANSE - EIENDELER", "BALANSE\nEIENDELER"],
-    "equity_debt": ["BALANSE - EGENKAPITAL OG GJELD", "EGENKAPITAL OG GJELD"],
+    "pnl": ["RESULTATREGNSKAP", "Driftsinntekter og driftskostnader"],
+    "assets": ["BALANSE - EIENDELER", "BALANSE\nEIENDELER", "Eendeler", "Eiendeler | Note"],
+    "equity_debt": ["BALANSE - EGENKAPITAL OG GJELD", "EGENKAPITAL OG GJELD",
+                     "Egenkapital og gjeld | Note"],
     "notes": ["NOTEOPPLYSNINGER", "Noter til", "Note 0", "Note 1"],
 }
 
@@ -141,11 +142,21 @@ def _find_section_boundaries(text: str) -> dict[str, int]:
     boundaries = {}
     low = text.lower()
     for section, markers in SECTION_MARKERS.items():
+        candidates = []
         for marker in markers:
             idx = low.find(marker.lower())
-            if idx >= 0:
-                if section not in boundaries or idx < boundaries[section]:
-                    boundaries[section] = idx
+            while idx >= 0:
+                candidates.append(idx)
+                idx = low.find(marker.lower(), idx + len(marker))
+        if not candidates:
+            continue
+        best = candidates[0]
+        for c in candidates:
+            lookahead = text[c:c + 500]
+            if lookahead.count("|") >= 6:
+                best = c
+                break
+        boundaries[section] = best
     return boundaries
 
 
@@ -155,12 +166,16 @@ def _extract_section(text: str, start: int, end: int) -> dict[str, tuple[float |
 
     for line in chunk.split("\n"):
         line = line.strip()
-        if not line or line.startswith("---") or line.startswith("Beløp i"):
+        if "|" not in line:
             continue
-        if line.startswith("Utskriftsdato") or line.startswith("Organisasjonsnr"):
+        if line.startswith("|---") or line.startswith("---"):
             continue
 
-        label = _normalize_label(line.split("|")[1] if "|" in line else line)
+        parts = line.split("|")
+        if len(parts) < 3:
+            continue
+
+        label = _normalize_label(parts[1])
         if not label or len(label) < 3:
             continue
 
@@ -174,6 +189,8 @@ def _extract_section(text: str, start: int, end: int) -> dict[str, tuple[float |
             continue
 
         amounts = _find_amounts_on_line(line)
+        amounts = [a for a in amounts if abs(a) >= 100 or a == 0]
+        amounts = [a for a in amounts if abs(a) < 1_000_000_000_000]
         current = amounts[0] if len(amounts) >= 1 else None
         prior = amounts[1] if len(amounts) >= 2 else None
 
