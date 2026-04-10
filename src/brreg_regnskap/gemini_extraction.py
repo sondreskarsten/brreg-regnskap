@@ -36,6 +36,9 @@ STRUCTURE: The PDF has two parts:
 CRITICAL RULES:
 - Extract P&L and BS from BOTH sections separately. All amounts in NOK (not thousands).
 - Check for "Beløp i: 1000 NOK" or "alle tall i tusen" — if found, multiply all amounts by 1000.
+- NUMBER FORMATS: Three formats coexist in the same PDF. Tabular: "1 364 000" (space-delimited). Narrative: "128.689,-" (dot-delimited, ",- " suffix means zero øre — treat as integer). Textual: "1,4 millioner" or "ca 700 000" (word multipliers and approximations). Extract exact amounts from tables; for narrative/årsberetning amounts, extract the value and convert word multipliers (millioner=×1000000, tusen=×1000).
+- KONTANTSTRØMOPPSTILLING: Large entities (regler_smaa_foretak=false) may include a cash flow statement. If present, extract operating/investing/financing cash flows into a note with type="table". NRS 8 entities are exempt — absence is expected, not an error.
+- ÅRSBERETNING: The board report contains numerical data not in the financial statements: insurance premiums, dispute amounts, cost overruns, maintenance costs. Extract as a note with type="mixed" and amounts for any quantified items. These contextual figures explain P&L anomalies.
 - Costs as POSITIVE values. Negative values appear as either minus signs (-5255) or parentheses ((5 255)) — treat both as negative.
 - For entities with both KONSERN and SELSKAP statements, extract SELSKAP into the "company" object. If konsern statements exist, extract them into a separate "konsern" object with the same field structure. Check "Morselskap i konsern" on Generell Informasjon: if "Ja", look for "Noteopplysninger - SELSKAP" vs "Konsernregnskap"/"Konsernresultatregnskap"/"Konsernbalanse" headers to distinguish which is which.
 - Extract notes from the COMPANY section. If BRREG wrapper also has notes, extract those too into the noter array with a flag indicating source (add "source":"brreg" or "source":"company" to each note object).
