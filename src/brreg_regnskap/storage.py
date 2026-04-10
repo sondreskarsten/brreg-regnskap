@@ -52,8 +52,11 @@ class StorageBackend:
     def from_settings(cls, settings: Settings) -> StorageBackend:
         """Create a StorageBackend from application settings.
 
-        Parses the storage_path prefix to determine the filesystem type.
+        Uses google.cloud.storage SDK for GCS (avoids gcsfs/aiohttp DNS issues
+        in proxy environments). Falls back to fsspec for S3 and local.
         """
+        if settings.backend_type == StorageBackendType.GCS:
+            return GCSNativeBackend(root_path=settings.storage_path)
         fs, _ = fsspec.core.url_to_fs(settings.storage_path)
         return cls(fs=fs, root_path=settings.storage_path)
 
@@ -220,3 +223,92 @@ class StorageBackend:
                 "  - Workload identity in GitHub Actions"
             )
         return "Local filesystem — no credentials needed."
+
+
+class GCSNativeBackend(StorageBackend):
+    """GCS backend using google.cloud.storage SDK directly.
+
+    Avoids gcsfs/aiohttp which fail in proxy environments due to
+    aiohttp DNS resolution bypassing HTTP_PROXY.
+    """
+
+    def __init__(self, root_path: str) -> None:
+        self._root_path = root_path
+        self._protocol = "gcs"
+        stripped = root_path.replace("gs://", "")
+        parts = stripped.split("/", 1)
+        self._bucket_name = parts[0]
+        self._prefix = parts[1] if len(parts) > 1 else ""
+        self._fs = None
+        self._client = None
+
+    def _get_client(self):
+        if self._client is None:
+            from google.cloud import storage as gcs_storage
+            creds_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+            if creds_path:
+                from google.oauth2 import service_account
+                creds = service_account.Credentials.from_service_account_file(creds_path)
+                self._client = gcs_storage.Client(credentials=creds, project=creds.project_id)
+            else:
+                self._client = gcs_storage.Client()
+        return self._client
+
+    def _bucket(self):
+        return self._get_client().bucket(self._bucket_name)
+
+    def _to_blob_name(self, path: str) -> str:
+        for prefix in ("gs://", "gcs://"):
+            if path.startswith(prefix):
+                path = path[len(prefix):]
+        if path.startswith(self._bucket_name + "/"):
+            path = path[len(self._bucket_name) + 1:]
+        return path
+
+    def check_credentials(self) -> None:
+        try:
+            self._bucket().exists()
+        except Exception as exc:
+            raise CredentialError(
+                f"{self._credential_help_message(StorageBackendType.GCS)}\n\nOriginal error: {exc}"
+            ) from exc
+
+    def write_bytes(self, path: str, data: bytes) -> None:
+        blob_name = self._to_blob_name(path)
+        self._bucket().blob(blob_name).upload_from_string(data)
+
+    def read_bytes(self, path: str) -> bytes:
+        blob_name = self._to_blob_name(path)
+        blob = self._bucket().blob(blob_name)
+        if not blob.exists():
+            raise FileNotFoundError(f"No such file: {path}")
+        return blob.download_as_bytes()
+
+    def exists(self, path: str) -> bool:
+        blob_name = self._to_blob_name(path)
+        return self._bucket().blob(blob_name).exists()
+
+    def list_dir(self, prefix: str) -> list[str]:
+        blob_prefix = self._to_blob_name(prefix)
+        blobs = self._get_client().list_blobs(self._bucket_name, prefix=blob_prefix)
+        return [f"gs://{self._bucket_name}/{b.name}" for b in blobs]
+
+    def delete(self, path: str) -> None:
+        blob_name = self._to_blob_name(path)
+        blob = self._bucket().blob(blob_name)
+        with contextlib.suppress(Exception):
+            blob.delete()
+
+    def modified_time(self, path: str) -> datetime | None:
+        blob_name = self._to_blob_name(path)
+        blob = self._bucket().blob(blob_name)
+        blob.reload()
+        return blob.updated
+
+    def rename(self, src: str, dst: str) -> None:
+        src_name = self._to_blob_name(src)
+        dst_name = self._to_blob_name(dst)
+        bucket = self._bucket()
+        src_blob = bucket.blob(src_name)
+        bucket.copy_blob(src_blob, bucket, dst_name)
+        src_blob.delete()
