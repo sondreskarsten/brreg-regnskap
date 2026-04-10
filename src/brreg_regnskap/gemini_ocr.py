@@ -28,11 +28,19 @@ from google.oauth2 import service_account
 logger = logging.getLogger(__name__)
 
 OCR_PROMPT = (
-    "Return the full text content of every page in this PDF. "
-    "Separate pages with '---PAGE BREAK---'. "
-    "Preserve all numbers exactly as they appear. "
-    "Preserve table structure using pipe-delimited markdown format. "
-    "Do not summarize or interpret — transcribe everything visible on each page."
+    "You are a precision OCR transcription engine. "
+    "Transcribe ALL text from this scanned Norwegian financial document exactly as it appears on each page. "
+    "Separate pages with '---PAGE BREAK---'.\n\n"
+    "Rules:\n"
+    "- Transcribe character by character. Do NOT correct, rephrase, translate, or normalize any text.\n"
+    "- Preserve all Norwegian characters exactly: æ, ø, å, Æ, Ø, Å.\n"
+    "- Preserve all numbers exactly as printed, including thousand separators and decimal commas.\n"
+    "- For tables: output each row on a single line using | as column separator. "
+    "Do NOT add extra whitespace, padding, or dashes for column alignment.\n"
+    "  Example: Driftsinntekter | 1 | 1 234 567 | 987 654\n"
+    "- Include all headers, footers, page numbers, and footnotes.\n"
+    "- Mark genuinely illegible text with [?].\n"
+    "- Output ONLY the transcription, no commentary."
 )
 
 
@@ -44,6 +52,7 @@ class OCRResult:
     input_tokens: int
     output_tokens: int
     cost_usd: float
+    truncated: bool = False
 
     @property
     def full_text(self) -> str:
@@ -99,6 +108,10 @@ class GeminiOCR:
         data = resp.json()
 
         raw = data["candidates"][0]["content"]["parts"][0]["text"]
+        finish_reason = data["candidates"][0].get("finishReason", "STOP")
+        truncated = finish_reason == "MAX_TOKENS"
+        if truncated:
+            logger.warning("OCR output truncated (MAX_TOKENS) — document may be incomplete")
         usage = data.get("usageMetadata", {})
         in_tok = usage.get("promptTokenCount", 0)
         out_tok = usage.get("candidatesTokenCount", 0)
@@ -110,4 +123,5 @@ class GeminiOCR:
         return OCRResult(
             pages=pages, n_pages=n_pages, total_chars=len(raw),
             input_tokens=in_tok, output_tokens=out_tok, cost_usd=cost,
+            truncated=truncated,
         )
