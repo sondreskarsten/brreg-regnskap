@@ -146,6 +146,14 @@ def _consolidate_one(storage: StorageBackend, path: str, new_rows: list[dict],
         existing_rows.append(row)
 
     existing_rows.sort(key=lambda r: tuple(r.get(k, "") for k in key_cols))
+
+    all_keys = set()
+    for row in existing_rows:
+        all_keys.update(row.keys())
+    for row in existing_rows:
+        for k in all_keys:
+            row.setdefault(k, None)
+
     table = pa.Table.from_pylist(existing_rows)
     buf = io.BytesIO()
     pq.write_table(table, buf)
