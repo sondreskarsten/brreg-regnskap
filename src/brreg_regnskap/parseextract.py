@@ -31,7 +31,7 @@ class ParseExtractClient:
         self,
         api_key: str,
         base_url: str = "https://api.parseextract.com/v1",
-        pdf_option: str = "option_a",
+        pdf_option: str = "option_b",
         poll_interval: int = 15,
         max_poll_attempts: int = 30,
     ) -> None:
