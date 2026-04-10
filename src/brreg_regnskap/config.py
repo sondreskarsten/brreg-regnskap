@@ -119,9 +119,19 @@ class Settings(BaseSettings):
     def notes_json_path(self, orgnr: str, year: int) -> str:
         return f"{self.storage_path}/notes/{orgnr}/notes_{year}.json"
 
+    def regnskap_ocr_path(self, orgnr: str, year: int) -> str:
+        return f"{self.storage_path}/notes/{orgnr}/ocr_{year}.txt"
+
+    def regnskap_items_path(self, orgnr: str, year: int) -> str:
+        return f"{self.storage_path}/notes/{orgnr}/regnskap_{year}.json"
+
     @property
     def notes_consolidated_path(self) -> str:
         return f"{self.storage_path}/notes/extractions.parquet"
+
+    @property
+    def regnskap_consolidated_path(self) -> str:
+        return f"{self.storage_path}/notes/regnskap_items.parquet"
 
     # ── Orderflow paths ──────────────────────────────────────────────
 

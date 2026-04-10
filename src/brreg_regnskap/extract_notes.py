@@ -33,6 +33,7 @@ import pyarrow.parquet as pq
 
 from brreg_regnskap.config import Settings
 from brreg_regnskap.note_extraction import NoteExtraction, extract_notes, extractions_to_rows
+from brreg_regnskap.regnskap_extraction import RegnskapExtraction, extract_regnskap, regnskap_to_row
 from brreg_regnskap.parseextract import ParseExtractClient, ParseExtractError
 from brreg_regnskap.storage import StorageBackend
 
@@ -54,6 +55,41 @@ def _save_extraction(storage: StorageBackend, settings: Settings, extraction: No
     d = asdict(extraction)
     d["note_excerpts"] = "\n---\n".join(extraction.note_excerpts) if extraction.note_excerpts else None
     storage.write_bytes(path, json.dumps(d, ensure_ascii=False, indent=2, default=str).encode("utf-8"))
+
+
+def _save_ocr(storage: StorageBackend, settings: Settings, orgnr: str, year: int, pages: list[str]) -> None:
+    path = settings.regnskap_ocr_path(orgnr, year)
+    text = "\n\n---PAGE BREAK---\n\n".join(pages)
+    storage.write_bytes(path, text.encode("utf-8"))
+
+
+def _save_regnskap(storage: StorageBackend, settings: Settings, extraction: RegnskapExtraction) -> None:
+    path = settings.regnskap_items_path(extraction.orgnr, extraction.year)
+    storage.write_bytes(path, json.dumps(regnskap_to_row(extraction), ensure_ascii=False, indent=2).encode("utf-8"))
+
+
+def _load_regnskap(storage: StorageBackend, settings: Settings, orgnr: str, year: int) -> RegnskapExtraction | None:
+    path = settings.regnskap_items_path(orgnr, year)
+    if not storage.exists(path):
+        return None
+    raw = storage.read_bytes(path)
+    data = json.loads(raw)
+    line_items = {}
+    prior_year_items = {}
+    meta = {}
+    for k, v in data.items():
+        if k in ("orgnr", "year", "revenue_label", "sections_found"):
+            meta[k] = v
+        elif k.endswith("_prior"):
+            prior_year_items[k.removesuffix("_prior")] = v
+        else:
+            line_items[k] = v
+    sections = meta.get("sections_found", "").split(",") if meta.get("sections_found") else []
+    return RegnskapExtraction(
+        orgnr=orgnr, year=year,
+        line_items=line_items, prior_year_items=prior_year_items,
+        revenue_label=meta.get("revenue_label"), sections_found=sections,
+    )
 
 
 def _download_pdf(storage: StorageBackend, settings: Settings, orgnr: str, year: int) -> bytes | None:
@@ -82,30 +118,39 @@ def _list_available_years(storage: StorageBackend, settings: Settings, orgnr: st
     return sorted(years)
 
 
-def _consolidate(storage: StorageBackend, settings: Settings, results: list[NoteExtraction]) -> None:
-    if not results:
-        return
+def _consolidate(storage: StorageBackend, settings: Settings,
+                 note_results: list[NoteExtraction],
+                 regnskap_results: list[RegnskapExtraction]) -> None:
+    if note_results:
+        _consolidate_one(storage, settings.notes_consolidated_path,
+                         extractions_to_rows(note_results), key_cols=("orgnr", "year"))
+
+    if regnskap_results:
+        _consolidate_one(storage, settings.regnskap_consolidated_path,
+                         [regnskap_to_row(r) for r in regnskap_results], key_cols=("orgnr", "year"))
+
+
+def _consolidate_one(storage: StorageBackend, path: str, new_rows: list[dict],
+                     key_cols: tuple[str, ...]) -> None:
     existing_rows: list[dict] = []
-    consolidated_path = settings.notes_consolidated_path
-    if storage.exists(consolidated_path):
-        raw = storage.read_bytes(consolidated_path)
+    if storage.exists(path):
+        raw = storage.read_bytes(path)
         existing = pq.read_table(io.BytesIO(raw))
         existing_rows = existing.to_pylist()
 
-    existing_keys = {(r["orgnr"], r["year"]) for r in existing_rows}
-    new_rows = extractions_to_rows(results)
+    existing_keys = {tuple(r[k] for k in key_cols) for r in existing_rows}
     for row in new_rows:
-        key = (row["orgnr"], row["year"])
+        key = tuple(row[k] for k in key_cols)
         if key in existing_keys:
-            existing_rows = [r for r in existing_rows if (r["orgnr"], r["year"]) != key]
+            existing_rows = [r for r in existing_rows if tuple(r[k] for k in key_cols) != key]
         existing_rows.append(row)
 
-    existing_rows.sort(key=lambda r: (r["orgnr"], r["year"]))
+    existing_rows.sort(key=lambda r: tuple(r.get(k, "") for k in key_cols))
     table = pa.Table.from_pylist(existing_rows)
     buf = io.BytesIO()
     pq.write_table(table, buf)
-    storage.write_bytes(consolidated_path, buf.getvalue())
-    print(f"Consolidated {len(existing_rows)} rows → {consolidated_path}", file=sys.stderr)
+    storage.write_bytes(path, buf.getvalue())
+    print(f"Consolidated {len(existing_rows)} rows → {path}", file=sys.stderr)
 
 
 def run_extraction(
@@ -115,13 +160,14 @@ def run_extraction(
     settings: Settings | None = None,
     force: bool = False,
     delay: float = 2.0,
-) -> list[NoteExtraction]:
+) -> tuple[list[NoteExtraction], list[RegnskapExtraction]]:
 
     if settings is None:
         settings = Settings()
     storage = StorageBackend.from_settings(settings)
     pe = ParseExtractClient(api_key=api_key)
-    results: list[NoteExtraction] = []
+    note_results: list[NoteExtraction] = []
+    regnskap_results: list[RegnskapExtraction] = []
 
     total = len(orgnrs) * len(years)
     done = 0
@@ -132,9 +178,11 @@ def run_extraction(
             done += 1
 
             if not force:
-                existing = _load_existing(storage, settings, orgnr, year)
-                if existing is not None:
-                    results.append(existing)
+                existing_note = _load_existing(storage, settings, orgnr, year)
+                existing_regn = _load_regnskap(storage, settings, orgnr, year)
+                if existing_note is not None and existing_regn is not None:
+                    note_results.append(existing_note)
+                    regnskap_results.append(existing_regn)
                     skipped += 1
                     print(f"[{done}/{total}] {orgnr}/{year}: cached", file=sys.stderr)
                     continue
@@ -147,24 +195,33 @@ def run_extraction(
             print(f"[{done}/{total}] {orgnr}/{year}: {len(pdf):,} bytes", end="", file=sys.stderr)
             try:
                 pages = pe.extract_bytes(pdf, filename=f"{orgnr}_{year}.pdf")
-                extraction = extract_notes(orgnr, year, pages)
-                results.append(extraction)
-                _save_extraction(storage, settings, extraction)
+
+                _save_ocr(storage, settings, orgnr, year, pages)
+
+                note_ext = extract_notes(orgnr, year, pages)
+                note_results.append(note_ext)
+                _save_extraction(storage, settings, note_ext)
+
+                regn_ext = extract_regnskap(orgnr, year, pages)
+                regnskap_results.append(regn_ext)
+                _save_regnskap(storage, settings, regn_ext)
+
                 flags = []
-                if extraction.has_klientmidler:
+                if note_ext.has_klientmidler:
                     flags.append("KLIENT")
-                if extraction.has_bundne_midler:
+                if note_ext.has_bundne_midler:
                     flags.append("BUNDNE")
-                if extraction.has_nettopresentasjon:
+                if note_ext.has_nettopresentasjon:
                     flags.append("NETTO")
-                if extraction.has_inkasso_forskrift:
+                if note_ext.has_inkasso_forskrift:
                     flags.append("INKASSO")
-                if extraction.has_felleskostnader:
+                if note_ext.has_felleskostnader:
                     flags.append("FELLESK")
-                if extraction.has_forretningsforer:
+                if note_ext.has_forretningsforer:
                     flags.append("FORRF")
+                n_items = len(regn_ext.line_items)
                 flag_str = " [" + ",".join(flags) + "]" if flags else ""
-                print(f" → {len(pages)} pages{flag_str}", file=sys.stderr)
+                print(f" → {len(pages)} pages, {n_items} items{flag_str}", file=sys.stderr)
             except ParseExtractError as e:
                 print(f" → ERROR: {e}", file=sys.stderr)
             except Exception as e:
@@ -172,10 +229,10 @@ def run_extraction(
 
             time.sleep(delay)
 
-    _consolidate(storage, settings, results)
+    _consolidate(storage, settings, note_results, regnskap_results)
 
     print(f"\nDone: {done} total, {skipped} cached, {done - skipped} processed", file=sys.stderr)
-    return results
+    return note_results, regnskap_results
 
 
 def main() -> None:
@@ -207,7 +264,7 @@ def main() -> None:
 
     years = [int(y) for y in args.years.split(",")]
 
-    results = run_extraction(
+    note_results, regnskap_results = run_extraction(
         orgnrs=orgnrs,
         years=years,
         api_key=api_key,
@@ -217,12 +274,17 @@ def main() -> None:
     )
 
     if args.output:
-        rows = extractions_to_rows(results)
+        rows = extractions_to_rows(note_results)
         table = pa.Table.from_pylist(rows)
         pq.write_table(table, args.output)
         print(f"Saved {len(rows)} rows to {args.output}", file=sys.stderr)
 
-    print(json.dumps(extractions_to_rows(results), indent=2, ensure_ascii=False, default=str))
+    combined = []
+    for n, r in zip(note_results, regnskap_results):
+        row = {**asdict(n), **regnskap_to_row(r)}
+        row["note_excerpts"] = "\n---\n".join(n.note_excerpts) if n.note_excerpts else None
+        combined.append(row)
+    print(json.dumps(combined, indent=2, ensure_ascii=False, default=str))
 
 
 if __name__ == "__main__":
