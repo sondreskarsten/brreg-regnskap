@@ -146,22 +146,17 @@ class GeminiResult:
         return rows
 
 
-def _extract_page_images(pdf_bytes: bytes) -> list[dict]:
+def _prepare_pdf_content(pdf_bytes: bytes) -> tuple[list[dict], int]:
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    images = []
-    for i in range(doc.page_count):
-        page_imgs = doc[i].get_images()
-        if page_imgs:
-            img = doc.extract_image(page_imgs[0][0])
-            images.append({
-                "inlineData": {
-                    "mimeType": f"image/{img['ext']}",
-                    "data": base64.b64encode(img["image"]).decode(),
-                }
-            })
     n_pages = doc.page_count
     doc.close()
-    return images, n_pages
+    content = [{
+        "inlineData": {
+            "mimeType": "application/pdf",
+            "data": base64.b64encode(pdf_bytes).decode(),
+        }
+    }]
+    return content, n_pages
 
 
 class GeminiExtractor:
@@ -199,9 +194,9 @@ class GeminiExtractor:
 
     def extract_pdf(self, pdf_bytes: bytes, orgnr: str, year: int) -> GeminiResult:
         self._refresh_if_needed()
-        images, n_pages = _extract_page_images(pdf_bytes)
+        content, n_pages = _prepare_pdf_content(pdf_bytes)
 
-        parts = images + [{"text": PROMPT}]
+        parts = content + [{"text": PROMPT}]
         body = {
             "contents": [{"role": "user", "parts": parts}],
             "generationConfig": {
