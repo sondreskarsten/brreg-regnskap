@@ -30,31 +30,39 @@ logger = logging.getLogger(__name__)
 PROMPT = """Extract ALL financial data from this Norwegian årsregnskap PDF.
 
 STRUCTURE: The PDF has two parts:
-1. BRREG WRAPPER (first few pages): "Utskriftsdato"/"Brønnøysundregistrene" footers. Standardized P&L + BS.
-2. COMPANY SECTION (remaining pages): Company's own annual report with P&L, BS, notes, revisjonsberetning.
+1. BRREG WRAPPER (first pages): Identified by "Utskriftsdato"/"Brønnøysundregistrene" footers and "Side X av Y" pagination. Contains Generell Informasjon, standardized P&L, BS, and sometimes basic notes.
+2. COMPANY SECTION (remaining pages): Company's own annual report — their P&L, BS, detailed notes, and possibly revisjonsberetning/årsberetning. Company pages may have centered/bolded headers and different formatting.
 
-INSTRUCTIONS:
-- Extract P&L and BS from BOTH sections. All amounts in NOK (not thousands). Costs as positive values.
-- For entities with both KONSERN and SELSKAP statements, extract SELSKAP.
-- Extract EVERY note disclosed in the company section as an array element.
-- Note titles, numbering, and content vary per entity — extract whatever is there.
-- Set fields to null if not found.
+CRITICAL RULES:
+- Extract P&L and BS from BOTH sections separately. All amounts in NOK (not thousands).
+- Check for "Beløp i: 1000 NOK" or "alle tall i tusen" — if found, multiply all amounts by 1000.
+- Costs as POSITIVE values. Negative values appear as either minus signs (-5255) or parentheses ((5 255)) — treat both as negative.
+- For entities with both KONSERN and SELSKAP statements, extract SELSKAP. Check "Morselskap i konsern" on Generell Informasjon: if "Ja", look for "Noteopplysninger - SELSKAP" header.
+- Extract notes ONLY from the COMPANY section (BRREG wrapper notes are simplified duplicates).
+- Some entities (Sameie, BRL) use "Fellesutgifter" instead of "Salgsinntekt" — map to annen_driftsinntekt.
+- Some entities have NO company P&L/BS (only BRREG wrapper + notes). Set company P&L/BS to null.
+- Some entities have "fravalgt revisjon" (opted out of audit) — no revisjonsberetning exists.
 
 Return JSON:
 {"split":{"brreg_last_page":4,"total_pages":13},
+"meta":{"morselskap_i_konsern":false,"regler_smaa_foretak":true,"fravalgt_revisjon":false,"amounts_unit":"NOK","regnskapsforer":null},
 "brreg":{"salgsinntekt":null,"annen_driftsinntekt":null,"sum_driftsinntekter":null,"lonnskostnad":null,"avskrivning":null,"annen_driftskostnad":null,"sum_driftskostnader":null,"driftsresultat":null,"sum_finansinntekter":null,"sum_finanskostnader":null,"resultat_for_skatt":null,"skattekostnad":null,"aarsresultat":null,"sum_anleggsmidler":null,"kundefordringer":null,"bankinnskudd":null,"sum_omlopsmidler":null,"sum_eiendeler":null,"aksjekapital":null,"sum_egenkapital":null,"sum_langsiktig_gjeld":null,"leverandorgjeld":null,"sum_kortsiktig_gjeld":null,"sum_gjeld":null},
 "company":{"salgsinntekt":null,"annen_driftsinntekt":null,"sum_driftsinntekter":null,"lonnskostnad":null,"avskrivning":null,"annen_driftskostnad":null,"sum_driftskostnader":null,"driftsresultat":null,"renteinntekt_konsern":null,"annen_renteinntekt":null,"sum_finansinntekter":null,"rentekostnad_konsern":null,"annen_rentekostnad":null,"sum_finanskostnader":null,"resultat_for_skatt":null,"skattekostnad":null,"aarsresultat":null,"sum_anleggsmidler":null,"kundefordringer":null,"andre_fordringer":null,"bankinnskudd":null,"sum_omlopsmidler":null,"sum_eiendeler":null,"aksjekapital":null,"overkurs":null,"sum_innskutt_egenkapital":null,"annen_egenkapital":null,"sum_opptjent_egenkapital":null,"sum_egenkapital":null,"sum_langsiktig_gjeld":null,"leverandorgjeld":null,"betalbar_skatt":null,"skyldige_offentlige_avgifter":null,"annen_kortsiktig_gjeld":null,"sum_kortsiktig_gjeld":null,"sum_gjeld":null,"sum_egenkapital_gjeld":null},
 "noter":[{"nr":1,"tittel":"...","type":"narrative|table|mixed","amounts":{}}],
-"note_flags":{"has_klientmidler":false,"klientmidler_amount":null,"klientansvar_amount":null,"has_bundne_midler":false,"bundne_midler_amount":null,"has_pantstillelser":false,"pantstillelser_bokfort":null,"pantstillelser_gjeld":null,"has_kassekreditt":false,"kassekredittlimit":null,"has_konsernmellomvaerende":false,"antall_ansatte":null,"antall_aarsverk":null,"revisjonshonorar_revisjon":null,"revisjonshonorar_andre":null,"utbytte":null,"konsernbidrag":null,"otp_pliktig":null,"fortsatt_drift_tvil":false,"hendelser_etter_balansedagen":null},
-"revisjon":{"revisor":null,"firma":null,"konklusjon":"uten_forbehold","fravalgt":false}}
+"note_flags":{"has_klientmidler":false,"klientmidler_amount":null,"klientansvar_amount":null,"has_bundne_midler":false,"bundne_midler_amount":null,"skattetrekkskonto":null,"has_pantstillelser":false,"pantstillelser_bokfort":null,"pantstillelser_gjeld":null,"has_kassekreditt":false,"kassekredittlimit":null,"kassekreditt_benyttet":null,"has_konsernmellomvaerende":false,"antall_ansatte":null,"antall_aarsverk":null,"revisjonshonorar_revisjon":null,"revisjonshonorar_andre":null,"utbytte":null,"konsernbidrag":null,"otp_pliktig":null,"fortsatt_drift_tvil":false,"hendelser_etter_balansedagen":null},
+"revisjon":{"revisor":null,"firma":null,"konklusjon":null,"fravalgt":false,"presisering":null}}
 
-NOTES INSTRUCTIONS:
+NOTES RULES:
 - "nr": note number as shown in the document
-- "tittel": exact title from the document (keep original language)
+- "tittel": exact title from the document (keep original language, Norwegian or English)
 - "type": "narrative" (free text only), "table" (has numerical data), or "mixed"
-- "amounts": for table/mixed notes, extract key-value pairs of CURRENT YEAR amounts only. Use descriptive snake_case keys. Omit for narrative notes.
+- "amounts": for table/mixed notes, extract key-value pairs of CURRENT YEAR amounts only. Use descriptive snake_case keys. Empty {} for narrative notes.
 - Do NOT include text summaries — only amounts. This keeps output compact.
-- note_flags: derived signals scanned across ALL notes. Set boolean flags and amounts."""
+- Klientmidler may be embedded within a "Bankinnskudd" note rather than its own note — scan all bank/deposit notes for klientmidler mentions.
+- "Skattetrekkskonto (har ikke)" means entity has no employees — set skattetrekkskonto to 0 and antall_ansatte to 0.
+- note_flags: derived signals scanned across ALL notes and årsberetning.
+- revisjon.konklusjon: "uten_forbehold", "med_forbehold", "negativ", "kan_ikke_uttale_seg", or null if fravalgt.
+- revisjon.presisering: any emphasis of matter text (e.g., "vesentlig usikkerhet knyttet til fortsatt drift"), null if none."""
 
 
 @dataclass
@@ -70,6 +78,10 @@ class GeminiResult:
     @property
     def split_page(self) -> int:
         return self.raw_json.get("split", {}).get("brreg_last_page", 0)
+
+    @property
+    def meta(self) -> dict:
+        return self.raw_json.get("meta", {})
 
     @property
     def brreg(self) -> dict | None:
