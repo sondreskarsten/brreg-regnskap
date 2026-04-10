@@ -197,6 +197,18 @@ class GeminiExtractor:
         content, n_pages = _prepare_pdf_content(pdf_bytes)
 
         parts = content + [{"text": PROMPT}]
+        return self._call_gemini(parts, orgnr, year, n_pages)
+
+    def extract_text(self, ocr_pages: list[str], orgnr: str, year: int) -> GeminiResult:
+        self._refresh_if_needed()
+        n_pages = len(ocr_pages)
+        numbered = "\n\n".join(
+            f"=== PAGE {i+1} ===\n{page}" for i, page in enumerate(ocr_pages)
+        )
+        parts = [{"text": f"OCR text from a Norwegian årsregnskap PDF ({n_pages} pages):\n\n{numbered}\n\n{PROMPT}"}]
+        return self._call_gemini(parts, orgnr, year, n_pages)
+
+    def _call_gemini(self, parts: list[dict], orgnr: str, year: int, n_pages: int) -> GeminiResult:
         body = {
             "contents": [{"role": "user", "parts": parts}],
             "generationConfig": {
