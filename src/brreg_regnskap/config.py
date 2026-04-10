@@ -114,6 +114,15 @@ class Settings(BaseSettings):
     def entity_dump_path(self, date: str) -> str:
         return f"{self.storage_path}/entities/enheter_dump_{date}.json.gz"
 
+    # ── Note extraction paths ────────────────────────────────────────
+
+    def notes_json_path(self, orgnr: str, year: int) -> str:
+        return f"{self.storage_path}/notes/{orgnr}/notes_{year}.json"
+
+    @property
+    def notes_consolidated_path(self) -> str:
+        return f"{self.storage_path}/notes/extractions.parquet"
+
     # ── Orderflow paths ──────────────────────────────────────────────
 
     def orderflow_shard_path(self, digit: int) -> str:
