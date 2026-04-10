@@ -99,6 +99,15 @@ LINE_ITEM_MAP = {
 }
 
 
+COST_KEYS = {
+    "lonnskostnad", "varekostnad", "avskrivning", "nedskrivning",
+    "annen_driftskostnad", "sum_driftskostnader",
+    "annen_rentekostnad", "rentekostnad_konsern",
+    "annen_finanskostnad", "sum_finanskostnader",
+    "skattekostnad",
+}
+
+
 def _parse_amount(raw: str) -> float | None:
     cleaned = _SEPARATORS.sub("", raw.strip())
     neg = cleaned.startswith("-")
@@ -171,8 +180,8 @@ def _extract_section(text: str, start: int, end: int) -> dict[str, tuple[float |
         if line.startswith("|---") or line.startswith("---"):
             continue
 
-        parts = line.split("|")
-        if len(parts) < 3:
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) < 4:
             continue
 
         label = _normalize_label(parts[1])
@@ -188,11 +197,21 @@ def _extract_section(text: str, start: int, end: int) -> dict[str, tuple[float |
         if matched_key is None:
             continue
 
-        amounts = _find_amounts_on_line(line)
-        amounts = [a for a in amounts if abs(a) >= 100 or a == 0]
+        amounts = []
+        for p in parts[2:]:
+            vals = _find_amounts_on_line(p)
+            if vals:
+                amounts.append(vals[0])
+
         amounts = [a for a in amounts if abs(a) < 1_000_000_000_000]
         current = amounts[0] if len(amounts) >= 1 else None
         prior = amounts[1] if len(amounts) >= 2 else None
+
+        if matched_key in COST_KEYS:
+            if current is not None:
+                current = abs(current)
+            if prior is not None:
+                prior = abs(prior)
 
         if matched_key not in items or (current is not None and items[matched_key][0] is None):
             items[matched_key] = (current, prior)
