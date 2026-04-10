@@ -29,21 +29,32 @@ logger = logging.getLogger(__name__)
 
 PROMPT = """Extract ALL financial data from this Norwegian årsregnskap PDF.
 
-The PDF has two parts:
-PART 1 (BRREG): First few pages with "Utskriftsdato" / "Brønnøysundregistrene" footers — standardized P&L and BS.
-PART 2 (COMPANY): Company's own annual report — their own P&L, BS, notes, revisjonsberetning.
+STRUCTURE: The PDF has two parts:
+1. BRREG WRAPPER (first few pages): "Utskriftsdato"/"Brønnøysundregistrene" footers. Standardized P&L + BS.
+2. COMPANY SECTION (remaining pages): Company's own annual report with P&L, BS, notes, revisjonsberetning.
 
-Extract BOTH parts. All amounts in NOK (not thousands). Costs as positive values. Use null for missing fields.
+INSTRUCTIONS:
+- Extract P&L and BS from BOTH sections. All amounts in NOK (not thousands). Costs as positive values.
+- For entities with both KONSERN and SELSKAP statements, extract SELSKAP.
+- Extract EVERY note disclosed in the company section as an array element.
+- Note titles, numbering, and content vary per entity — extract whatever is there.
+- Set fields to null if not found.
 
 Return JSON:
 {"split":{"brreg_last_page":4,"total_pages":13},
-"brreg":{"salgsinntekt":0,"annen_driftsinntekt":0,"sum_driftsinntekter":0,"lonnskostnad":0,"avskrivning":0,"annen_driftskostnad":0,"sum_driftskostnader":0,"driftsresultat":0,"sum_finansinntekter":0,"sum_finanskostnader":0,"netto_finans":0,"resultat_for_skatt":0,"skattekostnad":0,"aarsresultat":0,"sum_anleggsmidler":0,"kundefordringer":0,"andre_fordringer":0,"bankinnskudd":0,"sum_omlopsmidler":0,"sum_eiendeler":0,"aksjekapital":0,"overkurs":0,"sum_egenkapital":0,"sum_langsiktig_gjeld":0,"leverandorgjeld":0,"sum_kortsiktig_gjeld":0,"sum_gjeld":0,"sum_egenkapital_gjeld":0},
-"company":{"salgsinntekt":0,"annen_driftsinntekt":0,"sum_driftsinntekter":0,"lonnskostnad":0,"avskrivning":0,"annen_driftskostnad":0,"sum_driftskostnader":0,"driftsresultat":0,"renteinntekt_konsern":0,"annen_renteinntekt":0,"sum_finansinntekter":0,"rentekostnad_konsern":0,"annen_rentekostnad":0,"sum_finanskostnader":0,"netto_finans":0,"resultat_for_skatt":0,"skattekostnad":0,"aarsresultat":0,"sum_anleggsmidler":0,"kundefordringer":0,"andre_fordringer":0,"bankinnskudd":0,"sum_omlopsmidler":0,"sum_eiendeler":0,"aksjekapital":0,"overkurs":0,"sum_egenkapital":0,"sum_langsiktig_gjeld":0,"leverandorgjeld":0,"sum_kortsiktig_gjeld":0,"sum_gjeld":0,"sum_egenkapital_gjeld":0},
-"notes":{"has_klientmidler":false,"klientmidler_amount":null,"klientansvar_amount":null,"has_bundne_midler":false,"bundne_midler_amount":null,"antall_ansatte":null,"antall_aarsverk":null,"revisjonshonorar":null,"pantstillelser_bokfort":null,"kassekredittlimit":null,"utbytte":null,"konsernbidrag":null},
-"revisjon":{"revisor":"","firma":"","konklusjon":"uten_forbehold","fravalgt":false}}
+"brreg":{"salgsinntekt":null,"annen_driftsinntekt":null,"sum_driftsinntekter":null,"lonnskostnad":null,"avskrivning":null,"annen_driftskostnad":null,"sum_driftskostnader":null,"driftsresultat":null,"sum_finansinntekter":null,"sum_finanskostnader":null,"resultat_for_skatt":null,"skattekostnad":null,"aarsresultat":null,"sum_anleggsmidler":null,"kundefordringer":null,"bankinnskudd":null,"sum_omlopsmidler":null,"sum_eiendeler":null,"aksjekapital":null,"sum_egenkapital":null,"sum_langsiktig_gjeld":null,"leverandorgjeld":null,"sum_kortsiktig_gjeld":null,"sum_gjeld":null},
+"company":{"salgsinntekt":null,"annen_driftsinntekt":null,"sum_driftsinntekter":null,"lonnskostnad":null,"avskrivning":null,"annen_driftskostnad":null,"sum_driftskostnader":null,"driftsresultat":null,"renteinntekt_konsern":null,"annen_renteinntekt":null,"sum_finansinntekter":null,"rentekostnad_konsern":null,"annen_rentekostnad":null,"sum_finanskostnader":null,"resultat_for_skatt":null,"skattekostnad":null,"aarsresultat":null,"sum_anleggsmidler":null,"kundefordringer":null,"andre_fordringer":null,"bankinnskudd":null,"sum_omlopsmidler":null,"sum_eiendeler":null,"aksjekapital":null,"overkurs":null,"sum_innskutt_egenkapital":null,"annen_egenkapital":null,"sum_opptjent_egenkapital":null,"sum_egenkapital":null,"sum_langsiktig_gjeld":null,"leverandorgjeld":null,"betalbar_skatt":null,"skyldige_offentlige_avgifter":null,"annen_kortsiktig_gjeld":null,"sum_kortsiktig_gjeld":null,"sum_gjeld":null,"sum_egenkapital_gjeld":null},
+"noter":[{"nr":1,"tittel":"...","type":"narrative|table|mixed","amounts":{}}],
+"note_flags":{"has_klientmidler":false,"klientmidler_amount":null,"klientansvar_amount":null,"has_bundne_midler":false,"bundne_midler_amount":null,"has_pantstillelser":false,"pantstillelser_bokfort":null,"pantstillelser_gjeld":null,"has_kassekreditt":false,"kassekredittlimit":null,"has_konsernmellomvaerende":false,"antall_ansatte":null,"antall_aarsverk":null,"revisjonshonorar_revisjon":null,"revisjonshonorar_andre":null,"utbytte":null,"konsernbidrag":null,"otp_pliktig":null,"fortsatt_drift_tvil":false,"hendelser_etter_balansedagen":null},
+"revisjon":{"revisor":null,"firma":null,"konklusjon":"uten_forbehold","fravalgt":false}}
 
-If company section has no separate P&L/BS, set company to null.
-For entities with KONSERN and SELSKAP statements, extract SELSKAP (not konsern)."""
+NOTES INSTRUCTIONS:
+- "nr": note number as shown in the document
+- "tittel": exact title from the document (keep original language)
+- "type": "narrative" (free text only), "table" (has numerical data), or "mixed"
+- "amounts": for table/mixed notes, extract key-value pairs of CURRENT YEAR amounts only. Use descriptive snake_case keys. Omit for narrative notes.
+- Do NOT include text summaries — only amounts. This keeps output compact.
+- note_flags: derived signals scanned across ALL notes. Set boolean flags and amounts."""
 
 
 @dataclass
@@ -70,7 +81,11 @@ class GeminiResult:
 
     @property
     def notes(self) -> dict:
-        return self.raw_json.get("notes", {})
+        return self.raw_json.get("note_flags", {})
+
+    @property
+    def noter(self) -> list[dict]:
+        return self.raw_json.get("noter", [])
 
     @property
     def revisjon(self) -> dict:
@@ -83,9 +98,28 @@ class GeminiResult:
         if src:
             row.update(src)
         row.update({f"note_{k}": v for k, v in self.notes.items()})
+        row["n_noter"] = len(self.noter)
+        row["note_titles"] = "|".join(n.get("tittel", "") for n in self.noter)
         row.update({f"rev_{k}": v for k, v in self.revisjon.items()})
         row["gemini_cost_usd"] = self.cost_usd
         return row
+
+    def to_rows(self) -> list[dict]:
+        rows = []
+        for section in ["brreg", "company"]:
+            src = self.brreg if section == "brreg" else self.company
+            if src is None:
+                continue
+            row = {"orgnr": self.orgnr, "year": self.year, "section": section,
+                   "split_page": self.split_page, "n_pages": self.n_pages}
+            row.update(src)
+            if section == "company":
+                row.update({f"note_{k}": v for k, v in self.notes.items()})
+                row["n_noter"] = len(self.noter)
+                row.update({f"rev_{k}": v for k, v in self.revisjon.items()})
+            row["gemini_cost_usd"] = self.cost_usd
+            rows.append(row)
+        return rows
 
 
 def _extract_page_images(pdf_bytes: bytes) -> list[dict]:
