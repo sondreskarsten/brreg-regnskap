@@ -1,15 +1,35 @@
-"""Extract structured regnskap data from PDF page images via Gemini Flash.
+"""Extract structured regnskap data from PDF via Gemini Flash.
 
-Sends all pages as embedded PNG images to Gemini 2.5 Flash, returns
-structured JSON with BRREG wrapper and company sections separated.
+Sends PDF directly (not extracted images — 2.6x cheaper per T15) to
+Gemini 2.5 Flash with response_mime_type="application/json".
 
-Cost: ~$0.0015 per entity at thinkingBudget=0.
-Speed: ~3-5 seconds per entity.
+Three extraction modes:
+    extract_pdf()  — PDF → structured JSON (Gold layer, $0.0012/entity)
+    extract_text() — OCR text → structured JSON (from Silver layer, $0.0035/entity)
+    classify_pdf() — PDF → page manifest ($0.0003/entity, prevents hallucinated
+                     company values per manifest experiment)
+
+Experiment findings applied (docs/ocr_format_experiments.md):
+    T1:  JSON structured output eliminates multi-line label breaks
+    T6:  "Character by character" priming removed (zero effect)
+    T7:  Norwegian number format instruction removed (zero effect)
+    T9:  maxOutputTokens=65536 mandatory (8192 truncates 14p docs)
+    T10: thinkingBudget=0 (>0 costs 4.5x more, FEWER output chars)
+    T15: PDF input 2.6x cheaper than PNG (1321 vs 3385 tokens)
 
 Usage:
     from brreg_regnskap.gemini_extraction import GeminiExtractor
     extractor = GeminiExtractor()
+
+    # Option A: direct extraction
     result = extractor.extract_pdf(pdf_bytes, orgnr="988054631", year=2024)
+
+    # Option B: manifest-guided (recommended — prevents hallucinated company values)
+    manifest = extractor.classify_pdf(pdf_bytes)
+    result = extractor.extract_pdf(pdf_bytes, orgnr="988054631", year=2024, manifest=manifest)
+
+    # Option C: from cached OCR text (Silver layer re-extraction)
+    result = extractor.extract_text(ocr_pages, orgnr="988054631", year=2024)
 """
 
 from __future__ import annotations
@@ -192,11 +212,47 @@ class GeminiExtractor:
         if not self._creds.valid:
             self._creds.refresh(Request())
 
-    def extract_pdf(self, pdf_bytes: bytes, orgnr: str, year: int) -> GeminiResult:
+    def classify_pdf(self, pdf_bytes: bytes) -> list[dict]:
+        self._refresh_if_needed()
+        content, _ = _prepare_pdf_content(pdf_bytes)
+        classify_prompt = (
+            'For each page in this PDF, return a JSON array:\n'
+            '[{"page":1,"source":"brreg","type":"generell_info","has_table":false}]\n'
+            'source: "brreg" (standardized Brønnøysundregistrene pages) or '
+            '"company" (company\'s own attachment).\n'
+            'type: generell_info | resultatregnskap | balanse | noter | '
+            'revisjonsberetning | aarsberetning | kontantstrom | signatur | annet.\n'
+            'has_table: true if page has a financial table with number columns.'
+        )
+        body = {
+            "contents": [{"role": "user", "parts": content + [{"text": classify_prompt}]}],
+            "generationConfig": {
+                "maxOutputTokens": 2048,
+                "temperature": 0,
+                "responseMimeType": "application/json",
+                "thinkingConfig": {"thinkingBudget": self._thinking_budget},
+            },
+        }
+        resp = requests.post(
+            self._url,
+            headers={"Authorization": f"Bearer {self._creds.token}", "Content-Type": "application/json"},
+            json=body, timeout=60,
+        )
+        resp.raise_for_status()
+        return json.loads(resp.json()["candidates"][0]["content"]["parts"][0]["text"])
+
+    def extract_pdf(self, pdf_bytes: bytes, orgnr: str, year: int,
+                    manifest: list[dict] | None = None) -> GeminiResult:
         self._refresh_if_needed()
         content, n_pages = _prepare_pdf_content(pdf_bytes)
 
-        parts = content + [{"text": PROMPT}]
+        if manifest:
+            manifest_json = json.dumps(manifest, ensure_ascii=False)
+            prompt_text = f"Page manifest:\n{manifest_json}\n\n{PROMPT}"
+        else:
+            prompt_text = PROMPT
+
+        parts = content + [{"text": prompt_text}]
         return self._call_gemini(parts, orgnr, year, n_pages)
 
     def extract_text(self, ocr_pages: list[str], orgnr: str, year: int) -> GeminiResult:
