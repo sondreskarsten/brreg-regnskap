@@ -49,7 +49,7 @@ Return JSON:
 "brreg":{"salgsinntekt":null,"annen_driftsinntekt":null,"sum_driftsinntekter":null,"lonnskostnad":null,"avskrivning":null,"annen_driftskostnad":null,"sum_driftskostnader":null,"driftsresultat":null,"sum_finansinntekter":null,"sum_finanskostnader":null,"resultat_for_skatt":null,"skattekostnad":null,"aarsresultat":null,"sum_anleggsmidler":null,"kundefordringer":null,"bankinnskudd":null,"sum_omlopsmidler":null,"sum_eiendeler":null,"aksjekapital":null,"sum_egenkapital":null,"sum_langsiktig_gjeld":null,"leverandorgjeld":null,"sum_kortsiktig_gjeld":null,"sum_gjeld":null},
 "company":{"salgsinntekt":null,"annen_driftsinntekt":null,"sum_driftsinntekter":null,"lonnskostnad":null,"avskrivning":null,"annen_driftskostnad":null,"sum_driftskostnader":null,"driftsresultat":null,"renteinntekt_konsern":null,"annen_renteinntekt":null,"sum_finansinntekter":null,"rentekostnad_konsern":null,"annen_rentekostnad":null,"sum_finanskostnader":null,"resultat_for_skatt":null,"skattekostnad":null,"aarsresultat":null,"sum_anleggsmidler":null,"kundefordringer":null,"andre_fordringer":null,"bankinnskudd":null,"sum_omlopsmidler":null,"sum_eiendeler":null,"aksjekapital":null,"overkurs":null,"sum_innskutt_egenkapital":null,"annen_egenkapital":null,"sum_opptjent_egenkapital":null,"sum_egenkapital":null,"sum_langsiktig_gjeld":null,"leverandorgjeld":null,"betalbar_skatt":null,"skyldige_offentlige_avgifter":null,"annen_kortsiktig_gjeld":null,"sum_kortsiktig_gjeld":null,"sum_gjeld":null,"sum_egenkapital_gjeld":null},
 "noter":[{"nr":1,"tittel":"...","type":"narrative|table|mixed","amounts":{}}],
-"note_flags":{"has_klientmidler":false,"klientmidler_amount":null,"klientansvar_amount":null,"has_bundne_midler":false,"bundne_midler_amount":null,"skattetrekkskonto":null,"has_pantstillelser":false,"pantstillelser_bokfort":null,"pantstillelser_gjeld":null,"has_kassekreditt":false,"kassekredittlimit":null,"kassekreditt_benyttet":null,"has_konsernmellomvaerende":false,"antall_ansatte":null,"antall_aarsverk":null,"revisjonshonorar_revisjon":null,"revisjonshonorar_andre":null,"utbytte":null,"konsernbidrag":null,"otp_pliktig":null,"fortsatt_drift_tvil":false,"hendelser_etter_balansedagen":null},
+"note_flags":{"has_klientmidler":false,"klientmidler_amount":null,"klientansvar_amount":null,"klientmidler_forskrift":null,"has_bundne_midler":false,"bundne_midler_amount":null,"skattetrekkskonto":null,"has_pantstillelser":false,"pantstillelser_bokfort":null,"pantstillelser_gjeld":null,"has_kassekreditt":false,"kassekredittlimit":null,"kassekreditt_benyttet":null,"has_konsernmellomvaerende":false,"antall_ansatte":null,"antall_aarsverk":null,"revisjonshonorar_revisjon":null,"revisjonshonorar_andre":null,"utbytte":null,"konsernbidrag":null,"otp_pliktig":null,"fortsatt_drift_tvil":false,"hendelser_etter_balansedagen":null},
 "revisjon":{"revisor":null,"firma":null,"konklusjon":null,"fravalgt":false,"presisering":null}}
 
 NOTES RULES:
@@ -59,10 +59,12 @@ NOTES RULES:
 - "amounts": for table/mixed notes, extract key-value pairs of CURRENT YEAR amounts only. Use descriptive snake_case keys. Empty {} for narrative notes.
 - Do NOT include text summaries — only amounts. This keeps output compact.
 - Klientmidler may be embedded within a "Bankinnskudd" note rather than its own note — scan all bank/deposit notes for klientmidler mentions.
+- KLIENTMIDLER DISAMBIGUATION: "Disponible midler" in Sameie/BRL entities is collective owner liquidity, NOT klientmidler. Only flag has_klientmidler=true when entity holds funds in a statutory intermediary capacity (eiendomsmegling, inkasso, advokatvirksomhet). Look for regulatory references: "Meglerforskriften", "Inkassoforskriften", "Forskrift om årsregnskap m.m. for inkassovirksomhet", "Advokatforskriften" — these confirm fiduciary status.
 - "Skattetrekkskonto (har ikke)" means entity has no employees — set skattetrekkskonto to 0 and antall_ansatte to 0.
 - note_flags: derived signals scanned across ALL notes and årsberetning.
 - revisjon.konklusjon: "uten_forbehold", "med_forbehold", "negativ", "kan_ikke_uttale_seg", or null if fravalgt.
-- revisjon.presisering: any emphasis of matter text (e.g., "vesentlig usikkerhet knyttet til fortsatt drift"), null if none."""
+- revisjon.presisering: any emphasis of matter text (e.g., "vesentlig usikkerhet knyttet til fortsatt drift"), null if none.
+- note_flags.klientmidler_forskrift: if klientmidler found, set to the regulatory reference ("meglerforskriften", "inkassoforskriften", "advokatforskriften") or "unspecified" if no forskrift cited."""
 
 
 @dataclass
