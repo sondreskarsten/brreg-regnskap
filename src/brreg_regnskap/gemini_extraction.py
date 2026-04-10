@@ -37,8 +37,9 @@ CRITICAL RULES:
 - Extract P&L and BS from BOTH sections separately. All amounts in NOK (not thousands).
 - Check for "Beløp i: 1000 NOK" or "alle tall i tusen" — if found, multiply all amounts by 1000.
 - Costs as POSITIVE values. Negative values appear as either minus signs (-5255) or parentheses ((5 255)) — treat both as negative.
-- For entities with both KONSERN and SELSKAP statements, extract SELSKAP. Check "Morselskap i konsern" on Generell Informasjon: if "Ja", look for "Noteopplysninger - SELSKAP" header.
+- For entities with both KONSERN and SELSKAP statements, extract SELSKAP. Check "Morselskap i konsern" on Generell Informasjon: if "Ja", look for "Noteopplysninger - SELSKAP" header. SKIP any section headed "Konsernregnskap", "Konsernresultatregnskap", or "Konsernbalanse" — these are group accounts, not the entity's own.
 - Extract notes ONLY from the COMPANY section (BRREG wrapper notes are simplified duplicates).
+- The P&L and BS "Note" column contains integers linking to note numbers. The noter array captures the target notes. No need to extract the reference integers themselves.
 - Some entities (Sameie, BRL) use "Fellesutgifter" instead of "Salgsinntekt" — map to annen_driftsinntekt.
 - Some entities have NO company P&L/BS (only BRREG wrapper + notes). Set company P&L/BS to null.
 - Some entities have "fravalgt revisjon" (opted out of audit) — no revisjonsberetning exists.
