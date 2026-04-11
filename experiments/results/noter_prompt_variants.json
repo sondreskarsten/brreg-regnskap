@@ -1,0 +1,441 @@
+{
+  "988054631": {
+    "P1_minimal": {
+      "in_tok": 1855,
+      "out_tok": 1836,
+      "cost": 0.00137985,
+      "time": 10.4,
+      "finish_reason": "STOP",
+      "n_notes": 7,
+      "has_amounts": 5,
+      "n_flags_set": 0,
+      "truncated": false,
+      "note_titles": [
+        "Regnskapsprinsipper",
+        "Lønnskostnader, antall ansatte, lån til ansatte mv",
+        "Skatt",
+        "Egenkapital",
+        "Mellomværende med selskap i samme konsern og tilknyttet selskap",
+        "Bankinnskudd og klientmidler",
+        "Aksjekapital og aksjonærinformasjon"
+      ],
+      "raw_len": 3436
+    },
+    "P2_structured": {
+      "in_tok": 2035,
+      "out_tok": 1353,
+      "cost": 0.00111705,
+      "time": 6.6,
+      "finish_reason": "STOP",
+      "n_notes": 8,
+      "has_amounts": 6,
+      "n_flags_set": 2,
+      "truncated": false,
+      "note_titles": [
+        "Noter til regnskapet for 2024",
+        "Regnskapsprinsipper",
+        "Lønnskostnader, antall ansatte, lån til ansatte mv",
+        "Skatt",
+        "Egenkapital",
+        "Mellomværende med selskap i samme konsern og tilknyttet selskap",
+        "Bankinnskudd og klientmidler",
+        "Aksjekapital og aksjonærinformasjon"
+      ],
+      "raw_len": 3106
+    },
+    "P3_completeness_guard": {
+      "in_tok": 2053,
+      "out_tok": 2671,
+      "cost": 0.00191055,
+      "time": 10.3,
+      "finish_reason": "STOP",
+      "n_notes": 7,
+      "has_amounts": 0,
+      "n_flags_set": 4,
+      "truncated": false,
+      "note_titles": [
+        "Regnskapsprinsipper",
+        "Lønnskostnader, antall ansatte, lån til ansatte mv",
+        "Skatt",
+        "Egenkapital",
+        "Mellomværende med selskap i samme konsern og tilknyttet selskap",
+        "Bankinnskudd og klientmidler",
+        "Aksjekapital og aksjonærinformasjon"
+      ],
+      "raw_len": 6241
+    },
+    "P4_amounts_only": {
+      "in_tok": 1925,
+      "out_tok": 1065,
+      "cost": 0.00092775,
+      "time": 6.0,
+      "finish_reason": "STOP",
+      "n_notes": 6,
+      "has_amounts": 6,
+      "n_flags_set": 1,
+      "truncated": false,
+      "note_titles": [
+        "note_2_lonnskostnader_antall_ansatte_lan_til_ansatte_mv",
+        "note_3_skatt",
+        "note_4_egenkapital",
+        "note_5_mellomvaerende_med_selskap_i_samme_konsern_og_tilknyttet_selskap",
+        "note_6_bankinnskudd_og_klientmidler",
+        "note_7_aksjekapital_og_aksjonaerinformasjon"
+      ],
+      "raw_len": 2217
+    }
+  },
+  "974522683": {
+    "P1_minimal": {
+      "in_tok": 2113,
+      "out_tok": 2472,
+      "cost": 0.00180015,
+      "time": 11.7,
+      "finish_reason": "STOP",
+      "n_notes": 9,
+      "has_amounts": 8,
+      "n_flags_set": 1,
+      "truncated": false,
+      "note_titles": [
+        "Lønnskostnader",
+        "Antall årsverk",
+        "Varige driftsmidler og immaterielle eiendeler",
+        "Spesifisering av skatt",
+        "Midlertidige forskjeller - utsatt skatt/skattefordel",
+        "Gjeld og garantiforpliktelser",
+        "Konsern, tilknyttet selskap m.v.",
+        "Lån og sikkerhetsstillelse til ledende personer, eiere med videre",
+        "Egenkapital"
+      ],
+      "raw_len": 5958
+    },
+    "P2_structured": {
+      "in_tok": 2293,
+      "out_tok": 1882,
+      "cost": 0.00147315,
+      "time": 8.6,
+      "finish_reason": "STOP",
+      "n_notes": 17,
+      "has_amounts": 8,
+      "n_flags_set": 4,
+      "truncated": false,
+      "note_titles": [
+        "Regnskapsprinsipper",
+        "Salginntekter",
+        "Klassifisering og vurdering av balanseposter",
+        "Fordringer",
+        "Varige driftsmidler",
+        "Skatt",
+        "Selskapet har ikke endret regnskapsprinsipp fra 2023 til 2024.",
+        "Note 1 - Lønnskostnader",
+        "Note 2 - Antall årsverk",
+        "Note 3 - Varige driftsmidler og immaterielle eiendeler"
+      ],
+      "raw_len": 4483
+    },
+    "P3_completeness_guard": {
+      "in_tok": 2311,
+      "out_tok": 4072,
+      "cost": 0.00278985,
+      "time": 15.6,
+      "finish_reason": "STOP",
+      "n_notes": 10,
+      "has_amounts": 7,
+      "n_flags_set": 5,
+      "truncated": false,
+      "note_titles": [
+        "Regnskapsprinsipper",
+        "Lønnskostnader",
+        "Antall årsverk",
+        "Varige driftsmidler og immaterielle eiendeler",
+        "Spesifisering av skatt",
+        "Midlertidige forskjeller - utsatt skatt/skattefordel",
+        "Gjeld og garantiforpliktelser",
+        "Konsern, tilknyttet selskap m.v.",
+        "Lån og sikkerhetsstillelse til ledende personer, eiere med videre",
+        "Egenkapital"
+      ],
+      "raw_len": 10538
+    },
+    "P4_amounts_only": {
+      "in_tok": 2183,
+      "out_tok": 1169,
+      "cost": 0.00102885,
+      "time": 6.6,
+      "finish_reason": "STOP",
+      "n_notes": 9,
+      "has_amounts": 8,
+      "n_flags_set": 4,
+      "truncated": false,
+      "note_titles": [
+        "note_1_lonnskostnader",
+        "note_2_antall_arsverk",
+        "note_3_varige_driftsmidler_og_immaterielle_eiendeler",
+        "note_4_spesifisering_av_skatt",
+        "note_5_midlertidige_forskjeller_utsatt_skatt_skattefordel",
+        "note_6_gjeld_og_garantiforpliktelser",
+        "note_7_konsern_tilknyttet_selskap_mv",
+        "note_8_lan_og_sikkerhetsstillelse_til_ledende_personer_eiere_med_videre",
+        "note_9_egenkapital"
+      ],
+      "raw_len": 2431
+    }
+  },
+  "922085900": {
+    "P1_minimal": {
+      "in_tok": 1339,
+      "out_tok": 612,
+      "cost": 0.00056805,
+      "time": 4.2,
+      "finish_reason": "STOP",
+      "n_notes": 3,
+      "has_amounts": 3,
+      "n_flags_set": 6,
+      "truncated": false,
+      "note_titles": [
+        "Lønnskostnader",
+        "Varige driftsmidler og immaterielle eiendeler",
+        "Konsern, tilknyttet selskap m.v."
+      ],
+      "raw_len": 1495
+    },
+    "P2_structured": {
+      "in_tok": 1519,
+      "out_tok": 1163,
+      "cost": 0.0009256499999999999,
+      "time": 5.9,
+      "finish_reason": "STOP",
+      "n_notes": 11,
+      "has_amounts": 4,
+      "n_flags_set": 1,
+      "truncated": false,
+      "note_titles": [
+        "Regnskapsprinsipper",
+        "Salgsinntekter",
+        "Klassifisering og vurdering av balanseposter",
+        "Fordringer",
+        "Varige driftsmidler",
+        "Forøvrig er følgende regnskapsprinsipper anvendt:",
+        "Lønnskostnad",
+        "Varige driftsmidler og immaterielle eiendeler",
+        "Konsern, tilknyttet selskap m.v.",
+        "Antall årsverk"
+      ],
+      "raw_len": 2950
+    },
+    "P3_completeness_guard": {
+      "in_tok": 1537,
+      "out_tok": 1657,
+      "cost": 0.00122475,
+      "time": 7.8,
+      "finish_reason": "STOP",
+      "n_notes": 4,
+      "has_amounts": 3,
+      "n_flags_set": 1,
+      "truncated": false,
+      "note_titles": [
+        "Regnskapsprinsipper",
+        "Lønnskostnader",
+        "Varige driftsmidler og immaterielle eiendeler",
+        "Konsern, tilknyttet selskap m.v."
+      ],
+      "raw_len": 4681
+    },
+    "P4_amounts_only": {
+      "in_tok": 1409,
+      "out_tok": 513,
+      "cost": 0.00051915,
+      "time": 4.1,
+      "finish_reason": "STOP",
+      "n_notes": 3,
+      "has_amounts": 3,
+      "n_flags_set": 1,
+      "truncated": false,
+      "note_titles": [
+        "note_1_lonnskostnader",
+        "note_2_varige_driftsmidler_og_immaterielle_eiendeler",
+        "note_3_konsern_tilknyttet_selskap_m_v"
+      ],
+      "raw_len": 1101
+    }
+  },
+  "922090092": {
+    "P1_minimal": {
+      "in_tok": 1855,
+      "out_tok": 1402,
+      "cost": 0.00111945,
+      "time": 6.8,
+      "finish_reason": "STOP",
+      "n_notes": 7,
+      "has_amounts": 5,
+      "n_flags_set": 7,
+      "truncated": false,
+      "note_titles": [
+        "Lønnskostnader og antall årsverk",
+        "Skatt",
+        "Egenkapital",
+        "Mellomværende med selskap i samme konsern",
+        "Bankinnskudd",
+        "Aksjonærer",
+        "Fortsatt drift"
+      ],
+      "raw_len": 2637
+    },
+    "P2_structured": {
+      "in_tok": 2035,
+      "out_tok": 1040,
+      "cost": 0.0009292499999999998,
+      "time": 4.9,
+      "finish_reason": "STOP",
+      "n_notes": 7,
+      "has_amounts": 5,
+      "n_flags_set": 4,
+      "truncated": false,
+      "note_titles": [
+        "Lønnskostnader og antall årsverk",
+        "Skatt",
+        "Egenkapital",
+        "Mellomværende med selskap i samme konsern",
+        "Bankinnskudd",
+        "Aksjonærer",
+        "Fortsatt drift"
+      ],
+      "raw_len": 2388
+    },
+    "P3_completeness_guard": {
+      "in_tok": 2053,
+      "out_tok": 1623,
+      "cost": 0.0012817500000000001,
+      "time": 7.1,
+      "finish_reason": "STOP",
+      "n_notes": 9,
+      "has_amounts": 5,
+      "n_flags_set": 5,
+      "truncated": false,
+      "note_titles": [
+        "Lønnskostnader og antall årsverk",
+        "PENSJONSFORPLIKTELSER",
+        "REVISOR",
+        "Skatt",
+        "Egenkapital",
+        "Mellomværende med selskap i samme konsern",
+        "Bankinnskudd",
+        "Aksjonærer",
+        "Fortsatt drift"
+      ],
+      "raw_len": 4204
+    },
+    "P4_amounts_only": {
+      "in_tok": 1925,
+      "out_tok": 902,
+      "cost": 0.0008299500000000001,
+      "time": 5.0,
+      "finish_reason": "STOP",
+      "n_notes": 7,
+      "has_amounts": 7,
+      "n_flags_set": 1,
+      "truncated": false,
+      "note_titles": [
+        "1_lonnskostnader_og_antall_arsverk",
+        "2_skatt",
+        "3_egenkapital",
+        "4_mellomvaerende_med_selskap_i_samme_konsern",
+        "5_bankinnskudd",
+        "6_aksjonaerer",
+        "7_fortsatt_drift"
+      ],
+      "raw_len": 1841
+    }
+  },
+  "922107181": {
+    "P1_minimal": {
+      "in_tok": 1855,
+      "out_tok": 1960,
+      "cost": 0.00145425,
+      "time": 8.7,
+      "finish_reason": "STOP",
+      "n_notes": 30,
+      "has_amounts": 30,
+      "n_flags_set": 7,
+      "truncated": false,
+      "note_titles": [
+        "Anskaffelseskost 01.01.",
+        "Tilgang i året",
+        "Avgang i året",
+        "Anskaffelseskost 31.12.",
+        "Samlede avskrivninger, nedskrivninger og reverseringer av nedskrivninger",
+        "Balanseført verdi per 31.12.",
+        "Avskrivninger, nedskrivninger og reverseringer av nedskrivninger i regnskapsåret",
+        "Lønn",
+        "Arbeidsgiveravgift",
+        "Pensjonskostnader"
+      ],
+      "raw_len": 4300
+    },
+    "P2_structured": {
+      "in_tok": 2035,
+      "out_tok": 1719,
+      "cost": 0.00133665,
+      "time": 7.7,
+      "finish_reason": "STOP",
+      "n_notes": 17,
+      "has_amounts": 5,
+      "n_flags_set": 3,
+      "truncated": false,
+      "note_titles": [
+        "Regnskapsprinsipper",
+        "Salgsinntekter",
+        "Klassifisering og vurdering av balanseposter",
+        "Fordringer",
+        "Varebeholdninger",
+        "Varige driftsmidler",
+        "Forøvrig er følgende regnskapsprinsipper anvendt:",
+        "Skatt",
+        "Selskapet har ikke endret regnskapsprinsipp fra 2023 til 2024.",
+        "Note 1 - Antall årsverk"
+      ],
+      "raw_len": 4175
+    },
+    "P3_completeness_guard": {
+      "in_tok": 2053,
+      "out_tok": 3027,
+      "cost": 0.00212415,
+      "time": 12.2,
+      "finish_reason": "STOP",
+      "n_notes": 8,
+      "has_amounts": 5,
+      "n_flags_set": 3,
+      "truncated": false,
+      "note_titles": [
+        "Regnskapsprinsipper",
+        "Antall årsverk",
+        "Lønnskostnader",
+        "Varige driftsmidler og immaterielle eiendeler",
+        "Spesifisering av skatt",
+        "Midlertidige forskjeller - utsatt skatt/skattefordel",
+        "Lån og sikkerhetsstillelse til medlemmer av styrene, eiere med videre",
+        "Gjeld og garantiforpliktelser"
+      ],
+      "raw_len": 8643
+    },
+    "P4_amounts_only": {
+      "in_tok": 1925,
+      "out_tok": 861,
+      "cost": 0.00080535,
+      "time": 4.8,
+      "finish_reason": "STOP",
+      "n_notes": 5,
+      "has_amounts": 5,
+      "n_flags_set": 2,
+      "truncated": false,
+      "note_titles": [
+        "note_2_lonnskostnader",
+        "note_3_varige_driftsmidler_og_immaterielle_eiendeler",
+        "note_4_spesifisering_av_skatt",
+        "note_5_midlertidige_forskjeller_utsatt_skatt_skattefordel",
+        "note_7_gjeld_og_garantiforpliktelser"
+      ],
+      "raw_len": 1803
+    }
+  }
+}

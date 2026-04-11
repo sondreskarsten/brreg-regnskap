@@ -1,0 +1,706 @@
+{
+  "988054631": {
+    "cost": 0.0018846000000000002,
+    "in_tok": 2132,
+    "out_tok": 2608,
+    "n_pages": 7,
+    "n_notes": 8,
+    "has_amounts": 6,
+    "n_flags": 2,
+    "finish": "STOP",
+    "time": 11.0,
+    "noter": [
+      {
+        "nr": 1,
+        "tittel": "Noter til regnskapet for 2024",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": 1,
+        "tittel": "Regnskapsprinsipper",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": 2,
+        "tittel": "Lønnskostnader, antall ansatte, lån til ansatte mv",
+        "type": "table",
+        "amounts": {
+          "lonninger_2024": 2093991,
+          "lonninger_2023": 2597604,
+          "arbeidsgiveravgift_2024": 129466,
+          "arbeidsgiveravgift_2023": 188854,
+          "pensjonskostnader_2024": 237967,
+          "pensjonskostnader_2023": 260476,
+          "annen_personalkostnad_2024": 105,
+          "annen_personalkostnad_2023": 20130,
+          "styrehonorar_2024": 114000,
+          "styrehonorar_2023": 110000,
+          "sum_2024": 2485529,
+          "sum_2023": 3166268
+        }
+      },
+      {
+        "nr": 3,
+        "tittel": "Skatt",
+        "type": "table",
+        "amounts": {
+          "ordinart_resultat_for_skattekostnad_2024": -1148187,
+          "ordinart_resultat_for_skattekostnad_2023": -865121,
+          "permanente_forskjeller_2024": 0,
+          "permanente_forskjeller_2023": 1125,
+          "endring_i_midlertidige_forskjeller_2024": 42600,
+          "endring_i_midlertidige_forskjeller_2023": 9268,
+          "arets_skattegrunnlag_2024": -1105587,
+          "arets_skattegrunnlag_2023": -854728,
+          "oversikt_over_midlertidige_forskjeller_2024": 0,
+          "oversikt_over_midlertidige_forskjeller_2023": 0,
+          "driftsmidler_inkl_goodwill_2024": 0,
+          "driftsmidler_inkl_goodwill_2023": -13733,
+          "utestaende_fordringer_2024": -123900,
+          "utestaende_fordringer_2023": -67567,
+          "sum_2024": 0,
+          "sum_2023": 0,
+          "akkumulert_fremforbart_underskudd_for_konsernbidrag_2024": -4360377,
+          "akkumulert_fremforbart_underskudd_for_konsernbidrag_2023": -3254790,
+          "netto_midlertidige_forskjeller_pr_31_12_2024": -4484277,
+          "netto_midlertidige_forskjeller_pr_31_12_2023": -3336090,
+          "forskjeller_som_ikke_inngar_i_utsatt_skatt_skattefordel_2024": -4484277,
+          "forskjeller_som_ikke_inngar_i_utsatt_skatt_skattefordel_2023": -3336090,
+          "utsatt_skattefordel_som_ikke_er_balansefort_22_2024": -986541,
+          "utsatt_skattefordel_som_ikke_er_balansefort_22_2023": -733940
+        }
+      },
+      {
+        "nr": 4,
+        "tittel": "Egenkapital",
+        "type": "table",
+        "amounts": {
+          "egenkapital_01_01_2024": 704017,
+          "egenkapital_01_01_2023": 1088854,
+          "arsresultat_2024": -1148187,
+          "arsresultat_2023": -1148187,
+          "mottatt_konsernbidrag_2024": 3000000,
+          "mottatt_konsernbidrag_2023": 3000000,
+          "andre_endringer_2024": 2731171,
+          "andre_endringer_2023": -1,
+          "egenkapital_31_12_2024": 2555829,
+          "egenkapital_31_12_2023": 2555829
+        }
+      },
+      {
+        "nr": 5,
+        "tittel": "Mellomværende med selskap i samme konsern og tilknyttet selskap",
+        "type": "table",
+        "amounts": {
+          "fordringer_pa_selskap_i_samme_konsern_2024": 27522,
+          "fordringer_pa_selskap_i_samme_konsern_2023": 25030,
+          "larsneset_utbygging_as_2024": 0,
+          "larsneset_utbygging_as_2023": 2627,
+          "borkenes_utbygging_as_2024": 3000000,
+          "borkenes_utbygging_as_2023": 99472,
+          "boligbyggelaget_nord_mottatt_konsernbidrag_2024": 0,
+          "boligbyggelaget_nord_mottatt_konsernbidrag_2023": 10485,
+          "brygga_utbygging_as_2024": 3027522,
+          "brygga_utbygging_as_2023": 137614,
+          "gjeld_til_selskap_i_samme_konsern_2024": 3820824,
+          "gjeld_til_selskap_i_samme_konsern_2023": 2302178,
+          "boligbyggelaget_nord_likviditet_slan_2024": 126000,
+          "boligbyggelaget_nord_likviditet_slan_2023": 0,
+          "boligbyggelaget_nord_leverandorgjeld_2024": 3946824,
+          "boligbyggelaget_nord_leverandorgjeld_2023": 2302178
+        }
+      },
+      {
+        "nr": 6,
+        "tittel": "Bankinnskudd og klientmidler",
+        "type": "table",
+        "amounts": {
+          "klientmidler_2024": 11812153,
+          "klientmidler_2023": 8877738,
+          "klientansvar_2024": -8307344,
+          "klientansvar_2023": -6167674,
+          "utestaende_salgsoppgjor_oppgjor_ikke_foretatt_2024": -3050749,
+          "utestaende_salgsoppgjor_oppgjor_ikke_foretatt_2023": -2046793,
+          "sum_2024": 454070,
+          "sum_2023": 668269
+        }
+      },
+      {
+        "nr": 7,
+        "tittel": "Aksjekapital og aksjonærinformasjon",
+        "type": "table",
+        "amounts": {
+          "antall_ordinare_aksjer": 606,
+          "palyden_ordinare_aksjer": 1100,
+          "balansefort_ordinare_aksjer": 666600,
+          "ordinare_aksjer_boligbyggelaget_nord": 606,
+          "eierandel_boligbyggelaget_nord": 100,
+          "stemmeandel_boligbyggelaget_nord": 100
+        }
+      }
+    ],
+    "note_flags": {
+      "antall_ansatte": 0,
+      "antall_aarsverk": null,
+      "otp_pliktig": true,
+      "revisjonshonorar_revisjon": null,
+      "bundne_midler_amount": null,
+      "skattetrekkskonto": null,
+      "has_pantstillelser": false,
+      "pantstillelser_gjeld": null,
+      "pantstillelser_bokfort": null,
+      "utbytte": null,
+      "konsernbidrag": 3000000,
+      "fortsatt_drift_tvil": false,
+      "kassekredittlimit": null,
+      "kassekreditt_benyttet": null,
+      "hendelser_etter_balansedagen": null
+    }
+  },
+  "974522683": {
+    "cost": 0.0012405,
+    "in_tok": 2390,
+    "out_tok": 1470,
+    "n_pages": 8,
+    "n_notes": 9,
+    "has_amounts": 8,
+    "n_flags": 6,
+    "finish": "STOP",
+    "time": 7.7,
+    "noter": [
+      {
+        "nr": 1,
+        "tittel": "Lønnskostnader",
+        "type": "table",
+        "amounts": {
+          "loenn": 404992,
+          "arbeidsgiveravgift": 85096,
+          "pensjonskostnader": 16564,
+          "andre_relaterte_ytelser": 7887,
+          "sum": 513539
+        }
+      },
+      {
+        "nr": 2,
+        "tittel": "Antall årsverk",
+        "type": "table",
+        "amounts": {
+          "antall_årsverk_sysselsatt_i_regnskapsåret": 3
+        }
+      },
+      {
+        "nr": 3,
+        "tittel": "Varige driftsmidler og immaterielle eiendeler",
+        "type": "table",
+        "amounts": {
+          "anskaffelseskost_01_01": 2125359,
+          "tilgang_i_året": 0,
+          "avgang_i_året": -589008,
+          "anskaffelseskost_31_12": 1536351,
+          "balanseført_verdi_per_31_12": 717193,
+          "avskrivninger_nedskrivninger_og_reverseringer_av_nedskrivninger_i_regnskapsåret": 192808
+        }
+      },
+      {
+        "nr": 4,
+        "tittel": "Spesifisering av skatt",
+        "type": "table",
+        "amounts": {
+          "betalbar_skatt_på_alminnelig_inntekt": 75469,
+          "endringer_i_utsatt_skatt_utsatt_skattefordel": 3608,
+          "skattekostnad": 74861,
+          "permanent_forskjeller": 138,
+          "endring_i_midlertidige_forskjeller": 16398,
+          "anvendelse_av_fremførbart_underskudd": 0,
+          "mottatt_avgitt_konsernbidrag": -356677,
+          "skattepliktig_inntekt": 1,
+          "betalbar_skatt_i_balansen": 78469,
+          "betalbar_skatt_på_årets_resultat": -78469,
+          "betalbar_skatt_i_balansen_2": 0
+        }
+      },
+      {
+        "nr": 5,
+        "tittel": "Midlertidige forskjeller - utsatt skatt/skattefordel",
+        "type": "table",
+        "amounts": {
+          "midlertidige_forskjeller_knyttet_til_anleggsmidler": 203356,
+          "midlertidige_forskjeller_knyttet_til_omløpsmidler": 12931,
+          "sum_midlertidige_forskjeller": 216287,
+          "utsatt_skatt_31_12_2024_basert_på_22": 47583
+        }
+      },
+      {
+        "nr": 6,
+        "tittel": "Gjeld og garantiforpliktelser",
+        "type": "table",
+        "amounts": {
+          "balanseført_verdi_av_pantsatte_eiendeler": 717193
+        }
+      },
+      {
+        "nr": 7,
+        "tittel": "Konsern, tilknyttet selskap m.v.",
+        "type": "table",
+        "amounts": {
+          "samlet_beløp_som_gjelder_foretak_i_samme_konsern_fordringer": 2830178,
+          "samlet_beløp_som_gjelder_foretak_i_samme_konsern_kortsiktig_gjeld": 1830180
+        }
+      },
+      {
+        "nr": 8,
+        "tittel": "Lån og sikkerhetsstillelse til ledende personer, eiere med videre",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": 9,
+        "tittel": "Egenkapital",
+        "type": "table",
+        "amounts": {
+          "aksjekapital": 270000,
+          "annen_innsk_ek": 402529,
+          "opptjent_egenkapital": 278208,
+          "sum": 700331
+        }
+      }
+    ],
+    "note_flags": {
+      "antall_ansatte": 0,
+      "antall_aarsverk": 3.0,
+      "otp_pliktig": true,
+      "revisjonshonorar_revisjon": 0,
+      "bundne_midler_amount": 0,
+      "skattetrekkskonto": 0,
+      "has_pantstillelser": true,
+      "pantstillelser_gjeld": 1837365,
+      "pantstillelser_bokfort": 717193,
+      "utbytte": 0,
+      "konsernbidrag": 356677,
+      "fortsatt_drift_tvil": false,
+      "kassekredittlimit": 0,
+      "kassekreditt_benyttet": 0,
+      "hendelser_etter_balansedagen": null
+    }
+  },
+  "922085900": {
+    "cost": 0.0008862,
+    "in_tok": 1616,
+    "out_tok": 1073,
+    "n_pages": 5,
+    "n_notes": 11,
+    "has_amounts": 4,
+    "n_flags": 1,
+    "finish": "STOP",
+    "time": 5.4,
+    "noter": [
+      {
+        "nr": null,
+        "tittel": "Regnskapsprinsipper",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Salgsinntekter",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Klassifisering og vurdering av balanseposter",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Fordringer",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Varige driftsmidler",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Forøvrig er følgende regnskapsprinsipper anvendt:",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": 1,
+        "tittel": "Lønnskostnad",
+        "type": "table",
+        "amounts": {
+          "lonn": 500821,
+          "arbeidsgiveravgift": 71328,
+          "pensjonskostnader": 0,
+          "andre_relaterte_ytelser": 2842,
+          "sum": 574992
+        }
+      },
+      {
+        "nr": 2,
+        "tittel": "Varige driftsmidler og immaterielle eiendeler",
+        "type": "table",
+        "amounts": {
+          "anskaffelseskost_01_01": 0,
+          "tilgang_i_året": 0,
+          "avgang_i_året": 0,
+          "anskaffelseskost_31_12": 167100,
+          "samlede_avskrivninger_og_reverseringer_av_nedskrivninger": -16710,
+          "balanseført_verdi_per_31_12": 150390,
+          "avskrivninger_nedskrivninger_og_reverseringer_av_nedskrivninger_i_regnskapsåret": 16710
+        }
+      },
+      {
+        "nr": 3,
+        "tittel": "Konsern, tilknyttet selskap m.v.",
+        "type": "table",
+        "amounts": {
+          "samlet_beløp_som_gjelder_foretak_i_samme_konsern_fordringer": 324634,
+          "samlet_beløp_som_gjelder_foretak_i_samme_konsern_kortsiktig_gjeld": 214502
+        }
+      },
+      {
+        "nr": null,
+        "tittel": "Antall årsverk",
+        "type": "table",
+        "amounts": {
+          "antall_årsverk_sysselsatt_i_regnskapsåret": 1.5
+        }
+      },
+      {
+        "nr": null,
+        "tittel": "Lån og sikkerhetsstillelse til ledende personer, eiere med videre",
+        "type": "narrative",
+        "amounts": {}
+      }
+    ],
+    "note_flags": {
+      "antall_ansatte": null,
+      "antall_aarsverk": 1.5,
+      "otp_pliktig": null,
+      "revisjonshonorar_revisjon": null,
+      "bundne_midler_amount": null,
+      "skattetrekkskonto": null,
+      "has_pantstillelser": false,
+      "pantstillelser_gjeld": null,
+      "pantstillelser_bokfort": null,
+      "utbytte": null,
+      "konsernbidrag": null,
+      "fortsatt_drift_tvil": false,
+      "kassekredittlimit": null,
+      "kassekreditt_benyttet": null,
+      "hendelser_etter_balansedagen": null
+    }
+  },
+  "922090092": {
+    "cost": 0.0015456,
+    "in_tok": 2132,
+    "out_tok": 2043,
+    "n_pages": 7,
+    "n_notes": 7,
+    "has_amounts": 5,
+    "n_flags": 4,
+    "finish": "STOP",
+    "time": 8.8,
+    "noter": [
+      {
+        "nr": "1",
+        "tittel": "Lønnskostnader og antall årsverk",
+        "type": "table",
+        "amounts": {
+          "lonninger_2024": 25880665,
+          "lonninger_2023": 33327231,
+          "arbeidsgiveravgift_2024": 1675709,
+          "arbeidsgiveravgift_2023": 2067035,
+          "pensjonskostnader_2024": 2914675,
+          "pensjonskostnader_2023": 2187780,
+          "andre_ytelser_2024": 2080139,
+          "andre_ytelser_2023": 3128484,
+          "sum_2024": 32551187,
+          "sum_2023": 40710529
+        }
+      },
+      {
+        "nr": "2",
+        "tittel": "Skatt",
+        "type": "table",
+        "amounts": {
+          "betalbar_skatt_2024": 384464,
+          "betalbar_skatt_2023": 302348,
+          "ending_i_utsatt_skattefordel_2024": 0,
+          "ending_i_utsatt_skattefordel_2023": 0,
+          "skattekostnad_ordinært_resultat_2024": 384464,
+          "skattekostnad_ordinært_resultat_2023": 302348,
+          "resultat_før_skatt_2024": 1747563,
+          "resultat_før_skatt_2023": 1353695,
+          "permanente_forskjeller_2024": 0,
+          "permanente_forskjeller_2023": 20616,
+          "skattepliktig_inntekt_2024": 1747563,
+          "skattepliktig_inntekt_2023": 1374310,
+          "betalbar_skatt_i_balansen_2024": 384464,
+          "betalbar_skatt_i_balansen_2023": 302348,
+          "betalbar_skatt_på_årets_resultat_2024": 384464,
+          "betalbar_skatt_på_årets_resultat_2023": 302348,
+          "sum_betalbar_skatt_i_balansen_2024": 384464,
+          "sum_betalbar_skatt_i_balansen_2023": 302348,
+          "utsatt_skatt_22_prosent_2024": 0,
+          "utsatt_skatt_22_prosent_2023": 0,
+          "utsatt_skatt_22_prosent_endring": 0
+        }
+      },
+      {
+        "nr": "3",
+        "tittel": "Egenkapital",
+        "type": "table",
+        "amounts": {
+          "aksjekapital_pr_31_12_2023": 2000000,
+          "overkurs_pr_31_12_2023": 0,
+          "annen_innskutt_egenkapital_pr_31_12_2023": 0,
+          "annen_egenkapital_pr_31_12_2023": 6033609,
+          "sum_egenkapital_pr_31_12_2023": 8033609,
+          "aksjekapital_årets_resultat": 0,
+          "overkurs_årets_resultat": 0,
+          "annen_innskutt_egenkapital_årets_resultat": 0,
+          "annen_egenkapital_årets_resultat": 1363099,
+          "sum_egenkapital_årets_resultat": 1363099,
+          "aksjekapital_pr_31_12_2024": 2000000,
+          "overkurs_pr_31_12_2024": 0,
+          "annen_innskutt_egenkapital_pr_31_12_2024": 0,
+          "annen_egenkapital_pr_31_12_2024": 7396708,
+          "sum_egenkapital_pr_31_12_2024": 9396708
+        }
+      },
+      {
+        "nr": "4",
+        "tittel": "Mellomværende med selskap i samme konsern",
+        "type": "table",
+        "amounts": {
+          "kundefordringer_konsern_2024": 3834956,
+          "kundefordringer_konsern_2023": 11821258,
+          "sum_fordringer_2024": 3834956,
+          "sum_fordringer_2023": 11821258,
+          "leverandørgjeld_innen_konsern_2024": 439446,
+          "leverandørgjeld_innen_konsern_2023": 900749,
+          "sum_gjeld_2024": 439446,
+          "sum_gjeld_2023": 900749
+        }
+      },
+      {
+        "nr": "5",
+        "tittel": "Bankinnskudd",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": "6",
+        "tittel": "Aksjonærer",
+        "type": "table",
+        "amounts": {
+          "ordinære_aksjer_antall": 1000,
+          "ordinære_aksjer_pålydende": 2000,
+          "ordinære_aksjer_bokført": 2000000,
+          "sum_antall": 1000,
+          "sum_pålydende": 2000,
+          "sum_bokført": 2000000,
+          "nordlaks_oppdrett_as_eierandel": 100.0,
+          "nordlaks_oppdrett_as_stemmeandel": 100.0
+        }
+      },
+      {
+        "nr": "7",
+        "tittel": "Fortsatt drift",
+        "type": "narrative",
+        "amounts": {}
+      }
+    ],
+    "note_flags": {
+      "antall_ansatte": null,
+      "antall_aarsverk": null,
+      "otp_pliktig": true,
+      "revisjonshonorar_revisjon": 60725,
+      "bundne_midler_amount": 1530379,
+      "skattetrekkskonto": 1434691,
+      "has_pantstillelser": false,
+      "pantstillelser_gjeld": null,
+      "pantstillelser_bokfort": null,
+      "utbytte": null,
+      "konsernbidrag": null,
+      "fortsatt_drift_tvil": false,
+      "kassekredittlimit": null,
+      "kassekreditt_benyttet": null,
+      "hendelser_etter_balansedagen": null
+    }
+  },
+  "922107181": {
+    "cost": 0.0013464,
+    "in_tok": 2132,
+    "out_tok": 1711,
+    "n_pages": 7,
+    "n_notes": 17,
+    "has_amounts": 5,
+    "n_flags": 3,
+    "finish": "STOP",
+    "time": 8.6,
+    "noter": [
+      {
+        "nr": null,
+        "tittel": "Regnskapsprinsipper",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Salgsinntekter",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Klassifisering og vurdering av balanseposter",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Fordringer",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Varebeholdninger",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Varige driftsmidler",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Føring av følgende regnskapsprinsipper anvendt:",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Skatt",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": null,
+        "tittel": "Selskapet har ikke endret regnskapsprinsipp fra 2023 til 2024.",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": 1,
+        "tittel": "Note 1 - Antall årsverk",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": 2,
+        "tittel": "Note 2 - Lønnskostnader",
+        "type": "table",
+        "amounts": {
+          "lønn": 0,
+          "arbeidsgiveravgift": 0,
+          "pensjonskostnader": 0,
+          "andre_relaterte_ytelser": 2377,
+          "sum": 2377
+        }
+      },
+      {
+        "nr": 3,
+        "tittel": "Note 3 - Varige driftsmidler og immaterielle eiendeler",
+        "type": "table",
+        "amounts": {
+          "anskaffelseskost_01_01": 1663879,
+          "tilgang_i_året": 6066377,
+          "anskaffelseskost_31_12": 7728756,
+          "samlede_avskrivninger_nedskrivninger_og_reverseringer_av_nedskrivninger": -891217,
+          "balanseført_verdi_per_31_12": 6838539,
+          "avskrivninger_nedskrivninger_og_reverseringer_av_nedskrivninger_i_regnskapsåret": 321226
+        }
+      },
+      {
+        "nr": 4,
+        "tittel": "Note 4 - Spesifisering av skatt",
+        "type": "table",
+        "amounts": {
+          "skattekostnad": -61966,
+          "skattekostnad_sum": -61966,
+          "resultat_før_skatt": -281806,
+          "permanente_forskjeller": 142,
+          "endring_i_midlertidige_forskjeller": -159180,
+          "anvendelse_av_fremførbart_underskudd": 0,
+          "skattepliktig_inntekt": -440844
+        }
+      },
+      {
+        "nr": 5,
+        "tittel": "Note 5 - Midlertidige forskjeller - utsatt skatt/skattefordel",
+        "type": "table",
+        "amounts": {
+          "anleggsmidler": 365688,
+          "fremførbart_underskudd": -32,
+          "netto_forskjeller": 365656,
+          "sum_midlertidige_forskjeller_som_inngår_i_grunnlag_for_utsatt_skatt_skattefordel": 365656,
+          "utsatt_skatt_31_12_2024_basert_på_22_prosent": 80444
+        }
+      },
+      {
+        "nr": 6,
+        "tittel": "Note 6 - Lån og sikkerhetsstillelse til medlemmer av styrene, eiere med videre",
+        "type": "narrative",
+        "amounts": {}
+      },
+      {
+        "nr": 7,
+        "tittel": "Note 7 - Gjeld og garantiforpliktelser",
+        "type": "table",
+        "amounts": {
+          "del_av_gjelden_som_forfaller_til_betaling_mer_enn_fem_år_etter_regnskapsårets_slutt": 3333280,
+          "gjeld_som_er_sikret_ved_pant_eller_lignende_sikkerhet_i_eiendeler": 4267559,
+          "balanseført_verdi_av_pantsatte_eiendeler": 5754110,
+          "summen_av_garantiforpliktelser_som_ikke_er_regnskapsført": 0
+        }
+      },
+      {
+        "nr": null,
+        "tittel": "Mer om gjeld",
+        "type": "narrative",
+        "amounts": {}
+      }
+    ],
+    "note_flags": {
+      "antall_ansatte": 0,
+      "antall_aarsverk": 0,
+      "otp_pliktig": false,
+      "revisjonshonorar_revisjon": null,
+      "bundne_midler_amount": null,
+      "skattetrekkskonto": 0,
+      "has_pantstillelser": true,
+      "pantstillelser_gjeld": 4267559,
+      "pantstillelser_bokfort": 5754110,
+      "utbytte": null,
+      "konsernbidrag": null,
+      "fortsatt_drift_tvil": false,
+      "kassekredittlimit": null,
+      "kassekreditt_benyttet": null,
+      "hendelser_etter_balansedagen": null
+    }
+  }
+}
