@@ -1,0 +1,41 @@
+{
+  "t1_single": [
+    {
+      "orgnr": "988054631",
+      "n_pages": 7,
+      "n_notes": 7,
+      "in_tok": 2059,
+      "out_tok": 1123,
+      "cost": 0.00098265,
+      "time": 6.9
+    },
+    {
+      "orgnr": "974522683",
+      "n_pages": 8,
+      "n_notes": 9,
+      "in_tok": 2317,
+      "out_tok": 1420,
+      "cost": 0.00119955,
+      "time": 7.2
+    },
+    {
+      "orgnr": "981472470",
+      "n_pages": 1,
+      "n_notes": 0,
+      "in_tok": 3607,
+      "out_tok": 119,
+      "cost": 0.00061245,
+      "time": 2.5
+    }
+  ],
+  "t2_batch5": {
+    "cost": 0.00348015,
+    "per_entity": 0.00069603,
+    "in_tok": 9963,
+    "out_tok": 4578
+  },
+  "t3_batch10": {
+    "cost": 0.004241249999999999,
+    "per_entity": 0.0004241249999999999
+  }
+}
