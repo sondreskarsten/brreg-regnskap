@@ -1,0 +1,52 @@
+{
+  "experiment": "Silhouette-based page classification for scanned årsregnskap",
+  "date": "2026-04-11",
+  "status": "Informative but insufficient for production use",
+  "approach": "Render pages at low DPI (36-72), extract spatial features from grayscale thumbnails and diagnostic bands, classify by template matching",
+  "methods_tested": [
+    {
+      "name": "48x48 thumbnail features (quadrant means, row/col variance, edge density)",
+      "source_accuracy": "75% (36/48)",
+      "type_accuracy": "52% (25/48)",
+      "table_accuracy": "73% (35/48)",
+      "notes": "Features separate populations but overlap at decision boundaries"
+    },
+    {
+      "name": "Boundary detection via consecutive BRREG-like signature",
+      "accuracy": "2/4 entities correct boundary",
+      "failure_mode": "Generell_info page has different footer than other BRREG pages; sparse BRREG continuation pages look like company signatur pages"
+    },
+    {
+      "name": "Template divergence from page 1",
+      "accuracy": "2/4 entities correct boundary",
+      "failure_mode": "Silvercoin company pages visually similar to BRREG template; distance threshold cannot separate"
+    },
+    {
+      "name": "16-bin band signature template matching (72 DPI)",
+      "source_accuracy": "73% (35/48)",
+      "boundary_accuracy": "0/4 (page 1 always misclassified; Silvercoin company section uses BRREG-like template)",
+      "failure_mode": "Generell_info has footer='Utskriftsdato' not 'Side X av Y' — different bottom band. Silvercoin company pages have top_d=0.4, bot_d=3.4 — identical to BRREG"
+    }
+  ],
+  "key_findings": [
+    "All 5 test PDFs are scanned images (1728x2312 PNG/page, zero text layer) — text-based features impossible",
+    "BRREG template IS visually distinctive: top_band ~254 (white header), specific bottom-left dark band (Brønnøysundregistrene text)",
+    "Generell_info (page 1) is always an outlier — different footer pattern than other BRREG pages",
+    "CRITICAL: Some companies (Silvercoin) use templates visually indistinguishable from BRREG at pixel level — band signatures match within threshold. This is a hard ceiling for pixel-only approaches.",
+    "Company signatur pages (mostly white with a few lines of text) look identical to sparse BRREG continuation pages in pixel features",
+    "Best achievable source accuracy with pixels alone: ~75-80%. Not sufficient for production where misclassifying source causes hallucinated company values."
+  ],
+  "comparison_with_gemini": {
+    "gemini_classify_pdf_accuracy": "100% on all 4 labeled entities (per manifest experiment)",
+    "gemini_cost": "$0.0003/entity",
+    "pixel_best_accuracy": "~75% source classification",
+    "conclusion": "Gemini reads the actual text ('Brønnøysundregistrene', 'Side X av Y') which is unambiguous. Pixel silhouettes capture visual layout but cannot distinguish templates that LOOK similar but have different TEXT content. The 25% error rate is concentrated in exactly the cases that matter most: generell_info pages and company sections with BRREG-like formatting."
+  },
+  "generalizing_to_sections": {
+    "feasibility": "Low for fine-grained type classification, moderate for coarse binary (has_table vs narrative)",
+    "table_detection": "73% accuracy from row_var + col_var features — dense number tables have distinctively high column variance",
+    "type_classification": "52% — too many visual overlaps between resultatregnskap/balanse/noter, all of which are 'table with numbers'",
+    "recommendation": "Pixel features could pre-filter pages into has_table/no_table before Gemini extraction, potentially allowing skipping Gemini for clearly narrative pages. But the cost saving ($0.0001 per skipped page) does not justify the false negative risk."
+  },
+  "verdict": "The silhouette approach confirms that BRREG pages have a distinctive visual signature (consistent header/footer bands, specific text density patterns). However, pixel features hit a hard ceiling at ~75% because some company templates are visually identical to BRREG. For a pipeline where source misclassification causes Gemini to hallucinate company financial values (the most dangerous error type identified in the manifest experiment), 75% is unacceptable. Gemini classify_pdf at $0.0003 remains the production classifier."
+}
