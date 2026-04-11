@@ -1,0 +1,28 @@
+{
+  "c2_single_page": [
+    {
+      "orgnr": "988054631",
+      "in_tok": 3411,
+      "out_tok": 796,
+      "cost": 0.0009892500000000001,
+      "time": 4.8,
+      "raw_preview": "```json\n{\n  \"line_items\": [\n    {\n      \"label\": \"Salgsinntekt\",\n      \"current_year\": 3374122,\n      \"prior_year\": 3803742\n    },\n    {\n      \"label\": \"Sum inntekter\",\n      \"current_year\": 3374122,\n      \"prior_year\": 3803742\n    },\n    {\n      \"label\": \"Lønnskostnad\",\n      \"current_year\": 2512529,\n      \"prior_year\": 3166268\n    },\n    {\n      \"label\": \"Annen driftskostnad\",\n      \"current_year\": 2065419,\n      \"prior_year\": 1785685\n    },\n    {\n      \"label\": \"Sum kostnader\",\n      \"current"
+    },
+    {
+      "orgnr": "974522683",
+      "in_tok": 3411,
+      "out_tok": 1034,
+      "cost": 0.00113205,
+      "time": 5.3,
+      "raw_preview": "```json\n{\n  \"line_items\": [\n    {\n      \"label\": \"Salgsinntekt\",\n      \"current_year\": 2662142,\n      \"prior_year\": 3993098\n    },\n    {\n      \"label\": \"Annen driftsinntekt\",\n      \"current_year\": 4380,\n      \"prior_year\": 0\n    },\n    {\n      \"label\": \"Sum inntekter\",\n      \"current_year\": 2666522,\n      \"prior_year\": 3993098\n    },\n    {\n      \"label\": \"Varekostnad\",\n      \"current_year\": 43524,\n      \"prior_year\": 52222\n    },\n    {\n      \"label\": \"Lønnskostnad\",\n      \"current_year\": 513639,"
+    },
+    {
+      "orgnr": "981472470",
+      "in_tok": 3411,
+      "out_tok": 1161,
+      "cost": 0.00120825,
+      "time": 5.9,
+      "raw_preview": "```json\n{\n  \"line_items\": [\n    {\n      \"label\": \"Salgsinntekt\",\n      \"current_year\": 21580393,\n      \"prior_year\": 23487828\n    },\n    {\n      \"label\": \"Annen driftsinntekt\",\n      \"current_year\": 1801686,\n      \"prior_year\": 1724093\n    },\n    {\n      \"label\": \"Sum inntekter\",\n      \"current_year\": 23382078,\n      \"prior_year\": 25211921\n    },\n    {\n      \"label\": \"Varekostnad\",\n      \"current_year\": 520484,\n      \"prior_year\": 826372\n    },\n    {\n      \"label\": \"Lønnskostnad\",\n      \"current"
+    }
+  ]
+}
