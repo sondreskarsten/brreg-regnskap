@@ -1,0 +1,48 @@
+{
+  "experiment": "DETR layout detection for page classification",
+  "date": "2026-04-11",
+  "model": "cmarkea/detr-layout-detection",
+  "status": "FAILED — not viable in Claude container or Cloud Run 4vCPU",
+  "attempts": [
+    {
+      "attempt": 1,
+      "config": "torch 2.11.0 (full CUDA), transformers 5.5.3, DPI 150",
+      "result": "OOM — torch + CUDA packages exceed 4GB container memory"
+    },
+    {
+      "attempt": 2,
+      "config": "torch 2.11.0+cpu, transformers 5.5.3, DPI 100",
+      "result": "Model weight mismatch — transformers 5.5.3 renames all DETR weights (prefix mismatch), model loads with random weights, zero detections on all pages. ~7s/page on CPU."
+    },
+    {
+      "attempt": 3,
+      "config": "torch 2.11.0+cpu, transformers 4.44.0, DPI 150",
+      "result": "Timeout — HuggingFace cache migration + model loading exceeds container time limit"
+    }
+  ],
+  "root_causes": [
+    "PDFs are scanned images (1728x2312 PNG per page, zero text layer) — text-based classification impossible",
+    "DETR ResNet-101 backbone + transformer is ~170MB weights, ~800MB+ in memory during inference",
+    "CPU inference ~7s/page × 62 pages = 7+ minutes, exceeds container timeout",
+    "transformers v5.x changed DETR weight naming convention, breaking compatibility with cmarkea checkpoint"
+  ],
+  "alternative_tried": {
+    "method": "PyMuPDF text block analysis (classify_page_fitz)",
+    "result": "0% accuracy — pages have zero text layer, all classified as 'annet'",
+    "conclusion": "Confirms these PDFs require vision-based or OCR-based classification"
+  },
+  "pdf_structure": {
+    "format": "Each page is a single embedded PNG image (1728x2312, ~35-50KB per image)",
+    "text_layer": "None — scanned documents with no OCR text embedded",
+    "total_pages": 62,
+    "entities_tested": [
+      "Bonord (13p)",
+      "ECITLAW (10p)",
+      "Alliance (11p)",
+      "Silvercoin (14p)",
+      "Rødskifer (14p)"
+    ]
+  },
+  "conclusion": "Gemini classify_pdf() at $0.0003/entity remains the only viable page classifier for these scanned PDFs. DETR could work on a machine with 8GB+ RAM and 10+ minutes, but provides no advantage over Gemini at that point. For Cloud Run production deployment, Gemini manifest classification should be the first call before extraction.",
+  "recommendation": "Drop DETR from the pipeline. The Gemini manifest experiment already proved that classify_pdf prevents the most dangerous error (hallucinated company values). At $0.0003/entity it's 25% cost increase on a $0.0012 extraction — negligible. No free local alternative exists for image-only PDFs at reasonable latency."
+}

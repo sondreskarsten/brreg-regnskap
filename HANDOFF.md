@@ -74,30 +74,33 @@ Gemini classifies pages (source + type + has_table) for $0.0003/entity. Results 
 
 ---
 
+## DETR experiment results (2026-04-11, follow-up session)
+
+**DETR layout detection: NOT VIABLE.** Three attempts failed:
+
+| Attempt | Config | Result |
+|---|---|---|
+| 1 | torch 2.11.0 (CUDA), transformers 5.5.3 | OOM — CUDA packages exceed 4GB container |
+| 2 | torch 2.11.0+cpu, transformers 5.5.3 | Weight mismatch — v5.5 renames DETR weights, zero detections |
+| 3 | torch 2.11.0+cpu, transformers 4.44.0 | Timeout — cache migration + model load exceeds container limit |
+
+**Key discovery: All 5 test PDFs are scanned images** (1728×2312 PNG per page, zero text layer). PyMuPDF text-based classification returns 0% accuracy because there is no text to extract.
+
+**Decision: Gemini classify_pdf() is the production page classifier.** At $0.0003/entity (25% cost increase on $0.0012 extraction), it's the only option that works on image-only PDFs. No free local alternative exists at reasonable latency. DETR dropped from pipeline.
+
+Full results: `experiments/results/detr_experiment_findings.json`
+
+---
+
 ## First job for next chat
 
-**Install DETR layout detection model and run the experiment.**
+**Production extraction pipeline.** With the manifest experiment validated and DETR ruled out, the extraction architecture is settled:
 
-Script ready at `experiments/run_detr_layout.py`. Steps:
+1. `classify_pdf()` → page manifest ($0.0003)
+2. `extract_pdf()` with manifest → structured JSON ($0.0012)
+3. Cross-validate P&L/BS sums (catches 50% of errors per T20)
 
-```bash
-# 1. Install dependencies (may take a few minutes for torch)
-pip install transformers torch timm Pillow --break-system-packages
-
-# 2. Run the experiment
-GOOGLE_APPLICATION_CREDENTIALS=/mnt/project/sondreskarsten-d7d14-8486be2d085b.json \
-  python experiments/run_detr_layout.py
-```
-
-The script will:
-1. Download `cmarkea/detr-layout-detection` (~170MB)
-2. Run on all pages of 5 test entities (Bonord, ECITLAW, Alliance, Silvercoin, Rødskifer)
-3. Detect 11 element types with bounding boxes per page
-4. Classify pages as: financial_table, mixed_table_text, narrative, cover_or_header, other
-5. Compare against Gemini classification manifests
-6. Save results to `experiments/results/`
-
-The bounding box data from DETR can then be used to verify column assignment in Gemini's extraction — the spatial verification layer that Gemini cannot provide natively.
+Next steps: build the batch extraction loop over the regnskap-sync PDF inventory, wire output to `finstat/` CDC pipeline, and handle the BRREG HTTP 406 regression for new PDF downloads.
 
 ---
 
