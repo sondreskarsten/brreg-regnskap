@@ -1,0 +1,34 @@
+{
+  "experiment": "Image dimension-based page classification",
+  "date": "2026-04-11",
+  "status": "PRODUCTION VIABLE for source classification",
+  "method": "BRREG pages rendered at 1728x2312, company pages at 1653x{2140,2338,2339,2340}. Image size extracted via fitz.extract_image() — zero pixel analysis needed for source split.",
+  "results": {
+    "source_accuracy": "100% (48/48 labeled pages, 5 entities)",
+    "brreg_last_page_accuracy": "100% (4/4 labeled entities)",
+    "type_accuracy": "69% (33/48) — BRREG types from positional order, company types from silhouette features",
+    "cost": "$0 (no API calls, no ML model, ~2ms per page)"
+  },
+  "brreg_page_order": [
+    "p1: generell_info (always)",
+    "p2: resultatregnskap (always 1 page)",
+    "p3: balanse (first page, always)",
+    "p4: balanse (second page, IF n_brreg >= 6) OR noter",
+    "p5+: noter (remaining BRREG pages)"
+  ],
+  "company_type_accuracy_breakdown": {
+    "signatur": "2/5 correct — sparse signatur pages misclassified as noter",
+    "revisjonsberetning": "5/7 correct — works when text-heavy (high row_var)",
+    "noter": "6/10 correct — confused with revisjonsberetning when text-heavy",
+    "resultatregnskap": "0/1 correct — company P&L looks identical to noter in pixels",
+    "balanse": "0/2 correct — company BS looks identical to noter in pixels"
+  },
+  "production_architecture": {
+    "step_1": "Extract image dimensions per page via fitz — split into brreg/company sections (100% accurate, $0)",
+    "step_2": "Assign BRREG types by positional order (generell_info→resultatregnskap→balanse→noter)",
+    "step_3": "Pass brreg_last_page to Gemini extract_pdf() as manifest input — prevents hallucinated company values",
+    "step_4": "Gemini handles company section type assignment (it reads text, which is the only way to distinguish company P&L from noter)",
+    "cost_saving": "Eliminates classify_pdf() call ($0.0003/entity) by providing brreg_last_page for free. Gemini extraction ($0.0012) still needed for actual data extraction."
+  },
+  "key_insight": "The previous silhouette experiment showed 75% source accuracy from pixel analysis. The actual discriminator was trivial: BRREG renders pages at a fixed 1728x2312 resolution. Company attachments are scanned at different resolutions. This is metadata, not pixels."
+}
