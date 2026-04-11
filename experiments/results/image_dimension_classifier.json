@@ -30,5 +30,54 @@
     "step_4": "Gemini handles company section type assignment (it reads text, which is the only way to distinguish company P&L from noter)",
     "cost_saving": "Eliminates classify_pdf() call ($0.0003/entity) by providing brreg_last_page for free. Gemini extraction ($0.0012) still needed for actual data extraction."
   },
-  "key_insight": "The previous silhouette experiment showed 75% source accuracy from pixel analysis. The actual discriminator was trivial: BRREG renders pages at a fixed 1728x2312 resolution. Company attachments are scanned at different resolutions. This is metadata, not pixels."
+  "key_insight": "The previous silhouette experiment showed 75% source accuracy from pixel analysis. The actual discriminator was trivial: BRREG renders pages at a fixed 1728x2312 resolution. Company attachments are scanned at different resolutions. This is metadata, not pixels.",
+  "company_sub_sizes": {
+    "company_height_analysis": {
+      "2140": {
+        "types": [
+          "revisjonsberetning"
+        ],
+        "n": 2,
+        "pure": true
+      },
+      "2338": {
+        "types": [
+          "revisjonsberetning",
+          "signatur"
+        ],
+        "n": 6,
+        "pure": false,
+        "note": "audit report + signatur from same scan batch"
+      },
+      "2339": {
+        "types": [
+          "signatur",
+          "unknown"
+        ],
+        "n": 8,
+        "pure": false
+      },
+      "2340": {
+        "types": [
+          "noter",
+          "balanse",
+          "resultatregnskap",
+          "revisjonsberetning",
+          "signatur"
+        ],
+        "n": 16,
+        "pure": false,
+        "note": "mixed — all company content types"
+      }
+    },
+    "interpretation": "Height variation within company section corresponds to physical document origin (separate scans), not content type. Audit reports (revisjonsberetning) are consistently scanned at different height than financial statements. This gives a partial but useful signal: non-2340 company pages are never P&L/BS/noter.",
+    "refined_classifier": {
+      "1728x2312": "brreg (100%)",
+      "1653x2140": "company/revisjonsberetning (100% in sample)",
+      "1653x2338": "company/revisjonsberetning OR signatur (no financial tables)",
+      "1653x2339": "company — insufficient sample",
+      "1653x2340": "company financial content — needs Gemini for type"
+    },
+    "production_value": "Image dimensions provide: (1) perfect brreg/company split, (2) partial company sub-typing — audit reports identifiable by height in most entities. The brreg_last_page boundary plus audit-report identification eliminates classify_pdf entirely for the extraction prompt. Gemini only needs to distinguish P&L vs BS vs noter within the 2340-height pages."
+  }
 }
