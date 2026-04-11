@@ -42,7 +42,7 @@ import fitz
 import numpy as np
 from PIL import Image
 
-CLASSIFIER_VERSION = "0.4.0"
+CLASSIFIER_VERSION = "0.5.0"
 BRREG_WIDTH = 1728
 
 PLATFORM_HASHES = {
@@ -256,6 +256,7 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
         document: orgnr, year, pdf_hash, total_pages, file_size_bytes
         split: brreg_last_page, n_brreg, n_company
         platform: id, footer_hash, detection_method
+        konsern: detected flag, evidence signals
         pages: list of page dicts with source, type, zones, bounding boxes
         created_at: ISO 8601 timestamp
     """
@@ -275,6 +276,11 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
             break
     n_brreg = brreg_last
 
+    nested_wrapper_pages = [
+        pd["page"] for pd in page_dims
+        if pd["page"] > brreg_last and pd["w"] == BRREG_WIDTH
+    ]
+
     company_page_dims = [pd for pd in page_dims if pd["page"] > brreg_last]
     if len(company_page_dims) >= 2:
         platform_id = _detect_platform(doc, company_page_dims[1]["page"] - 1)
@@ -287,6 +293,8 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
         footer_hash = None
 
     pages = []
+    konsern_evidence = []
+
     for pd in page_dims:
         if pd["page"] <= brreg_last:
             source = "brreg"
@@ -326,6 +334,16 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
         if ptype == "generell_info":
             has_table = False
 
+        max_col_gaps = max((z["n_col_gaps"] for z in zones), default=0)
+        n_high_gap_zones = sum(1 for z in zones if z["n_col_gaps"] >= 5)
+
+        if source == "company" and max_col_gaps >= 4:
+            konsern_evidence.append({
+                "signal": "high_col_gap_page",
+                "page": pd["page"],
+                "max_col_gaps": max_col_gaps,
+            })
+
         pages.append({
             "page": pd["page"],
             "source": source,
@@ -333,6 +351,7 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
             "has_table": has_table,
             "img_w": pd["w"],
             "img_h": pd["h"],
+            "max_col_gaps": max_col_gaps,
             "zones": zones,
         })
 
@@ -342,6 +361,8 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
     for pd in company_page_dims:
         height_groups[pd["h"]].append(pd["page"])
 
+    konsern_detected = len(konsern_evidence) >= 5
+
     return {
         "classifier": {
             "version": CLASSIFIER_VERSION,
@@ -350,6 +371,8 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
                 "brreg_type": {"method": "positional_order", "rules": BRREG_POSITIONAL_RULES},
                 "platform_id": {"method": "footer_avg_hash", "hamming_threshold": 5, "calibration": PLATFORM_HASH_CALIBRATION},
                 "zone_segmentation": {"method": "projection_profile_col_gap", "params": ZONE_SEGMENTATION_PARAMS},
+                "konsern_detection": {"method": "col_gap_page_count", "min_gaps_per_page": 4, "min_pages": 5,
+                                      "calibration": {"n_entities": 50, "n_konsern": 2, "precision": 1.0, "recall": 1.0, "date": "2026-04-11"}},
             },
             "accuracy": ACCURACY_REPORT,
         },
@@ -364,11 +387,16 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
             "brreg_last_page": brreg_last,
             "n_brreg": n_brreg,
             "n_company": len(page_dims) - brreg_last,
+            "nested_wrapper_pages": nested_wrapper_pages,
         },
         "platform": {
             "id": platform_id,
             "footer_hash": footer_hash,
             "detection_method": "footer_avg_hash_hamming5" if footer_hash else "structural",
+        },
+        "konsern": {
+            "detected": konsern_detected,
+            "evidence": konsern_evidence,
         },
         "company_height_groups": {str(h): pg_list for h, pg_list in sorted(height_groups.items())},
         "pages": pages,
