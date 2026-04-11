@@ -42,7 +42,7 @@ import fitz
 import numpy as np
 from PIL import Image
 
-CLASSIFIER_VERSION = "0.3.0"
+CLASSIFIER_VERSION = "0.4.0"
 BRREG_WIDTH = 1728
 
 PLATFORM_HASHES = {
@@ -225,12 +225,12 @@ def segment_page_zones(
         transitions = np.diff(ink_rows.astype(int))
         line_starts = np.where(transitions == 1)[0]
 
-        if bh < 80 and len(line_starts) <= 3:
-            label = "title"
-        elif len(col_gaps) >= 2:
+        if len(col_gaps) >= 2:
             label = "table"
         elif len(col_gaps) == 1 and col_gaps[0] > 100:
             label = "table"
+        elif bh < 50 and len(col_gaps) == 0 and len(line_starts) <= 2:
+            label = "title"
         else:
             label = "text"
 
