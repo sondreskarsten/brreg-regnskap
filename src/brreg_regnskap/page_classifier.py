@@ -33,13 +33,16 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
 import io
 from collections import defaultdict
+from datetime import datetime, timezone
 
 import fitz
 import numpy as np
 from PIL import Image
 
+CLASSIFIER_VERSION = "0.3.0"
 BRREG_WIDTH = 1728
 
 PLATFORM_HASHES = {
@@ -51,7 +54,42 @@ PLATFORM_HASHES = {
     "ffff1c9fffffffff": "visma_finale_c",
 }
 
+PLATFORM_HASH_CALIBRATION = {
+    "n_pdfs": 205,
+    "date": "2026-04-07",
+    "source": "gs://brreg-regnskap/extraction/fingerprint/clusters.json",
+}
+
+BRREG_POSITIONAL_RULES = {
+    "calibration_n_entities": 20,
+    "calibration_n_pages": 117,
+    "accuracy": 0.96,
+    "date": "2026-04-11",
+}
+
+ZONE_SEGMENTATION_PARAMS = {
+    "min_gap": 40,
+    "min_block": 15,
+    "col_gap_min": 40,
+    "ink_threshold": 245,
+    "white_col_threshold": 248,
+    "interior_margin_frac": 0.05,
+    "interior_position_range": [0.1, 0.9],
+    "title_max_height": 80,
+    "title_max_lines": 3,
+    "table_min_col_gaps": 2,
+    "table_single_gap_min_width": 100,
+}
+
 COMPANY_REVISJON_HEIGHTS = {2140, 2337}
+
+ACCURACY_REPORT = {
+    "source_split": {"accuracy": 1.0, "n_pages": 808, "n_entities": 50, "method": "image_width"},
+    "brreg_type": {"accuracy": 0.96, "n_pages": 117, "n_entities": 20, "method": "positional_order"},
+    "platform_id": {"classified_frac": 0.70, "n_entities": 50, "method": "footer_avg_hash_hamming5"},
+    "has_table": {"accuracy": 0.88, "n_pages": 243, "n_entities": 20, "method": "zone_col_gap_detection", "note": "with generell_info carve-out"},
+    "company_revisjon_height": {"accuracy": 1.0, "n_pages": 6, "n_entities": 20, "method": "height_2140_2337"},
+}
 
 
 def _img_dims(doc: fitz.Document, page_idx: int) -> tuple[int, int]:
@@ -89,6 +127,22 @@ def _detect_platform(doc: fitz.Document, second_company_idx: int) -> str:
         if ah - known <= 5:
             return label
     return f"unknown_{ah}"
+
+
+def _footer_hash_hex(doc: fitz.Document, page_idx: int) -> str | None:
+    try:
+        import imagehash
+    except ImportError:
+        return None
+
+    imgs = doc[page_idx].get_images()
+    if not imgs:
+        return None
+    info = doc.extract_image(imgs[0][0])
+    pil = Image.open(io.BytesIO(info["image"]))
+    w, h = pil.size
+    footer = pil.crop((0, int(h * 0.88), w, h))
+    return str(imagehash.average_hash(footer, hash_size=8))
 
 
 def segment_page_zones(
@@ -192,18 +246,19 @@ def segment_page_zones(
     return zones
 
 
-def build_manifest(pdf_bytes: bytes) -> dict:
+def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None = None) -> dict:
     """Build a complete page manifest from PDF bytes. Zero API calls.
 
-    Returns dict with keys:
-        brreg_last_page: int
-        n_brreg: int
-        n_company: int
-        total_pages: int
-        platform: str
-        pages: list of page dicts
+    Returns a self-describing metadata envelope with keys:
+        classifier: version, params, accuracy report
+        document: orgnr, year, pdf_hash, total_pages, file_size_bytes
+        split: brreg_last_page, n_brreg, n_company
+        platform: id, footer_hash, detection_method
+        pages: list of page dicts with source, type, zones, bounding boxes
+        created_at: ISO 8601 timestamp
     """
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    pdf_hash = hashlib.sha256(pdf_bytes).hexdigest()[:16]
 
     page_dims = []
     for i in range(doc.page_count):
@@ -218,13 +273,16 @@ def build_manifest(pdf_bytes: bytes) -> dict:
             break
     n_brreg = brreg_last
 
-    company_pages = [pd for pd in page_dims if pd["page"] > brreg_last]
-    if len(company_pages) >= 2:
-        platform = _detect_platform(doc, company_pages[1]["page"] - 1)
-    elif len(company_pages) == 1:
-        platform = "single_page_company"
+    company_page_dims = [pd for pd in page_dims if pd["page"] > brreg_last]
+    if len(company_page_dims) >= 2:
+        platform_id = _detect_platform(doc, company_page_dims[1]["page"] - 1)
+        footer_hash = _footer_hash_hex(doc, company_page_dims[1]["page"] - 1)
+    elif len(company_page_dims) == 1:
+        platform_id = "single_page_company"
+        footer_hash = None
     else:
-        platform = "brreg_only"
+        platform_id = "brreg_only"
+        footer_hash = None
 
     pages = []
     for pd in page_dims:
@@ -277,11 +335,40 @@ def build_manifest(pdf_bytes: bytes) -> dict:
         })
 
     doc.close()
+
+    height_groups = defaultdict(list)
+    for pd in company_page_dims:
+        height_groups[pd["h"]].append(pd["page"])
+
     return {
-        "brreg_last_page": brreg_last,
-        "n_brreg": n_brreg,
-        "n_company": len(page_dims) - brreg_last,
-        "total_pages": len(page_dims),
-        "platform": platform,
+        "classifier": {
+            "version": CLASSIFIER_VERSION,
+            "layers": {
+                "source_split": {"method": "image_width", "brreg_width": BRREG_WIDTH},
+                "brreg_type": {"method": "positional_order", "rules": BRREG_POSITIONAL_RULES},
+                "platform_id": {"method": "footer_avg_hash", "hamming_threshold": 5, "calibration": PLATFORM_HASH_CALIBRATION},
+                "zone_segmentation": {"method": "projection_profile_col_gap", "params": ZONE_SEGMENTATION_PARAMS},
+            },
+            "accuracy": ACCURACY_REPORT,
+        },
+        "document": {
+            "orgnr": orgnr,
+            "year": year,
+            "pdf_sha256_prefix": pdf_hash,
+            "file_size_bytes": len(pdf_bytes),
+            "total_pages": len(page_dims),
+        },
+        "split": {
+            "brreg_last_page": brreg_last,
+            "n_brreg": n_brreg,
+            "n_company": len(page_dims) - brreg_last,
+        },
+        "platform": {
+            "id": platform_id,
+            "footer_hash": footer_hash,
+            "detection_method": "footer_avg_hash_hamming5" if footer_hash else "structural",
+        },
+        "company_height_groups": {str(h): pg_list for h, pg_list in sorted(height_groups.items())},
         "pages": pages,
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
