@@ -1,0 +1,1204 @@
+{
+  "821995302": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    }
+  ],
+  "822031722": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "company",
+      "type": "annet",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": false
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    }
+  ],
+  "822044182": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    }
+  ],
+  "921986181": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "company",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 13,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    },
+    {
+      "page": 14,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    }
+  ],
+  "921990316": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "company",
+      "type": "annet",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    }
+  ],
+  "921995377": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "company",
+      "type": "annet",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 13,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    }
+  ],
+  "922017786": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 6,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 7,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 8,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 9,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 10,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    }
+  ],
+  "922018448": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 6,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "annet",
+      "has_table": false
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 13,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 14,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 15,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 16,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 17,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 18,
+      "source": "company",
+      "type": "annet",
+      "has_table": false
+    },
+    {
+      "page": 19,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    },
+    {
+      "page": 20,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    },
+    {
+      "page": 21,
+      "source": "company",
+      "type": "annet",
+      "has_table": false
+    }
+  ],
+  "922021066": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    }
+  ],
+  "922032378": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "annet",
+      "has_table": false
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 13,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    },
+    {
+      "page": 14,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    }
+  ],
+  "922036799": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "company",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    }
+  ],
+  "922036845": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    }
+  ],
+  "922040907": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 5,
+      "source": "company",
+      "type": "aarsberetning",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "signatur",
+      "has_table": false
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    }
+  ],
+  "922042195": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "company",
+      "type": "annet",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    },
+    {
+      "page": 13,
+      "source": "company",
+      "type": "revisjonsberetning",
+      "has_table": false
+    }
+  ],
+  "922043310": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 7,
+      "source": "company",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 12,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 13,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    }
+  ],
+  "922043795": [
+    {
+      "page": 1,
+      "source": "brreg",
+      "type": "generell_info",
+      "has_table": false
+    },
+    {
+      "page": 2,
+      "source": "brreg",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 3,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 4,
+      "source": "brreg",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 5,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 6,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": true
+    },
+    {
+      "page": 7,
+      "source": "brreg",
+      "type": "noter",
+      "has_table": false
+    },
+    {
+      "page": 8,
+      "source": "company",
+      "type": "resultatregnskap",
+      "has_table": true
+    },
+    {
+      "page": 9,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 10,
+      "source": "company",
+      "type": "balanse",
+      "has_table": true
+    },
+    {
+      "page": 11,
+      "source": "company",
+      "type": "noter",
+      "has_table": true
+    }
+  ]
+}

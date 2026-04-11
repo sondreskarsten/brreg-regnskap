@@ -1,0 +1,6916 @@
+{
+  "821995302": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 0,
+    "total_pages": 7,
+    "platform": "brreg_only",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      }
+    ]
+  },
+  "822031722": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 6,
+    "total_pages": 11,
+    "platform": "visma_finale_b",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2334
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2334
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2334
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2334
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2334
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2334
+      }
+    ]
+  },
+  "822044182": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 4,
+    "total_pages": 10,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "921986181": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 9,
+    "total_pages": 14,
+    "platform": "visma_finale_b",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "921990316": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 7,
+    "total_pages": 12,
+    "platform": "visma_finale_a",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "921995377": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 8,
+    "total_pages": 13,
+    "platform": "visma_finale_a",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "922017786": {
+    "brreg_last_page": 10,
+    "n_brreg": 10,
+    "n_company": 0,
+    "total_pages": 10,
+    "platform": "brreg_only",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 9,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 10,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      }
+    ]
+  },
+  "922018448": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 15,
+    "total_pages": 21,
+    "platform": "visma_finale_c",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 18,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 19,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 20,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 21,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922021066": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 6,
+    "total_pages": 11,
+    "platform": "visma_finale_a",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "922032378": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 8,
+    "total_pages": 14,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2337
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2337
+      }
+    ]
+  },
+  "922036799": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 6,
+    "total_pages": 11,
+    "platform": "visma_finale_a",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "922036845": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 5,
+    "total_pages": 12,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922040907": {
+    "brreg_last_page": 4,
+    "n_brreg": 4,
+    "n_company": 8,
+    "total_pages": 12,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2337
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2337
+      }
+    ]
+  },
+  "922042195": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 8,
+    "total_pages": 13,
+    "platform": "visma_finale_a",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "922043310": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 7,
+    "total_pages": 13,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922043795": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 4,
+    "total_pages": 11,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922044120": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 7,
+    "total_pages": 12,
+    "platform": "visma_finale_a",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922046891": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 8,
+    "total_pages": 13,
+    "platform": "unknown_ff8100ff3f7fffff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "922048940": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 0,
+    "total_pages": 7,
+    "platform": "brreg_only",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      }
+    ]
+  },
+  "922069794": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 11,
+    "total_pages": 16,
+    "platform": "unknown_81ffffffffffffff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922076901": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 9,
+    "total_pages": 15,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922077142": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 0,
+    "total_pages": 6,
+    "platform": "brreg_only",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      }
+    ]
+  },
+  "922084556": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 8,
+    "total_pages": 15,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      }
+    ]
+  },
+  "922085544": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 6,
+    "total_pages": 12,
+    "platform": "unknown_ffffffff818381ff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "922085900": {
+    "brreg_last_page": 8,
+    "n_brreg": 8,
+    "n_company": 5,
+    "total_pages": 13,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922090092": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 9,
+    "total_pages": 14,
+    "platform": "visma_finale_a",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2337
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2337
+      }
+    ]
+  },
+  "922090130": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 5,
+    "total_pages": 11,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922098743": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 5,
+    "total_pages": 12,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922107181": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 7,
+    "total_pages": 14,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922109974": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 11,
+    "total_pages": 17,
+    "platform": "unknown_fffffffffdfcffff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "922133344": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 24,
+    "total_pages": 30,
+    "platform": "unknown_bf1f0f071fffffff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 18,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 19,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 20,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 21,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 22,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 23,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 24,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 25,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 26,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 27,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 28,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 29,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 30,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922135207": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 0,
+    "total_pages": 6,
+    "platform": "brreg_only",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      }
+    ]
+  },
+  "922140804": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 7,
+    "total_pages": 14,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "922140936": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 0,
+    "total_pages": 6,
+    "platform": "brreg_only",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      }
+    ]
+  },
+  "934938763": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 10,
+    "total_pages": 16,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "938455384": {
+    "brreg_last_page": 9,
+    "n_brreg": 9,
+    "n_company": 56,
+    "total_pages": 65,
+    "platform": "visma_finale_b",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 9,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 18,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 19,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 20,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 21,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 22,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 23,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 24,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 25,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 26,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 27,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 28,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 29,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 30,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 31,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 32,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 33,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 34,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 35,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 36,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 37,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 38,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 39,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 40,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 41,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 42,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 43,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 44,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 45,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 46,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 47,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 48,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 49,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 50,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 51,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 52,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 53,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 54,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 55,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 56,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 57,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 58,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 59,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 60,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 61,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 62,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 63,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2204
+      },
+      {
+        "page": 64,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 65,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "953133210": {
+    "brreg_last_page": 4,
+    "n_brreg": 4,
+    "n_company": 39,
+    "total_pages": 43,
+    "platform": "unknown_819fffff8f8f9fff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 18,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 19,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 20,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 21,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 22,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 23,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 24,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 25,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 26,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 27,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 28,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 29,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 30,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 31,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 32,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 33,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 34,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2341
+      },
+      {
+        "page": 35,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2341
+      },
+      {
+        "page": 36,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2341
+      },
+      {
+        "page": 37,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2341
+      },
+      {
+        "page": 38,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2341
+      },
+      {
+        "page": 39,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2341
+      },
+      {
+        "page": 40,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2341
+      },
+      {
+        "page": 41,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 42,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 43,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "968613189": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 6,
+    "total_pages": 11,
+    "platform": "unknown_ffffffeb838101ff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      }
+    ]
+  },
+  "974227037": {
+    "brreg_last_page": 12,
+    "n_brreg": 12,
+    "n_company": 48,
+    "total_pages": 60,
+    "platform": "unknown_01ffffffffffffff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 9,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 10,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 11,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 12,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 18,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 19,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 20,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 21,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 22,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 23,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 24,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 25,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 26,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 27,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 28,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 29,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 30,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 31,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 32,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 33,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 34,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 35,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 36,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 37,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 38,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 39,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 40,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 41,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 42,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 43,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 44,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 45,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 46,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 47,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 48,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 49,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 50,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 51,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 52,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 53,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 54,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 55,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 56,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 57,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 58,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 59,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 60,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  },
+  "974522683": {
+    "brreg_last_page": 8,
+    "n_brreg": 8,
+    "n_company": 8,
+    "total_pages": 16,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "981472470": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 3,
+    "total_pages": 10,
+    "platform": "unknown_fffffffffffdffff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "982974852": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 13,
+    "total_pages": 19,
+    "platform": "unknown_ffff1c9dffff18ff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 18,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 19,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      }
+    ]
+  },
+  "984272170": {
+    "brreg_last_page": 4,
+    "n_brreg": 4,
+    "n_company": 20,
+    "total_pages": 24,
+    "platform": "unknown_1f3fffffffffffff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 18,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 19,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 20,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 21,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 22,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 23,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 24,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      }
+    ]
+  },
+  "987281758": {
+    "brreg_last_page": 7,
+    "n_brreg": 7,
+    "n_company": 9,
+    "total_pages": 16,
+    "platform": "fiken_tripletex_conta",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "987591102": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 9,
+    "total_pages": 14,
+    "platform": "visma_finale_b",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      }
+    ]
+  },
+  "988014060": {
+    "brreg_last_page": 4,
+    "n_brreg": 4,
+    "n_company": 22,
+    "total_pages": 26,
+    "platform": "unknown_ffffffff8f8f9fff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 18,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 19,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 20,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 21,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 22,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 23,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 24,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 25,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 26,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "988054631": {
+    "brreg_last_page": 6,
+    "n_brreg": 6,
+    "n_company": 7,
+    "total_pages": 13,
+    "platform": "unknown_ffffffff8f079fff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2340
+      }
+    ]
+  },
+  "988476501": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 12,
+    "total_pages": 17,
+    "platform": "visma_finale_a",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 17,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      }
+    ]
+  },
+  "988775460": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 9,
+    "total_pages": 14,
+    "platform": "unknown_ff9c9dffffffffff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": "revisjonsberetning",
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2140
+      }
+    ]
+  },
+  "995453886": {
+    "brreg_last_page": 5,
+    "n_brreg": 5,
+    "n_company": 11,
+    "total_pages": 16,
+    "platform": "unknown_ffc10081ffff02ff",
+    "pages": [
+      {
+        "page": 1,
+        "source": "brreg",
+        "type": "generell_info",
+        "has_table": false,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 2,
+        "source": "brreg",
+        "type": "resultatregnskap",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 3,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 4,
+        "source": "brreg",
+        "type": "balanse",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 5,
+        "source": "brreg",
+        "type": "noter",
+        "has_table": true,
+        "img_w": 1728,
+        "img_h": 2312
+      },
+      {
+        "page": 6,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 7,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 8,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 9,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 10,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 11,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 12,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 13,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      },
+      {
+        "page": 14,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 15,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2338
+      },
+      {
+        "page": 16,
+        "source": "company",
+        "type": null,
+        "has_table": null,
+        "img_w": 1653,
+        "img_h": 2339
+      }
+    ]
+  }
+}

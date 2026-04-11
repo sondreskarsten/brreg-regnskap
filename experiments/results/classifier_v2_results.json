@@ -1,0 +1,10 @@
+{
+  "brreg_accuracy": "113/117",
+  "table_accuracy": "191/243",
+  "signatur_precision": 0.2631578947368421,
+  "signatur_recall": 0.8333333333333334,
+  "revisjon_precision": 0.41935483870967744,
+  "revisjon_recall": 0.7647058823529411,
+  "brreg_errors": 4,
+  "total_pages": 243
+}
