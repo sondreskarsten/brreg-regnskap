@@ -61,6 +61,19 @@ MANIFEST_SCHEMA = pa.schema([
     pa.field("pdf_sha256_prefix", pa.string(), nullable=False),
     pa.field("orgnr", pa.string(), nullable=False),
     pa.field("year", pa.int32()),
+    pa.field("journalnr", pa.string()),
+    pa.field("regnskapsaar", pa.int32()),
+    pa.field("periode_start", pa.string()),
+    pa.field("periode_slutt", pa.string()),
+    pa.field("foretaksnavn", pa.string()),
+    pa.field("organisasjonsform", pa.string()),
+    pa.field("morselskap_i_konsern", pa.bool_()),
+    pa.field("konsernregnskap_vedlagt", pa.bool_()),
+    pa.field("regler_smaa_foretak", pa.bool_()),
+    pa.field("regnskapsregler", pa.string()),
+    pa.field("fravalgt_revisjon", pa.bool_()),
+    pa.field("dato_fastsettelse", pa.string()),
+    pa.field("regnskapsforer", pa.string()),
     pa.field("total_pages", pa.int32()),
     pa.field("brreg_last_page", pa.int32()),
     pa.field("n_brreg", pa.int32()),
@@ -212,6 +225,19 @@ class ExtractionStore:
                 "pdf_sha256_prefix": r.get("pdf_sha256_prefix", ""),
                 "orgnr": r.get("orgnr", ""),
                 "year": r.get("year"),
+                "journalnr": r.get("journalnr"),
+                "regnskapsaar": _safe_int(r.get("regnskapsaar")),
+                "periode_start": r.get("periode_start"),
+                "periode_slutt": r.get("periode_slutt"),
+                "foretaksnavn": r.get("foretaksnavn"),
+                "organisasjonsform": r.get("organisasjonsform"),
+                "morselskap_i_konsern": r.get("morselskap_i_konsern"),
+                "konsernregnskap_vedlagt": r.get("konsernregnskap_vedlagt"),
+                "regler_smaa_foretak": r.get("regler_smaa_foretak"),
+                "regnskapsregler": r.get("regnskapsregler"),
+                "fravalgt_revisjon": r.get("fravalgt_revisjon"),
+                "dato_fastsettelse": r.get("dato_fastsettelse"),
+                "regnskapsforer": r.get("regnskapsforer"),
                 "total_pages": r.get("total_pages"),
                 "brreg_last_page": r.get("brreg_last_page"),
                 "n_brreg": r.get("n_brreg"),
@@ -316,16 +342,30 @@ class ExtractionStore:
         table = pa.Table.from_pylist(rows, schema=REVISJON_SCHEMA)
         return self._write_parquet("revisjon", table, cdate, ctime)
 
-    def manifest_from_classifier(self, classifier_output: dict) -> dict:
+    def manifest_from_classifier(self, classifier_output: dict, generell_info: dict | None = None) -> dict:
         doc = classifier_output.get("document", {})
         split = classifier_output.get("split", {})
         platform = classifier_output.get("platform", {})
         konsern = classifier_output.get("konsern", {})
         clf = classifier_output.get("classifier", {})
+        gi = generell_info or {}
         return {
             "pdf_sha256_prefix": doc.get("pdf_sha256_prefix"),
             "orgnr": doc.get("orgnr"),
             "year": doc.get("year"),
+            "journalnr": gi.get("journalnr"),
+            "regnskapsaar": gi.get("regnskapsaar"),
+            "periode_start": gi.get("periode_start"),
+            "periode_slutt": gi.get("periode_slutt"),
+            "foretaksnavn": gi.get("foretaksnavn"),
+            "organisasjonsform": gi.get("organisasjonsform"),
+            "morselskap_i_konsern": gi.get("morselskap_i_konsern"),
+            "konsernregnskap_vedlagt": gi.get("konsernregnskap_vedlagt"),
+            "regler_smaa_foretak": gi.get("regler_smaa_foretak"),
+            "regnskapsregler": gi.get("regnskapsregler"),
+            "fravalgt_revisjon": gi.get("fravalgt_revisjon"),
+            "dato_fastsettelse": gi.get("dato_fastsettelse"),
+            "regnskapsforer": gi.get("regnskapsforer"),
             "total_pages": doc.get("total_pages"),
             "brreg_last_page": split.get("brreg_last_page"),
             "n_brreg": split.get("n_brreg"),
@@ -337,3 +377,77 @@ class ExtractionStore:
             "classifier_version": clf.get("version"),
             "file_size_bytes": doc.get("file_size_bytes"),
         }
+
+
+def parse_generell_info(ocr_text: str) -> dict:
+    """Parse structured fields from BRREG generell_info page OCR text.
+
+    Extracts: journalnr, regnskapsaar, periode_start/slutt, foretaksnavn,
+    organisasjonsform, morselskap_i_konsern, konsernregnskap_vedlagt,
+    regler_smaa_foretak, regnskapsregler, fravalgt_revisjon,
+    dato_fastsettelse, regnskapsforer.
+    """
+    import re
+
+    def _find_bool_after(label: str, text: str) -> bool | None:
+        idx = text.find(label)
+        if idx == -1:
+            return None
+        after = text[idx + len(label):idx + len(label) + 150]
+        m = re.search(r'\b(Ja|Nei)\b', after)
+        if m:
+            return m.group(1) == "Ja"
+        return None
+
+    result = {}
+
+    m = re.search(r'REGNSKAPSÅRET\s+(\d{4})', ocr_text)
+    result["regnskapsaar"] = int(m.group(1)) if m else None
+
+    m = re.search(r'(\d{4})\s+(\d{4,7})', ocr_text)
+    result["journalnr"] = f"{m.group(1)}/{m.group(2)}" if m else None
+
+    m = re.search(r'(\d{2}\.\d{2}\.\d{4})\s*[-–]?\s*\n?\s*(\d{2}\.\d{2}\.\d{4})', ocr_text)
+    result["periode_start"] = m.group(1) if m else None
+    result["periode_slutt"] = m.group(2) if m else None
+
+    lines = ocr_text.split("\n")
+    result["foretaksnavn"] = None
+    for i, line in enumerate(lines):
+        if line.strip().startswith("Foretaksnavn"):
+            for j in range(i + 1, min(i + 5, len(lines))):
+                candidate = lines[j].strip()
+                if (candidate and
+                    candidate not in ("Forretningsadresse:", "GENERELL INFORMASJON") and
+                    not candidate.startswith("Organisasjon") and
+                    not re.match(r'^\d{4}\s+\d{4,7}$', candidate) and
+                    not re.match(r'^\d{3}\s+\d{3}\s+\d{3}$', candidate) and
+                    len(candidate) > 3):
+                    result["foretaksnavn"] = candidate
+                    break
+            break
+
+    m = re.search(r'(Aksjeselskap|Norskregistrert utenlandsk foretak|Samvirkeforetak|'
+                  r'Ansvarlig selskap|Allmennaksjeselskap|Enkeltpersonforetak|'
+                  r'Borettslag|Stiftelse|Sameie)', ocr_text)
+    result["organisasjonsform"] = m.group(1) if m else None
+
+    result["morselskap_i_konsern"] = _find_bool_after("Morselskap i konsern", ocr_text)
+    result["konsernregnskap_vedlagt"] = _find_bool_after("Konsernregnskap lagt ved", ocr_text)
+    result["regler_smaa_foretak"] = _find_bool_after("Regler for små foretak benyttet", ocr_text)
+
+    m = re.search(r'(Regnskapslovens alminnelige regler|Forenklet IFRS|IFRS)', ocr_text)
+    result["regnskapsregler"] = m.group(1) if m else None
+
+    result["fravalgt_revisjon"] = "ikke skal revideres" in ocr_text
+
+    m = re.search(r'fastsettelse.*?(\d{2}\.\d{2}\.\d{4})', ocr_text, re.DOTALL)
+    result["dato_fastsettelse"] = m.group(1) if m else None
+
+    if result.get("fravalgt_revisjon"):
+        m = re.search(r'regnskapsfører.*?\n\s*([A-ZÆØÅ][\wÆØÅæøå\s&.,-]+?)(?:\n|$)', ocr_text, re.IGNORECASE)
+        result["regnskapsforer"] = m.group(1).strip() if m else None
+    else:
+        result["regnskapsforer"] = None
+
+    return result
