@@ -75,10 +75,12 @@ ZONE_SEGMENTATION_PARAMS = {
     "white_col_threshold": 248,
     "interior_margin_frac": 0.05,
     "interior_position_range": [0.1, 0.9],
-    "title_max_height": 80,
-    "title_max_lines": 3,
+    "title_max_height": 50,
+    "title_max_lines": 2,
+    "title_requires_zero_gaps": True,
     "table_min_col_gaps": 2,
     "table_single_gap_min_width": 100,
+    "classification_order": "gaps_first_then_height",
 }
 
 COMPANY_REVISJON_HEIGHTS = {2140, 2337}
