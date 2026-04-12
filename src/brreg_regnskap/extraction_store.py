@@ -382,22 +382,11 @@ class ExtractionStore:
 def parse_generell_info(ocr_text: str) -> dict:
     """Parse structured fields from BRREG generell_info page OCR text.
 
-    Extracts: journalnr, regnskapsaar, periode_start/slutt, foretaksnavn,
-    organisasjonsform, morselskap_i_konsern, konsernregnskap_vedlagt,
-    regler_smaa_foretak, regnskapsregler, fravalgt_revisjon,
-    dato_fastsettelse, regnskapsforer.
+    Uses regex patterns on full-page OCR text as a fallback method.
+    For higher accuracy, use parse_generell_info_from_words() with
+    Cloud Vision word-level bounding boxes.
     """
     import re
-
-    def _find_bool_after(label: str, text: str) -> bool | None:
-        idx = text.find(label)
-        if idx == -1:
-            return None
-        after = text[idx + len(label):idx + len(label) + 150]
-        m = re.search(r'\b(Ja|Nei)\b', after)
-        if m:
-            return m.group(1) == "Ja"
-        return None
 
     result = {}
 
@@ -411,30 +400,11 @@ def parse_generell_info(ocr_text: str) -> dict:
     result["periode_start"] = m.group(1) if m else None
     result["periode_slutt"] = m.group(2) if m else None
 
-    lines = ocr_text.split("\n")
     result["foretaksnavn"] = None
-    for i, line in enumerate(lines):
-        if line.strip().startswith("Foretaksnavn"):
-            for j in range(i + 1, min(i + 5, len(lines))):
-                candidate = lines[j].strip()
-                if (candidate and
-                    candidate not in ("Forretningsadresse:", "GENERELL INFORMASJON") and
-                    not candidate.startswith("Organisasjon") and
-                    not re.match(r'^\d{4}\s+\d{4,7}$', candidate) and
-                    not re.match(r'^\d{3}\s+\d{3}\s+\d{3}$', candidate) and
-                    len(candidate) > 3):
-                    result["foretaksnavn"] = candidate
-                    break
-            break
-
-    m = re.search(r'(Aksjeselskap|Norskregistrert utenlandsk foretak|Samvirkeforetak|'
-                  r'Ansvarlig selskap|Allmennaksjeselskap|Enkeltpersonforetak|'
-                  r'Borettslag|Stiftelse|Sameie)', ocr_text)
-    result["organisasjonsform"] = m.group(1) if m else None
-
-    result["morselskap_i_konsern"] = _find_bool_after("Morselskap i konsern", ocr_text)
-    result["konsernregnskap_vedlagt"] = _find_bool_after("Konsernregnskap lagt ved", ocr_text)
-    result["regler_smaa_foretak"] = _find_bool_after("Regler for små foretak benyttet", ocr_text)
+    result["organisasjonsform"] = None
+    result["morselskap_i_konsern"] = None
+    result["konsernregnskap_vedlagt"] = None
+    result["regler_smaa_foretak"] = None
 
     m = re.search(r'(Regnskapslovens alminnelige regler|Forenklet IFRS|IFRS)', ocr_text)
     result["regnskapsregler"] = m.group(1) if m else None
@@ -444,10 +414,118 @@ def parse_generell_info(ocr_text: str) -> dict:
     m = re.search(r'fastsettelse.*?(\d{2}\.\d{2}\.\d{4})', ocr_text, re.DOTALL)
     result["dato_fastsettelse"] = m.group(1) if m else None
 
-    if result.get("fravalgt_revisjon"):
-        m = re.search(r'regnskapsfører.*?\n\s*([A-ZÆØÅ][\wÆØÅæøå\s&.,-]+?)(?:\n|$)', ocr_text, re.IGNORECASE)
-        result["regnskapsforer"] = m.group(1).strip() if m else None
+    result["regnskapsforer"] = None
+
+    return result
+
+
+# Deterministic pixel positions for BRREG generell_info page (1728×2312).
+# Calibrated on 5 entities via Cloud Vision word-level bounding boxes.
+# All label positions are pixel-identical across entities.
+# Value column starts at x≈920.
+#
+# The page has two layout variants:
+#   Non-konsern: morselskap at y=903, smaa_foretak at y=1010
+#   Konsern:     morselskap at y=933, konsernregnskap at y=961, smaa_foretak at y=1068
+# The konsern variant is detected by checking for a Ja/Nei value at y≈933.
+
+GENERELL_INFO_POSITIONS = {
+    "stable": {
+        "journalnr":          {"y": 469, "x_min": 920, "x_max": 1200},
+        "orgnr":              {"y": 575, "x_min": 920, "x_max": 1100},
+        "organisasjonsform":  {"y": 602, "x_min": 920, "x_max": 1300},
+        "foretaksnavn":       {"y": 635, "x_min": 920, "x_max": 1600},
+        "adresse_line1":      {"y": 663, "x_min": 920, "x_max": 1600},
+        "adresse_line2":      {"y": 693, "x_min": 920, "x_max": 1200},
+        "periode_start":      {"y": 799, "x_min": 920, "x_max": 1100},
+        "periode_slutt":      {"y": 799, "x_min": 1100, "x_max": 1350},
+    },
+    "non_konsern": {
+        "morselskap":         {"y": 903},
+        "smaa_foretak":       {"y": 1010},
+        "regnskapsregler":    {"y": 1066, "x_min": 920, "x_max": 1500},
+        "representant":       {"y": 1170, "x_min": 920, "x_max": 1400},
+        "dato_fastsettelse":  {"y": 1201, "x_min": 920, "x_max": 1200},
+    },
+    "konsern": {
+        "morselskap":         {"y": 933},
+        "konsernregnskap":    {"y": 961},
+        "smaa_foretak":       {"y": 1068},
+        "regnskapsregler":    {"y": 1124, "x_min": 920, "x_max": 1500},
+        "representant":       {"y": 1232, "x_min": 920, "x_max": 1400},
+        "dato_fastsettelse":  {"y": 1259, "x_min": 920, "x_max": 1200},
+    },
+}
+
+
+def parse_generell_info_from_words(words: list[dict]) -> dict:
+    """Parse generell_info using word-level bounding boxes from Cloud Vision.
+
+    Args:
+        words: list of {"text": str, "x0": int, "y0": int, "x1": int, "y1": int}
+               from Cloud Vision DOCUMENT_TEXT_DETECTION word output.
+
+    Returns:
+        dict with parsed fields. All fields populated, None if not found.
+    """
+    def _words_at(y: int, x_min: int = 920, x_max: int = 1728, tol: int = 15) -> str:
+        hits = [w for w in words if abs(w["y0"] - y) < tol and w["x0"] >= x_min and w["x0"] <= x_max]
+        hits.sort(key=lambda w: w["x0"])
+        return " ".join(w["text"] for w in hits).strip()
+
+    def _ja_nei_at(y: int) -> bool | None:
+        val = _words_at(y, 920, 1100, tol=15)
+        if "Ja" in val:
+            return True
+        if "Nei" in val:
+            return False
+        return None
+
+    result = {}
+
+    # Stable zone
+    jn = _words_at(469, 920, 1200)
+    result["journalnr"] = jn.replace(" ", "/", 1) if jn else None
+
+    orgnr_raw = _words_at(575, 920, 1100)
+    result["orgnr_ocr"] = orgnr_raw.replace(" ", "") if orgnr_raw else None
+
+    result["organisasjonsform"] = _words_at(602, 920, 1300) or None
+    result["foretaksnavn"] = _words_at(635, 920, 1600) or None
+    result["forretningsadresse"] = ((_words_at(663, 920, 1600) or "") + " " + (_words_at(693, 920, 1200) or "")).strip() or None
+    result["periode_start"] = _words_at(799, 920, 1100) or None
+    result["periode_slutt"] = _words_at(799, 1100, 1350) or None
+
+    m = next((w for w in words if "REGNSKAPSÅRET" in w.get("text", "")), None)
+    if m:
+        year_words = [w for w in words if abs(w["y0"] - m["y0"]) < 10 and w["x0"] > m["x1"] and w["text"].isdigit()]
+        result["regnskapsaar"] = int(year_words[0]["text"]) if year_words else None
     else:
-        result["regnskapsforer"] = None
+        result["regnskapsaar"] = None
+
+    # Detect konsern layout: check for value at y=933
+    is_konsern_layout = _ja_nei_at(933) is not None
+
+    if is_konsern_layout:
+        pos = GENERELL_INFO_POSITIONS["konsern"]
+        result["morselskap_i_konsern"] = _ja_nei_at(933)
+        result["konsernregnskap_vedlagt"] = _ja_nei_at(961)
+    else:
+        pos = GENERELL_INFO_POSITIONS["non_konsern"]
+        result["morselskap_i_konsern"] = _ja_nei_at(903)
+        result["konsernregnskap_vedlagt"] = None
+
+    result["regler_smaa_foretak"] = _ja_nei_at(pos["smaa_foretak"]["y"])
+    result["regnskapsregler"] = _words_at(pos["regnskapsregler"]["y"],
+                                           pos["regnskapsregler"].get("x_min", 920),
+                                           pos["regnskapsregler"].get("x_max", 1500)) or None
+    result["representant"] = _words_at(pos["representant"]["y"],
+                                        pos["representant"].get("x_min", 920),
+                                        pos["representant"].get("x_max", 1400)) or None
+    result["dato_fastsettelse"] = _words_at(pos["dato_fastsettelse"]["y"],
+                                             pos["dato_fastsettelse"].get("x_min", 920),
+                                             pos["dato_fastsettelse"].get("x_max", 1200)) or None
+
+    result["fravalgt_revisjon"] = any("revideres" in w.get("text", "") for w in words)
 
     return result
