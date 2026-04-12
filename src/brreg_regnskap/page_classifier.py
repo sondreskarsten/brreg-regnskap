@@ -106,7 +106,7 @@ def _page_to_gray(doc: fitz.Document, page_idx: int) -> np.ndarray:
     imgs = doc[page_idx].get_images()
     info = doc.extract_image(imgs[0][0])
     pil = Image.open(io.BytesIO(info["image"])).convert("L")
-    return np.array(pil, dtype=np.float64)
+    return np.array(pil, dtype=np.uint8)
 
 
 def _detect_platform(doc: fitz.Document, second_company_idx: int) -> str:
@@ -328,6 +328,7 @@ def build_manifest(pdf_bytes: bytes, orgnr: str | None = None, year: int | None 
 
         gray = _page_to_gray(doc, pd["page"] - 1)
         zones = segment_page_zones(gray)
+        del gray
 
         if has_table is None:
             has_table = any(z["label"] == "table" for z in zones)
