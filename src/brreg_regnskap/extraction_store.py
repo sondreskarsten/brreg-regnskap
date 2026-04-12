@@ -496,6 +496,10 @@ def parse_generell_info_from_words(words: list[dict]) -> dict:
     result["periode_start"] = _words_at(799, 920, 1100) or None
     result["periode_slutt"] = _words_at(799, 1100, 1350) or None
 
+    if not result["periode_start"]:
+        result["periode_start"] = _words_at(828, 920, 1100) or None
+        result["periode_slutt"] = _words_at(828, 1100, 1350) or None
+
     m = next((w for w in words if "REGNSKAPSÅRET" in w.get("text", "")), None)
     if m:
         year_words = [w for w in words if abs(w["y0"] - m["y0"]) < 10 and w["x0"] > m["x1"] and w["text"].isdigit()]
