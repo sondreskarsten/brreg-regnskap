@@ -572,17 +572,7 @@ def extract_noter(
     *,
     credentials_path: str = "/mnt/project/sondreskarsten-d7d14-8486be2d085b.json",
     gemini_location: str = "europe-west1",
-    ocr_text_page1: str | None = None,
 ) -> dict:
-    """Extract noter from a single årsregnskap PDF.
-
-    Returns a complete extraction record with full provenance metadata:
-        pdf_sha256_prefix, orgnr, year, journalnr, extractor_version,
-        extraction_model, timestamps, tokens, cost, noter, note_flags.
-
-    The record is self-describing and ready for ExtractionStore.write_noter()
-    and ExtractionStore.write_note_flags().
-    """
     import base64
     import hashlib
     import json
@@ -591,6 +581,7 @@ def extract_noter(
 
     import fitz
     import requests
+    from PIL import Image
     from google.auth.transport.requests import Request
     from google.oauth2 import service_account
 
@@ -604,14 +595,66 @@ def extract_noter(
 
     pdf_hash = hashlib.sha256(pdf_bytes).hexdigest()[:16]
     manifest = build_manifest(pdf_bytes, orgnr=orgnr, year=year)
+
+    creds = service_account.Credentials.from_service_account_file(
+        credentials_path, scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    creds.refresh(Request())
+    project_id = creds.project_id
+    url = (f"https://{gemini_location}-aiplatform.googleapis.com/v1/"
+           f"projects/{project_id}/locations/{gemini_location}/"
+           f"publishers/google/models/{MODEL}:generateContent")
+
+    def _gemini_call(parts, timeout=180):
+        if not creds.valid:
+            creds.refresh(Request())
+        body = {"contents": [{"role": "user", "parts": parts}],
+                "generationConfig": {"maxOutputTokens": 65536, "temperature": 0,
+                                     "thinkingConfig": {"thinkingBudget": 0}}}
+        r = requests.post(url, headers={"Authorization": f"Bearer {creds.token}",
+                                         "Content-Type": "application/json"},
+                          json=body, timeout=timeout)
+        r.raise_for_status()
+        d = r.json()
+        u = d.get("usageMetadata", {})
+        c = d["candidates"][0]
+        return {"in_tok": u.get("promptTokenCount", 0), "out_tok": u.get("candidatesTokenCount", 0),
+                "cost": u.get("promptTokenCount", 0)/1e6*0.15 + u.get("candidatesTokenCount", 0)/1e6*0.60,
+                "raw": c["content"]["parts"][0]["text"], "finish_reason": c.get("finishReason", "")}
+
+    def _img_part(img_bytes):
+        return {"inlineData": {"mimeType": "image/png", "data": base64.b64encode(img_bytes).decode()}}
+
+    def _crop_to_png(img_bytes, x0, y0, x1, y1):
+        pil = Image.open(io.BytesIO(img_bytes))
+        cropped = pil.crop((x0, y0, x1, y1))
+        buf = io.BytesIO()
+        cropped.save(buf, format="PNG")
+        return buf.getvalue()
+
+    # Extract journalnr from pixel crop of page 1
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     del pdf_bytes
+    p1_imgs = doc[0].get_images()
+    p1_image = doc.extract_image(p1_imgs[0][0])["image"] if p1_imgs else None
 
     journalnr = None
     regnskapsaar = year
-    if ocr_text_page1:
-        m = re.search(r'(\d{4})\s+(\d{4,7})', ocr_text_page1)
-        journalnr = f"{m.group(1)}/{m.group(2)}" if m else None
-        m = re.search(r'REGNSKAPSÅRET\s+(\d{4})', ocr_text_page1)
+    journalnr_cost = 0.0
+
+    if p1_image:
+        jn_crop = _crop_to_png(p1_image, 900, 455, 1250, 500)
+        jn_result = _gemini_call([_img_part(jn_crop), {"text": "Read the numbers from this image. Return only the digits and spaces, nothing else."}], timeout=30)
+        jn_raw = jn_result["raw"].strip()
+        journalnr_cost = jn_result["cost"]
+        m = re.search(r'(\d{4})\s*(\d{4,7})', jn_raw)
+        if m:
+            journalnr = f"{m.group(1)}/{m.group(2)}"
+
+        yr_crop = _crop_to_png(p1_image, 780, 370, 870, 420)
+        yr_result = _gemini_call([_img_part(yr_crop), {"text": "Read the 4-digit year. Return only the number."}], timeout=30)
+        yr_raw = yr_result["raw"].strip()
+        journalnr_cost += yr_result["cost"]
+        m = re.search(r'(\d{4})', yr_raw)
         regnskapsaar = int(m.group(1)) if m else year
 
     record = {
@@ -634,9 +677,10 @@ def extract_noter(
         record["status"] = "skipped_brreg_only"
         record["noter"] = []
         record["note_flags"] = {}
+        record["cost_usd"] = journalnr_cost
+        doc.close()
         return record
 
-    doc = fitz.open(pdf_path)
     note_pages = []
     for p in manifest["pages"]:
         if p["source"] != "company" or p["type"] == "revisjonsberetning":
@@ -651,55 +695,26 @@ def extract_noter(
         record["status"] = "skipped_no_note_pages"
         record["noter"] = []
         record["note_flags"] = {}
+        record["cost_usd"] = journalnr_cost
         return record
 
     record["n_note_pages"] = len(note_pages)
     record["note_page_numbers"] = [p["page"] for p in note_pages]
 
-    creds = service_account.Credentials.from_service_account_file(
-        credentials_path, scopes=["https://www.googleapis.com/auth/cloud-platform"])
-    creds.refresh(Request())
-    project_id = creds.project_id
-    url = (f"https://{gemini_location}-aiplatform.googleapis.com/v1/"
-           f"projects/{project_id}/locations/{gemini_location}/"
-           f"publishers/google/models/{MODEL}:generateContent")
-
-    parts = [
-        {"inlineData": {"mimeType": "image/png", "data": base64.b64encode(p["image"]).decode()}}
-        for p in note_pages
-    ]
+    parts = [_img_part(p["image"]) for p in note_pages]
     parts.append({"text": NOTER_PROMPT_V2})
 
-    body = {
-        "contents": [{"role": "user", "parts": parts}],
-        "generationConfig": {
-            "maxOutputTokens": 65536,
-            "temperature": 0,
-            "thinkingConfig": {"thinkingBudget": 0},
-        },
-    }
-
     t0 = time.time()
-    resp = requests.post(
-        url,
-        headers={"Authorization": f"Bearer {creds.token}", "Content-Type": "application/json"},
-        json=body,
-        timeout=180,
-    )
-    resp.raise_for_status()
+    r = _gemini_call(parts)
     elapsed = time.time() - t0
 
-    data = resp.json()
-    usage = data.get("usageMetadata", {})
-    cand = data["candidates"][0]
-
-    record["input_tokens"] = usage.get("promptTokenCount", 0)
-    record["output_tokens"] = usage.get("candidatesTokenCount", 0)
-    record["cost_usd"] = record["input_tokens"] / 1e6 * 0.15 + record["output_tokens"] / 1e6 * 0.60
+    record["input_tokens"] = r["in_tok"]
+    record["output_tokens"] = r["out_tok"]
+    record["cost_usd"] = r["cost"] + journalnr_cost
     record["elapsed_seconds"] = round(elapsed, 1)
-    record["finish_reason"] = cand.get("finishReason", "")
+    record["finish_reason"] = r["finish_reason"]
 
-    raw = cand["content"]["parts"][0]["text"].strip()
+    raw = r["raw"].strip()
     if raw.startswith("```"):
         raw = raw.split("\n", 1)[1]
     if raw.endswith("```"):
