@@ -290,7 +290,7 @@ class ExtractionStore:
                 "note_nr": str(r.get("nr", r.get("note_nr", ""))) if r.get("nr") is not None or r.get("note_nr") is not None else None,
                 "tittel": r.get("tittel"),
                 "note_type": r.get("type", r.get("note_type")),
-                "amounts_json": _json.dumps(amounts, ensure_ascii=False) if amounts else None,
+                "amounts_json": _json.dumps(amounts, ensure_ascii=False) if isinstance(amounts, dict) else None,
                 "n_amounts": len(amounts) if isinstance(amounts, dict) else 0,
                 "extraction_model": r.get("extraction_model"),
                 "extraction_cost_usd": _safe_float(r.get("extraction_cost_usd")),
