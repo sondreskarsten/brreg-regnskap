@@ -713,6 +713,7 @@ def extract_noter(
     record["cost_usd"] = r["cost"] + journalnr_cost
     record["elapsed_seconds"] = round(elapsed, 1)
     record["finish_reason"] = r["finish_reason"]
+    record["raw_response"] = r["raw"]
 
     raw = r["raw"].strip()
     if raw.startswith("```"):
