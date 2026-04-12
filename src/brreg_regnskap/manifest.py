@@ -18,6 +18,7 @@ Implementation notes:
 from __future__ import annotations
 
 import io
+import os
 from typing import TYPE_CHECKING
 
 import pyarrow as pa  # type: ignore[import-untyped]
@@ -270,52 +271,54 @@ class ManifestManager:
     def merge_shards(storage: StorageBackend, shard_paths: list[str], output_path: str) -> None:
         """Merge multiple shard manifest files into a single global manifest.
 
-        Used after GitHub Actions matrix jobs complete. Concatenates all shard tables,
-        deduplicates by (orgnr, year, version) keeping the most recent download_timestamp,
-        and writes the merged result.
+        Downloads all shard parquets and the existing root manifest to a temp
+        directory, then uses DuckDB COPY TO for streaming dedup — never loads
+        all tables into memory simultaneously. Handles 5M+ rows within 2Gi.
         """
-        tables = []
+        import tempfile
+        import duckdb
 
-        output_mgr = ManifestManager(storage, output_path)
-        existing = output_mgr.load()
-        if existing.num_rows > 0:
-            tables.append(existing)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            local_files = []
 
-        for path in shard_paths:
-            if not storage.exists(path):
-                continue
-            raw = storage.read_bytes(path)
-            buf = pa.BufferReader(raw)
-            shard = pq.read_table(buf, schema=MANIFEST_SCHEMA)
-            if shard.num_rows > 0:
-                tables.append(shard)
+            output_mgr = ManifestManager(storage, output_path)
+            if storage.exists(output_path):
+                local_root = os.path.join(tmpdir, "root.parquet")
+                raw = storage.read_bytes(output_path)
+                with open(local_root, "wb") as f:
+                    f.write(raw)
+                local_files.append(local_root)
 
-        if not tables:
-            output_mgr.save(_empty_table())
-            return
+            for i, path in enumerate(shard_paths):
+                if not storage.exists(path):
+                    continue
+                local_shard = os.path.join(tmpdir, f"shard_{i}.parquet")
+                raw = storage.read_bytes(path)
+                with open(local_shard, "wb") as f:
+                    f.write(raw)
+                local_files.append(local_shard)
 
-        combined = pa.concat_tables(tables, promote_options="none")
+            if not local_files:
+                output_mgr.save(_empty_table())
+                return
 
-        if combined.num_rows == 0:
-            output_mgr.save(combined)
-            return
+            merged_path = os.path.join(tmpdir, "merged.parquet")
+            glob_pattern = os.path.join(tmpdir, "*.parquet")
 
-        orgnr_col = combined.column("orgnr")
-        year_col = combined.column("year")
-        version_col = combined.column("version")
-        ts_col = combined.column("download_timestamp")
+            con = duckdb.connect()
+            con.execute(f"""
+                COPY (
+                    WITH ranked AS (
+                        SELECT *, ROW_NUMBER() OVER (
+                            PARTITION BY orgnr, year, version
+                            ORDER BY download_timestamp DESC NULLS LAST
+                        ) as rn
+                        FROM read_parquet('{glob_pattern}', union_by_name=true)
+                    )
+                    SELECT * EXCLUDE (rn) FROM ranked WHERE rn = 1
+                ) TO '{merged_path}' (FORMAT PARQUET, COMPRESSION ZSTD)
+            """)
+            con.close()
 
-        seen: dict[tuple[str, int, int], int] = {}
-        for i in range(combined.num_rows):
-            key = (orgnr_col[i].as_py(), year_col[i].as_py(), version_col[i].as_py())
-            ts = ts_col[i].as_py() or ""
-            if key not in seen:
-                seen[key] = i
-            else:
-                existing_ts = ts_col[seen[key]].as_py() or ""
-                if ts > existing_ts:
-                    seen[key] = i
-
-        keep_indices = sorted(seen.values())
-        deduped = combined.take(keep_indices)
-        output_mgr.save(deduped)
+            with open(merged_path, "rb") as f:
+                storage.write_bytes(output_path, f.read())
