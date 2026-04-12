@@ -154,6 +154,7 @@ NOTE_FLAGS_SCHEMA = pa.schema([
     pa.field("fortsatt_drift_tvil", pa.bool_()),
     pa.field("kassekredittlimit", pa.int64()),
     pa.field("kassekreditt_benyttet", pa.int64()),
+    pa.field("klientmidler", pa.int64()),
     pa.field("hendelser_etter_balansedagen", pa.string()),
     pa.field("extraction_model", pa.string()),
     pa.field("extraction_cost_usd", pa.float64()),
@@ -533,3 +534,186 @@ def parse_generell_info_from_words(words: list[dict]) -> dict:
     result["fravalgt_revisjon"] = any("revideres" in w.get("text", "") for w in words)
 
     return result
+
+
+NOTER_PROMPT_V2 = """Extract notes (noter) from these Norwegian årsregnskap pages.
+
+For each note:
+- nr: note number as printed (string or null)
+- tittel: exact Norwegian title
+- type: narrative | table | mixed
+- amounts: ALL key-value pairs of amounts found. snake_case keys. {} for narrative.
+
+Extract these flags (AMOUNTS must be integers in NOK, not true/false):
+- antall_ansatte: integer or null
+- antall_aarsverk: number or null
+- otp_pliktig: bool — "pliktig til å ha tjenestepensjonsordning" → true
+- revisjonshonorar_revisjon: amount or null
+- bundne_midler_amount: amount or null — "bundne bankinnskudd"
+- skattetrekkskonto: amount or null — "har ikke" → 0
+- has_pantstillelser: bool
+- pantstillelser_gjeld: amount or null — "gjeld sikret ved pant"
+- pantstillelser_bokfort: amount or null — "balanseført verdi av pantsatte eiendeler"
+- utbytte: amount or null — "foreslått/avsatt utbytte"
+- konsernbidrag: amount or null — the NOK amount, NOT true/false
+- fortsatt_drift_tvil: bool
+- kassekredittlimit: amount or null
+- kassekreditt_benyttet: amount or null
+- klientmidler: amount or null — "innestående på klientkonto" or "klientmidler" amount in NOK, NOT true/false
+
+Do NOT split one note into multiple entries. Extract EVERY note.
+Return JSON: {"noter": [...], "note_flags": {...}, "n_notes_found": <int>}"""
+
+
+def extract_noter(
+    pdf_path: str,
+    orgnr: str,
+    year: int = 2024,
+    *,
+    credentials_path: str = "/mnt/project/sondreskarsten-d7d14-8486be2d085b.json",
+    gemini_location: str = "europe-west1",
+    ocr_text_page1: str | None = None,
+) -> dict:
+    """Extract noter from a single årsregnskap PDF.
+
+    Returns a complete extraction record with full provenance metadata:
+        pdf_sha256_prefix, orgnr, year, journalnr, extractor_version,
+        extraction_model, timestamps, tokens, cost, noter, note_flags.
+
+    The record is self-describing and ready for ExtractionStore.write_noter()
+    and ExtractionStore.write_note_flags().
+    """
+    import base64
+    import hashlib
+    import json
+    import re
+    import time
+
+    import fitz
+    import requests
+    from google.auth.transport.requests import Request
+    from google.oauth2 import service_account
+
+    from brreg_regnskap.page_classifier import build_manifest
+
+    EXTRACTOR_VERSION = "noter_v2"
+    MODEL = "gemini-2.5-flash"
+
+    with open(pdf_path, "rb") as f:
+        pdf_bytes = f.read()
+
+    pdf_hash = hashlib.sha256(pdf_bytes).hexdigest()[:16]
+    manifest = build_manifest(pdf_bytes, orgnr=orgnr, year=year)
+    del pdf_bytes
+
+    journalnr = None
+    regnskapsaar = year
+    if ocr_text_page1:
+        m = re.search(r'(\d{4})\s+(\d{4,7})', ocr_text_page1)
+        journalnr = f"{m.group(1)}/{m.group(2)}" if m else None
+        m = re.search(r'REGNSKAPSÅRET\s+(\d{4})', ocr_text_page1)
+        regnskapsaar = int(m.group(1)) if m else year
+
+    record = {
+        "pdf_sha256_prefix": pdf_hash,
+        "orgnr": orgnr,
+        "year": regnskapsaar,
+        "journalnr": journalnr,
+        "extractor_version": EXTRACTOR_VERSION,
+        "extraction_model": MODEL,
+        "extraction_timestamp": datetime.now(timezone.utc).isoformat(),
+        "classifier_version": manifest["classifier"]["version"],
+        "platform": manifest["platform"]["id"],
+        "konsern_detected": manifest["konsern"]["detected"],
+        "n_brreg": manifest["split"]["n_brreg"],
+        "n_company": manifest["split"]["n_company"],
+        "total_pages": manifest["document"]["total_pages"],
+    }
+
+    if manifest["split"]["n_company"] == 0:
+        record["status"] = "skipped_brreg_only"
+        record["noter"] = []
+        record["note_flags"] = {}
+        return record
+
+    doc = fitz.open(pdf_path)
+    note_pages = []
+    for p in manifest["pages"]:
+        if p["source"] != "company" or p["type"] == "revisjonsberetning":
+            continue
+        imgs = doc[p["page"] - 1].get_images()
+        if imgs:
+            info = doc.extract_image(imgs[0][0])
+            note_pages.append({"page": p["page"], "image": info["image"]})
+    doc.close()
+
+    if not note_pages:
+        record["status"] = "skipped_no_note_pages"
+        record["noter"] = []
+        record["note_flags"] = {}
+        return record
+
+    record["n_note_pages"] = len(note_pages)
+    record["note_page_numbers"] = [p["page"] for p in note_pages]
+
+    creds = service_account.Credentials.from_service_account_file(
+        credentials_path, scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    creds.refresh(Request())
+    project_id = creds.project_id
+    url = (f"https://{gemini_location}-aiplatform.googleapis.com/v1/"
+           f"projects/{project_id}/locations/{gemini_location}/"
+           f"publishers/google/models/{MODEL}:generateContent")
+
+    parts = [
+        {"inlineData": {"mimeType": "image/png", "data": base64.b64encode(p["image"]).decode()}}
+        for p in note_pages
+    ]
+    parts.append({"text": NOTER_PROMPT_V2})
+
+    body = {
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {
+            "maxOutputTokens": 65536,
+            "temperature": 0,
+            "thinkingConfig": {"thinkingBudget": 0},
+        },
+    }
+
+    t0 = time.time()
+    resp = requests.post(
+        url,
+        headers={"Authorization": f"Bearer {creds.token}", "Content-Type": "application/json"},
+        json=body,
+        timeout=180,
+    )
+    resp.raise_for_status()
+    elapsed = time.time() - t0
+
+    data = resp.json()
+    usage = data.get("usageMetadata", {})
+    cand = data["candidates"][0]
+
+    record["input_tokens"] = usage.get("promptTokenCount", 0)
+    record["output_tokens"] = usage.get("candidatesTokenCount", 0)
+    record["cost_usd"] = record["input_tokens"] / 1e6 * 0.15 + record["output_tokens"] / 1e6 * 0.60
+    record["elapsed_seconds"] = round(elapsed, 1)
+    record["finish_reason"] = cand.get("finishReason", "")
+
+    raw = cand["content"]["parts"][0]["text"].strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1]
+    if raw.endswith("```"):
+        raw = raw.rsplit("```", 1)[0]
+
+    parsed = json.loads(raw.strip())
+    record["noter"] = parsed.get("noter", [])
+    record["note_flags"] = parsed.get("note_flags", {})
+    record["n_notes_found"] = len(record["noter"])
+    record["n_notes_with_amounts"] = sum(1 for n in record["noter"] if n.get("amounts"))
+    record["n_flags_set"] = sum(
+        1 for v in record["note_flags"].values()
+        if v is not None and v is not False and v != 0
+    )
+    record["status"] = "ok"
+
+    return record
