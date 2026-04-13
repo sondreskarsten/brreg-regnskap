@@ -107,11 +107,11 @@ def _parse_gemini_json(raw):
     return json.loads(s.strip())
 
 
-def load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shard):
+def load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shards):
     bucket = gcs.bucket(bucket_name)
 
-    if manifest_shard is not None:
-        shard_blobs = [f"manifest_shard_{manifest_shard}.parquet"]
+    if manifest_shards is not None:
+        shard_blobs = [f"manifest_shard_{s}.parquet" for s in manifest_shards]
     else:
         shard_blobs = sorted(b.name for b in bucket.list_blobs(prefix="manifest_shard_")
                              if b.name.endswith(".parquet"))
@@ -141,7 +141,14 @@ def load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shard):
         log.info("Latest enheter snapshot: %s", blobs[-1] if blobs else "NONE")
         buf = enheter_bucket.blob(blobs[-1]).download_as_bytes()
         log.info("Enheter downloaded: %d bytes", len(buf))
-        enheter = pq.read_table(io.BytesIO(buf), columns=["org_nr", "nace_1"])
+        try:
+            enheter = pq.read_table(io.BytesIO(buf), columns=["org_nr", "nace_1"])
+        except Exception as e:
+            log.error("Failed to read enheter parquet: %s", e)
+            schema = pq.read_schema(io.BytesIO(buf))
+            log.error("Enheter schema: %s", schema.names[:20])
+            raise
+        log.info("Enheter loaded: %d rows", len(enheter))
         con.register("enheter", enheter)
         nace_list = ",".join(f"'{n}'" for n in nace_filter)
         df = con.execute(f"""
@@ -353,18 +360,20 @@ def main():
     batch_size = int(os.environ.get("BATCH_SIZE", "0"))
     nace_raw = os.environ.get("NACE_FILTER", "")
     nace_filter = [n.strip() for n in nace_raw.split(",") if n.strip()] or None
-    manifest_shard = os.environ.get("MANIFEST_SHARD")
-    if manifest_shard is not None:
-        manifest_shard = int(manifest_shard)
+    manifest_shard = os.environ.get("MANIFEST_SHARD", "0,1")
+    if manifest_shard.lower() == "all":
+        manifest_shard_list = None
+    else:
+        manifest_shard_list = [int(s.strip()) for s in manifest_shard.split(",")]
 
     creds = _get_creds()
     gcs = gcs_storage.Client()
     gemini_url = _gemini_url(creds)
     store = ExtractionStore(f"gs://{store_bucket}/extraction/store")
 
-    log.info("Loading targets bucket=%s year=%d nace=%s shard=%s",
-             bucket_name, year, nace_filter, manifest_shard)
-    targets = load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shard)
+    log.info("Loading targets bucket=%s year=%d nace=%s shards=%s",
+             bucket_name, year, nace_filter, manifest_shard_list)
+    targets = load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shard_list)
     log.info("Found %d target PDFs", len(targets))
 
     done_hashes = load_already_done(gcs, store_bucket)
