@@ -116,22 +116,31 @@ def load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shard):
         shard_blobs = sorted(b.name for b in bucket.list_blobs(prefix="manifest_shard_")
                              if b.name.endswith(".parquet"))
 
+    log.info("Manifest shards: %s", shard_blobs)
+
     con = duckdb.connect()
     frames = []
     for sb in shard_blobs:
+        log.info("Downloading manifest shard: %s", sb)
         buf = bucket.blob(sb).download_as_bytes()
+        log.info("Downloaded %d bytes, reading parquet", len(buf))
         t = pq.read_table(io.BytesIO(buf), columns=["orgnr", "year", "status", "pdf_path", "pdf_hash"])
+        log.info("Shard %s: %d rows", sb, len(t))
         frames.append(t)
     combined = pa.concat_tables(frames)
     con.register("manifest", combined)
+    log.info("Combined manifest: %d rows", len(combined))
 
     where = f"year = {year} AND status = 'success' AND pdf_path IS NOT NULL"
 
     if nace_filter:
+        log.info("Loading enheter for NACE filter: %s", nace_filter)
         enheter_bucket = gcs.bucket("sondre_brreg_data")
         blobs = sorted(b.name for b in enheter_bucket.list_blobs(prefix="enheter/parsed/v1/state/")
                         if b.name.endswith(".parquet"))
+        log.info("Latest enheter snapshot: %s", blobs[-1] if blobs else "NONE")
         buf = enheter_bucket.blob(blobs[-1]).download_as_bytes()
+        log.info("Enheter downloaded: %d bytes", len(buf))
         enheter = pq.read_table(io.BytesIO(buf), columns=["org_nr", "nace_1"])
         con.register("enheter", enheter)
         nace_list = ",".join(f"'{n}'" for n in nace_filter)
