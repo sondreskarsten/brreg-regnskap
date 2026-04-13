@@ -60,8 +60,9 @@ def _get_creds():
 
 
 def _gemini_url(creds, location="europe-west1"):
+    project = getattr(creds, "project_id", None) or os.environ.get("GCP_PROJECT", "sondreskarsten-d7d14")
     return (f"https://{location}-aiplatform.googleapis.com/v1/"
-            f"projects/{creds.project_id}/locations/{location}/"
+            f"projects/{project}/locations/{location}/"
             f"publishers/google/models/{GEMINI_MODEL}:generateContent")
 
 
