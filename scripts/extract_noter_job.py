@@ -168,15 +168,15 @@ def _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shar
         """
         log.info("Running query: %s", sql[:200])
         try:
-            df = con.execute(sql).fetchdf()
+            df = con.execute(sql).fetchall()
         except Exception as e:
             log.error("DuckDB query failed: %s", e)
             raise
         log.info("Found %d target PDFs", len(df))
     else:
-        df = con.execute(f"SELECT orgnr, pdf_path, pdf_hash FROM manifest WHERE {where}").fetchdf()
+        df = con.execute(f"SELECT orgnr, pdf_path, pdf_hash FROM manifest WHERE {where}").fetchall()
 
-    return list(df.itertuples(index=False, name=None))
+    return df
 
 
 def load_already_done(gcs, store_bucket):
