@@ -27,6 +27,12 @@ dependencies = [
     "pydantic-settings>=2.1,<3",
     "rich>=13,<14",
     "structlog>=24,<26",
+    "pymupdf>=1.24,<2",
+    "Pillow>=10,<12",
+    "google-cloud-storage>=2.14,<3",
+    "google-auth>=2.27,<3",
+    "requests>=2.31,<3",
+    "imagehash>=4.3,<5",
 ]
 
 [project.optional-dependencies]
