@@ -108,6 +108,15 @@ def _parse_gemini_json(raw):
 
 
 def load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shards):
+    import traceback
+    try:
+        return _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shards)
+    except Exception:
+        log.error("load_target_orgnrs FULL TRACEBACK:\n%s", traceback.format_exc())
+        raise
+
+
+def _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shards):
     bucket = gcs.bucket(bucket_name)
 
     if manifest_shards is not None:
@@ -151,12 +160,19 @@ def load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shards):
         log.info("Enheter loaded: %d rows", len(enheter))
         con.register("enheter", enheter)
         nace_list = ",".join(f"'{n}'" for n in nace_filter)
-        df = con.execute(f"""
+        sql = f"""
             SELECT m.orgnr, m.pdf_path, m.pdf_hash
             FROM manifest m
             JOIN enheter e ON m.orgnr = e.org_nr
             WHERE {where} AND e.nace_1 IN ({nace_list})
-        """).fetchdf()
+        """
+        log.info("Running query: %s", sql[:200])
+        try:
+            df = con.execute(sql).fetchdf()
+        except Exception as e:
+            log.error("DuckDB query failed: %s", e)
+            raise
+        log.info("Found %d target PDFs", len(df))
     else:
         df = con.execute(f"SELECT orgnr, pdf_path, pdf_hash FROM manifest WHERE {where}").fetchdf()
 
