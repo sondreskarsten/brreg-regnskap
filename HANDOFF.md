@@ -81,7 +81,7 @@ Wire `page_classifier.build_manifest()` into extraction pipeline. Run on 50 test
 
 - Gemini 3 Flash not available on Vertex AI (404)
 - Batch API not tested (50% error rate reported on Flash-Lite)
-- finstat cross-validation: 50% P&L failures from missing sum_driftskostnader
+- regnskapsdata cross-validation: 50% P&L failures from missing sum_driftskostnader
 - BRREG HTTP 406 regression for new PDF downloads
 - 30% unknown platform hashes need expanding reference set
 - Zone segmentation company FPs from indented margins (14 cases)
