@@ -107,16 +107,16 @@ def _parse_gemini_json(raw):
     return json.loads(s.strip())
 
 
-def load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shards):
+def load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shards, orgnr_filter=None):
     import traceback
     try:
-        return _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shards)
+        return _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shards, orgnr_filter)
     except Exception:
         log.error("load_target_orgnrs FULL TRACEBACK:\n%s", traceback.format_exc())
         raise
 
 
-def _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shards):
+def _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shards, orgnr_filter=None):
     bucket = gcs.bucket(bucket_name)
 
     if manifest_shards is not None:
@@ -141,6 +141,11 @@ def _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shar
     log.info("Combined manifest: %d rows", len(combined))
 
     where = f"year = {year} AND status = 'success' AND pdf_path IS NOT NULL"
+
+    if orgnr_filter:
+        orgnr_in = ",".join(f"'{o}'" for o in orgnr_filter)
+        where = f"{where} AND orgnr IN ({orgnr_in})"
+        log.info("Applied orgnr_filter: %d orgnr", len(orgnr_filter))
 
     if nace_filter:
         log.info("Loading enheter for NACE filter: %s", nace_filter)
@@ -367,14 +372,18 @@ def main():
     else:
         manifest_shard_list = [int(s.strip()) for s in manifest_shard.split(",")]
 
+    orgnr_raw = os.environ.get("ORGNR_LIST", "")
+    orgnr_filter = [o.strip() for o in orgnr_raw.split(",") if o.strip()] or None
+
     creds = _get_creds()
     gcs = gcs_storage.Client()
     gemini_url = _gemini_url(creds)
     store = ExtractionStore(f"gs://{store_bucket}/extraction/store")
 
-    log.info("Loading targets bucket=%s year=%d nace=%s shards=%s",
-             bucket_name, year, nace_filter, manifest_shard_list)
-    targets = load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shard_list)
+    log.info("Loading targets bucket=%s year=%d nace=%s shards=%s orgnr_list=%s",
+             bucket_name, year, nace_filter, manifest_shard_list,
+             f"{len(orgnr_filter)} orgnr" if orgnr_filter else None)
+    targets = load_target_orgnrs(gcs, bucket_name, year, nace_filter, manifest_shard_list, orgnr_filter)
     log.info("Found %d target PDFs", len(targets))
 
     done_hashes = load_already_done(gcs, store_bucket)
