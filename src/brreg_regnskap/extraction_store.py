@@ -128,10 +128,15 @@ NOTER_SCHEMA = pa.schema([
     pa.field("note_nr", pa.string()),
     pa.field("tittel", pa.string()),
     pa.field("note_type", pa.string()),
-    pa.field("amounts_json", pa.string()),
-    pa.field("n_amounts", pa.int32()),
+    pa.field("has_table", pa.bool_()),
+    pa.field("page_refs", pa.string()),
+    pa.field("raw_amounts_json", pa.large_string()),
+    pa.field("raw_text", pa.large_string()),
+    pa.field("sub_tables_json", pa.large_string()),
     pa.field("extraction_model", pa.string()),
     pa.field("extraction_cost_usd", pa.float64()),
+    pa.field("input_tokens", pa.int32()),
+    pa.field("output_tokens", pa.int32()),
     pa.field("collection_date", pa.string(), nullable=False),
     pa.field("collection_time", pa.string(), nullable=False),
 ])
@@ -282,7 +287,9 @@ class ExtractionStore:
         import json as _json
         rows = []
         for r in records:
-            amounts = r.get("amounts", {})
+            raw_amounts = r.get("raw_amounts", r.get("amounts", {}))
+            sub_tables = r.get("sub_tables")
+            page_refs = r.get("page_refs")
             rows.append({
                 "pdf_sha256_prefix": r.get("pdf_sha256_prefix", ""),
                 "orgnr": r.get("orgnr", ""),
@@ -290,10 +297,15 @@ class ExtractionStore:
                 "note_nr": str(r.get("nr", r.get("note_nr", ""))) if r.get("nr") is not None or r.get("note_nr") is not None else None,
                 "tittel": r.get("tittel"),
                 "note_type": r.get("type", r.get("note_type")),
-                "amounts_json": _json.dumps(amounts, ensure_ascii=False) if isinstance(amounts, dict) else None,
-                "n_amounts": len(amounts) if isinstance(amounts, dict) else 0,
+                "has_table": r.get("has_table"),
+                "page_refs": _json.dumps(page_refs, ensure_ascii=False) if isinstance(page_refs, list) else page_refs,
+                "raw_amounts_json": _json.dumps(raw_amounts, ensure_ascii=False) if isinstance(raw_amounts, dict) else None,
+                "raw_text": r.get("raw_text"),
+                "sub_tables_json": _json.dumps(sub_tables, ensure_ascii=False) if isinstance(sub_tables, list) else None,
                 "extraction_model": r.get("extraction_model"),
                 "extraction_cost_usd": _safe_float(r.get("extraction_cost_usd")),
+                "input_tokens": _safe_int(r.get("input_tokens")),
+                "output_tokens": _safe_int(r.get("output_tokens")),
                 "collection_date": cdate,
                 "collection_time": ctime,
             })
@@ -536,33 +548,31 @@ def parse_generell_info_from_words(words: list[dict]) -> dict:
     return result
 
 
-NOTER_PROMPT_V2 = """Extract notes (noter) from these Norwegian årsregnskap pages.
+NOTER_PROMPT_V2 = """YOU ARE DEPRECATED. Use NOTER_PROMPT_V3."""
 
-For each note:
-- nr: note number as printed (string or null)
-- tittel: exact Norwegian title
+NOTER_PROMPT_V3 = """Extract notes (noter) from these Norwegian årsregnskap pages.
+
+For each note, return a STRUCTURAL observation — verbatim labels and values as printed, no interpretation or re-keying.
+
+Per note:
+- nr: note number as printed (string or null if unnumbered)
+- tittel: exact Norwegian title as printed
 - type: narrative | table | mixed
-- amounts: ALL key-value pairs of amounts found. snake_case keys. {} for narrative.
+- has_table: true if the note contains any tabular data with numeric columns
+- page_refs: array of 1-indexed page numbers this note spans (within the images provided, so first image = page 1)
+- raw_amounts: key-value pairs where KEYS are the EXACT ROW LABELS as printed (preserve original Norwegian spelling, casing, and punctuation — do NOT normalize to snake_case) and VALUES are integers in NOK. For multi-year tables, suffix keys with the year: "Salgsinntekt 2024", "Salgsinntekt 2023". Empty {} for purely narrative notes.
+- raw_text: the full verbatim text of the note — all sentences, all paragraphs, as printed. For table notes, include header labels and any surrounding prose but not the numeric values themselves (those go in raw_amounts). For narrative notes, include all text.
+- sub_tables: if the note contains multiple distinct sub-tables (e.g. a lønnskostnad note with separate "Godtgjørelse til daglig leder" and "Revisjonshonorar" sub-sections), return each as a separate object: [{"heading": "...", "amounts": {...}}]. null if no sub-tables or only one flat table.
 
-Extract these flags (AMOUNTS must be integers in NOK, not true/false):
-- antall_ansatte: integer or null
-- antall_aarsverk: number or null
-- otp_pliktig: bool — "pliktig til å ha tjenestepensjonsordning" → true
-- revisjonshonorar_revisjon: amount or null
-- bundne_midler_amount: amount or null — "bundne bankinnskudd"
-- skattetrekkskonto: amount or null — "har ikke" → 0
-- has_pantstillelser: bool
-- pantstillelser_gjeld: amount or null — "gjeld sikret ved pant"
-- pantstillelser_bokfort: amount or null — "balanseført verdi av pantsatte eiendeler"
-- utbytte: amount or null — "foreslått/avsatt utbytte"
-- konsernbidrag: amount or null — the NOK amount, NOT true/false
-- fortsatt_drift_tvil: bool
-- kassekredittlimit: amount or null
-- kassekreditt_benyttet: amount or null
-- klientmidler: amount or null — "innestående på klientkonto" or "klientmidler" amount in NOK, NOT true/false
+Rules:
+- Do NOT split one note into multiple entries. Each printed note = one entry.
+- Do NOT invent labels. Use the exact text from the document as keys.
+- Do NOT interpret amounts: if the document says "Beløp i: 1000 NOK" or "alle tall i tusen", multiply by 1000 so all values are in NOK — but that is arithmetic, not interpretation.
+- Number formats: "1 364 000" (space-delimited), "128.689,-" (dot-delimited, treat as integer), "(5 255)" = -5255.
+- Extract EVERY note visible in the pages.
+- Include notes from both the BRREG wrapper and company section if both are present.
 
-Do NOT split one note into multiple entries. Extract EVERY note.
-Return JSON: {"noter": [...], "note_flags": {...}, "n_notes_found": <int>}"""
+Return JSON only: {"noter": [...], "n_notes_found": <int>}"""
 
 
 def extract_noter(
@@ -587,7 +597,7 @@ def extract_noter(
 
     from brreg_regnskap.page_classifier import build_manifest
 
-    EXTRACTOR_VERSION = "noter_v2"
+    EXTRACTOR_VERSION = "noter_v3"
     MODEL = "gemini-2.5-flash"
 
     with open(pdf_path, "rb") as f:
@@ -676,7 +686,6 @@ def extract_noter(
     if manifest["split"]["n_company"] == 0:
         record["status"] = "skipped_brreg_only"
         record["noter"] = []
-        record["note_flags"] = {}
         record["cost_usd"] = journalnr_cost
         doc.close()
         return record
@@ -694,7 +703,6 @@ def extract_noter(
     if not note_pages:
         record["status"] = "skipped_no_note_pages"
         record["noter"] = []
-        record["note_flags"] = {}
         record["cost_usd"] = journalnr_cost
         return record
 
@@ -702,7 +710,7 @@ def extract_noter(
     record["note_page_numbers"] = [p["page"] for p in note_pages]
 
     parts = [_img_part(p["image"]) for p in note_pages]
-    parts.append({"text": NOTER_PROMPT_V2})
+    parts.append({"text": NOTER_PROMPT_V3})
 
     t0 = time.time()
     r = _gemini_call(parts)
@@ -723,13 +731,8 @@ def extract_noter(
 
     parsed = json.loads(raw.strip())
     record["noter"] = parsed.get("noter", [])
-    record["note_flags"] = parsed.get("note_flags", {})
     record["n_notes_found"] = len(record["noter"])
-    record["n_notes_with_amounts"] = sum(1 for n in record["noter"] if n.get("amounts"))
-    record["n_flags_set"] = sum(
-        1 for v in record["note_flags"].values()
-        if v is not None and v is not False and v != 0
-    )
+    record["n_notes_with_amounts"] = sum(1 for n in record["noter"] if n.get("raw_amounts"))
     record["status"] = "ok"
 
     return record

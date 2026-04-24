@@ -36,7 +36,7 @@ from PIL import Image
 
 from brreg_regnskap.page_classifier import build_manifest
 from brreg_regnskap.extraction_store import (
-    ExtractionStore, NOTER_PROMPT_V2, NOTER_SCHEMA, NOTE_FLAGS_SCHEMA,
+    ExtractionStore, NOTER_PROMPT_V3, NOTER_SCHEMA, NOTE_FLAGS_SCHEMA,
     _safe_int, _safe_float,
 )
 
@@ -44,7 +44,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger(__name__)
 
 GEMINI_MODEL = "gemini-2.5-flash"
-EXTRACTOR_VERSION = "noter_v2"
+EXTRACTOR_VERSION = "noter_v3"
 
 
 def _get_creds():
@@ -217,7 +217,7 @@ def extract_one(orgnr, pdf_path, gcs, creds, gemini_url):
     }
 
     if manifest["split"]["n_company"] == 0:
-        record.update(status="skipped_brreg_only", noter=[], note_flags={}, raw_response=None)
+        record.update(status="skipped_brreg_only", noter=[], raw_response=None)
         return record
 
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -251,7 +251,7 @@ def extract_one(orgnr, pdf_path, gcs, creds, gemini_url):
     doc.close()
 
     if not note_pages:
-        record.update(status="skipped_no_note_pages", noter=[], note_flags={},
+        record.update(status="skipped_no_note_pages", noter=[],
                       cost_usd=journalnr_cost, raw_response=None)
         return record
 
@@ -259,7 +259,7 @@ def extract_one(orgnr, pdf_path, gcs, creds, gemini_url):
     record["note_page_numbers"] = [p["page"] for p in note_pages]
 
     parts = [_img_part(p["image"]) for p in note_pages]
-    parts.append({"text": NOTER_PROMPT_V2})
+    parts.append({"text": NOTER_PROMPT_V3})
 
     t0 = time.time()
     r = _gemini_call(gemini_url, creds, parts)
@@ -275,29 +275,25 @@ def extract_one(orgnr, pdf_path, gcs, creds, gemini_url):
     try:
         parsed = _parse_gemini_json(r["raw"])
         record["noter"] = parsed.get("noter", [])
-        record["note_flags"] = parsed.get("note_flags", {})
         record["n_notes_found"] = len(record["noter"])
-        record["n_flags_set"] = sum(1 for v in record["note_flags"].values()
-                                     if v is not None and v is not False and v != 0)
         record["status"] = "ok"
     except Exception as e:
         record["status"] = "parse_error"
         record["error"] = str(e)[:500]
         record["noter"] = []
-        record["note_flags"] = {}
 
     return record
 
 
 def write_batch(store, records, cdate, ctime):
     noter_rows = []
-    flag_rows = []
     raw_rows = []
 
     for rec in records:
         if rec["status"] not in ("ok", "parse_error"):
             continue
 
+        n_noter = max(len(rec.get("noter", [])), 1)
         for n in rec.get("noter", []):
             noter_rows.append({
                 "pdf_sha256_prefix": rec["pdf_sha256_prefix"],
@@ -305,18 +301,10 @@ def write_batch(store, records, cdate, ctime):
                 "year": rec["year"],
                 **n,
                 "extraction_model": rec["extraction_model"],
-                "extraction_cost_usd": rec.get("cost_usd", 0) / max(len(rec.get("noter", [])), 1),
+                "extraction_cost_usd": rec.get("cost_usd", 0) / n_noter,
+                "input_tokens": rec.get("input_tokens"),
+                "output_tokens": rec.get("output_tokens"),
             })
-
-        flag_rows.append({
-            "pdf_sha256_prefix": rec["pdf_sha256_prefix"],
-            "orgnr": rec["orgnr"],
-            "year": rec["year"],
-            **rec.get("note_flags", {}),
-            "extraction_model": rec["extraction_model"],
-            "extraction_cost_usd": rec.get("cost_usd"),
-            "n_note_pages": rec.get("n_note_pages"),
-        })
 
         raw_rows.append({
             "pdf_sha256_prefix": rec["pdf_sha256_prefix"],
@@ -337,10 +325,7 @@ def write_batch(store, records, cdate, ctime):
 
     if noter_rows:
         store.write_noter(noter_rows, cdate, ctime)
-    if flag_rows:
-        store.write_note_flags(flag_rows, cdate, ctime)
 
-    # Write raw responses to separate partition
     if raw_rows:
         raw_schema = pa.schema([
             pa.field("pdf_sha256_prefix", pa.string(), nullable=False),
@@ -366,7 +351,7 @@ def write_batch(store, records, cdate, ctime):
         table = pa.Table.from_pylist(raw_rows, schema=raw_schema)
         store._write_parquet("raw_responses", table, cdate, ctime)
 
-    return len(noter_rows), len(flag_rows), len(raw_rows)
+    return len(noter_rows), len(raw_rows)
 
 
 def main():
@@ -424,16 +409,16 @@ def main():
             n_err += 1
 
         if len(records) % 50 == 0 and records:
-            n_noter, n_flags, n_raw = write_batch(store, records, cdate, ctime)
-            log.info("Batch written: %d noter, %d flags, %d raw | total: %d ok, %d skip, %d err, $%.2f",
-                     n_noter, n_flags, n_raw, n_ok, n_skip, n_err, total_cost)
+            n_noter, n_raw = write_batch(store, records, cdate, ctime)
+            log.info("Batch written: %d noter, %d raw | total: %d ok, %d skip, %d err, $%.2f",
+                     n_noter, n_raw, n_ok, n_skip, n_err, total_cost)
             records = []
             ctime = datetime.now(timezone.utc).strftime("%H%M%S")
             gc.collect()
 
     if records:
-        n_noter, n_flags, n_raw = write_batch(store, records, cdate, ctime)
-        log.info("Final batch: %d noter, %d flags, %d raw", n_noter, n_flags, n_raw)
+        n_noter, n_raw = write_batch(store, records, cdate, ctime)
+        log.info("Final batch: %d noter, %d raw", n_noter, n_raw)
 
     log.info("DONE: %d ok, %d skip, %d err, $%.2f total", n_ok, n_skip, n_err, total_cost)
 
