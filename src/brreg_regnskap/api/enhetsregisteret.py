@@ -159,6 +159,7 @@ class EnhetsregisteretClient:
                 "oppdateringsid": str(cursor),
                 "dato": since_date,
                 "includeChanges": "true",
+                "size": "10000",
             }
             url = f"{BASE_URL}/oppdateringer/enheter"
             headers = {"Accept": "application/json"}
