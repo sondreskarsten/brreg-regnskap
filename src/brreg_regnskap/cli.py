@@ -249,6 +249,8 @@ def patch(
 
 
 async def _patch_async(settings: Settings, storage: StorageBackend) -> None:
+    from datetime import UTC, datetime
+
     from brreg_regnskap.api.enhetsregisteret import EnhetsregisteretClient
     from brreg_regnskap.checkpoint import CheckpointManager
     from brreg_regnskap.orderflow import OrderflowManager
@@ -256,6 +258,8 @@ async def _patch_async(settings: Settings, storage: StorageBackend) -> None:
     orderflow = OrderflowManager(storage, settings)
     checkpoint_mgr = CheckpointManager(storage, settings.checkpoint_path)
     state = checkpoint_mgr.load()
+
+    patch_started = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
     # ── Poll updates API ──────────────────────────────────────────
     console.print("Polling BRREG updates API...")
@@ -282,17 +286,76 @@ async def _patch_async(settings: Settings, storage: StorageBackend) -> None:
         state.last_oppdateringsid = max_id
         checkpoint_mgr.save(state)
 
+    storage.write_bytes(
+        settings.patch_cursor_path,
+        json.dumps({"last_patch_date": patch_started}).encode(),
+    )
+
     console.print(f"  Updates processed, fast-lane entries added: {added}")
     console.print("Run [bold]brreg-regnskap sync[/bold] to download.")
+
+
+# ── daily ─────────────────────────────────────────────────────────
+
+
+@app.command()
+def daily(
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
+    requests_per_second: float | None = typer.Option(
+        None, "--rps", help="Rate limit (requests per second)"
+    ),
+    max_runtime: int | None = typer.Option(
+        None, "--max-runtime", help="Max runtime in minutes (0=unlimited)"
+    ),
+    log_level: str = typer.Option("INFO", "--log-level", "-l"),
+) -> None:
+    """Patch then sync the full orderflow in one process.
+
+    Single-worker topology: processes all shards' lanes sequentially and
+    writes the global manifest directly, so no merge step is needed.
+    Ignores CLOUD_RUN_TASK_INDEX deliberately — on Cloud Run the env var is
+    always set and would otherwise silently pin the run to shard 0.
+    """
+    _configure_logging(log_level)
+
+    overrides: dict[str, object] = {
+        "storage_path": storage_path,
+        "log_level": log_level,
+        "shard": None,
+    }
+    if requests_per_second is not None:
+        overrides["requests_per_second"] = requests_per_second
+    if max_runtime is not None:
+        overrides["max_runtime_minutes"] = max_runtime
+    settings = Settings(**overrides)  # type: ignore[arg-type]
+
+    from brreg_regnskap.storage import StorageBackend
+    from brreg_regnskap.sync_engine import SyncEngine
+
+    storage = StorageBackend.from_settings(settings)
+    storage.check_credentials()
+    asyncio.run(_patch_async(settings, storage))
+
+    engine = SyncEngine(settings)
+    asyncio.run(engine.run())
 
 
 def _last_patch_date(storage: StorageBackend, settings: Settings) -> str:
     """Determine the date to poll updates from.
 
+    Reads metadata/patch_cursor.json (written after each successful patch),
+    falling back to the bulk-dump date in etag.json, then to now.
+
     BRREG requires ISO format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
     """
     from datetime import UTC, datetime
 
+    if storage.exists(settings.patch_cursor_path):
+        raw = storage.read_bytes(settings.patch_cursor_path)
+        data = json.loads(raw)
+        cursor = data.get("last_patch_date", "")
+        if cursor:
+            return cursor
     if storage.exists(settings.etag_path):
         raw = storage.read_bytes(settings.etag_path)
         data = json.loads(raw)

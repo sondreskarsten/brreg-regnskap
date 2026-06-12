@@ -143,3 +143,8 @@ class Settings(BaseSettings):
     def etag_path(self) -> str:
         """JSON file storing the bulk-dump ETag and last-processed date."""
         return f"{self.storage_path}/metadata/etag.json"
+
+    @property
+    def patch_cursor_path(self) -> str:
+        """JSON file storing the date of the last successful patch run."""
+        return f"{self.storage_path}/metadata/patch_cursor.json"
