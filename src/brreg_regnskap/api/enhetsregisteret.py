@@ -114,6 +114,7 @@ class EnhetsregisteretClient:
         """
         cursor = since_id
         while True:
+            last_cursor = cursor
             params = {
                 "oppdateringsid": str(cursor),
                 "includeChanges": str(include_changes).lower(),
@@ -131,6 +132,9 @@ class EnhetsregisteretClient:
                 update = EnhetUpdate.model_validate(u)
                 cursor = update.oppdateringsid
                 yield update
+
+            if cursor == last_cursor:
+                break
 
     async def poll_regnskap_updates(self, since_id: int = 0) -> AsyncIterator[EnhetUpdate]:
         """Yield only updates where sisteInnsendteAarsregnskap changed.
@@ -161,6 +165,7 @@ class EnhetsregisteretClient:
         cursor = 1
         page = 0
         while True:
+            last_cursor = cursor
             params: dict[str, str] = {
                 "oppdateringsid": str(cursor),
                 "dato": since_date,
@@ -201,3 +206,6 @@ class EnhetsregisteretClient:
                             year = int(raw_year) if raw_year and str(raw_year).isdigit() else None
                             yield update, year
                             break
+
+            if cursor == last_cursor:
+                break
