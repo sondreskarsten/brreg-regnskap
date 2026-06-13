@@ -334,10 +334,43 @@ def daily(
 
     storage = StorageBackend.from_settings(settings)
     storage.check_credentials()
-    asyncio.run(_patch_async(settings, storage))
 
-    engine = SyncEngine(settings)
-    asyncio.run(engine.run())
+    lock_path = f"{settings.storage_path}/metadata/daily.lock"
+    lock_max_age_s = (settings.max_runtime_minutes + 120) * 60
+
+    if storage.exists(lock_path):
+        from datetime import UTC, datetime
+
+        held = json.loads(storage.read_bytes(lock_path))
+        acquired = datetime.fromisoformat(held["acquired_at"])
+        age_s = (datetime.now(UTC) - acquired).total_seconds()
+        if age_s < lock_max_age_s:
+            console.print(
+                f"[yellow]daily.lock held by execution {held.get('execution')} "
+                f"since {held['acquired_at']} ({age_s/60:.0f} min ago); exiting.[/yellow]"
+            )
+            return
+        console.print(
+            f"[yellow]daily.lock is stale ({age_s/60:.0f} min > "
+            f"{lock_max_age_s/60:.0f} min limit); overriding.[/yellow]"
+        )
+
+    from datetime import UTC, datetime
+
+    execution = os.environ.get("CLOUD_RUN_EXECUTION", "local")
+    storage.write_bytes(
+        lock_path,
+        json.dumps(
+            {"execution": execution, "acquired_at": datetime.now(UTC).isoformat()}
+        ).encode(),
+    )
+
+    try:
+        asyncio.run(_patch_async(settings, storage))
+        engine = SyncEngine(settings)
+        asyncio.run(engine.run())
+    finally:
+        storage.delete(lock_path)
 
 
 def _last_patch_date(storage: StorageBackend, settings: Settings) -> str:
