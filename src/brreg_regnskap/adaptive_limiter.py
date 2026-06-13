@@ -24,6 +24,19 @@ import asyncio
 
 from aiolimiter import AsyncLimiter
 
+_WINDOW = 2.0
+
+
+def _make_limiter(rate: float) -> AsyncLimiter:
+    """AsyncLimiter at ``rate`` req/s.
+
+    aiolimiter ties burst capacity to ``max_rate``; a per-second limiter
+    with rate < 1 would have capacity < 1 and reject every acquire.  Using
+    a 2s window keeps capacity = rate * 2 >= 1 for any rate >= 0.5 (our
+    min_rate floor) while preserving the same average rate.
+    """
+    return AsyncLimiter(rate * _WINDOW, _WINDOW)
+
 
 class AdaptiveLimiter:
     def __init__(
@@ -44,7 +57,7 @@ class AdaptiveLimiter:
         self._rate = max(min_rate, start_rate if start_rate is not None else max_rate)
         self._clean_streak = 0
         self._lock = asyncio.Lock()
-        self._limiter = AsyncLimiter(self._rate, 1)
+        self._limiter = _make_limiter(self._rate)
 
     @property
     def rate(self) -> float:
@@ -60,7 +73,7 @@ class AdaptiveLimiter:
             new_rate = max(self._min_rate, self._rate * self._decrease_factor)
             if new_rate != self._rate:
                 self._rate = new_rate
-                self._limiter = AsyncLimiter(self._rate, 1)
+                self._limiter = _make_limiter(self._rate)
 
     async def on_success(self) -> None:
         """Record a clean response; recover additively after a streak."""
@@ -69,4 +82,4 @@ class AdaptiveLimiter:
             if self._clean_streak >= self._recover_after and self._rate < self._max_rate:
                 self._clean_streak = 0
                 self._rate = min(self._max_rate, self._rate + self._increase_step)
-                self._limiter = AsyncLimiter(self._rate, 1)
+                self._limiter = _make_limiter(self._rate)

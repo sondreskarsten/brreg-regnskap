@@ -100,7 +100,10 @@ class SyncEngine:
         self._orderflow = OrderflowManager(self._storage, settings)
         self._checkpoint_mgr = CheckpointManager(self._storage, settings.checkpoint_path)
         self._semaphore = asyncio.Semaphore(settings.max_concurrent)
-        self._limiter = AdaptiveLimiter(settings.requests_per_second, start_rate=2.0)
+        # The kopi PDF/years endpoints throttle; the JSON API does not.
+        # Separate limiters so JSON successes can't mask PDF 429s.
+        self._pdf_limiter = AdaptiveLimiter(settings.requests_per_second, start_rate=2.0)
+        self._json_limiter = AdaptiveLimiter(20.0, start_rate=20.0, min_rate=5.0)
         self._start_time = time.monotonic()
         self._shutdown = False
         self._stats = {
@@ -250,7 +253,7 @@ class SyncEngine:
                 break
 
             try:
-                years = await self._throttled_request(client.fetch_years, orgnr)
+                years = await self._throttled_request(client.fetch_years, orgnr, limiter=self._pdf_limiter)
             except Exception as exc:
                 logger.warning("years_api_failed", orgnr=orgnr, error=str(exc))
                 continue
@@ -334,7 +337,7 @@ class SyncEngine:
 
         # ── PDF ──────────────────────────────────────────────────
         try:
-            pdf_data = await self._throttled_request(client.download_pdf, orgnr, year)
+            pdf_data = await self._throttled_request(client.download_pdf, orgnr, year, limiter=self._pdf_limiter)
         except Exception as exc:
             logger.warning("pdf_failed", orgnr=orgnr, year=year, error=str(exc))
             self._stats["failed"] += 1
@@ -369,7 +372,7 @@ class SyncEngine:
 
         if json_too:
             try:
-                raw_json = await self._throttled_request(client.fetch_regnskap_raw, orgnr)
+                raw_json = await self._throttled_request(client.fetch_regnskap_raw, orgnr, limiter=self._json_limiter)
             except Exception as exc:
                 logger.warning("json_failed", orgnr=orgnr, error=str(exc))
                 json_error = str(exc)[:500]
@@ -473,7 +476,9 @@ class SyncEngine:
         limit = self._settings.max_runtime_minutes * 60
         return max(0.0, limit - elapsed)
 
-    async def _throttled_request(self, coro_fn: Any, *args: Any, **kwargs: Any) -> Any:
+    async def _throttled_request(
+        self, coro_fn: Any, *args: Any, limiter: AdaptiveLimiter, **kwargs: Any
+    ) -> Any:
         @retry(
             retry=retry_if_exception(_is_retryable),
             wait=wait_exponential_jitter(initial=1, max=60, jitter=2),
@@ -483,16 +488,16 @@ class SyncEngine:
         )
         async def _inner() -> Any:
             async with self._semaphore:
-                await self._limiter.acquire()
+                await limiter.acquire()
                 try:
                     result = await coro_fn(*args, **kwargs)
                 except (aiohttp.ClientResponseError, BrregRateLimitError) as exc:
                     if isinstance(exc, BrregRateLimitError) or (
                         isinstance(exc, aiohttp.ClientResponseError) and exc.status == 429
                     ):
-                        await self._limiter.on_throttle()
+                        await limiter.on_throttle()
                     raise
-                await self._limiter.on_success()
+                await limiter.on_success()
                 return result
 
         return await _inner()
