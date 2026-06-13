@@ -226,8 +226,6 @@ class SyncEngine:
                     **self._stats,
                 )
 
-            await asyncio.sleep(0.5)
-
         if records_buf:
             self._manifest.upsert(records_buf)
         logger.info("fast_lane_done", shard=digit, **self._stats)
@@ -246,7 +244,6 @@ class SyncEngine:
 
         logger.info("slow_discovery_start", shard=digit, orgnrs=len(stubs))
         discovered: set[str] = set()
-        burst_count = 0
 
         for orgnr in stubs:
             if self._should_shutdown():
@@ -264,11 +261,6 @@ class SyncEngine:
             if years:
                 self._orderflow.enqueue_slow(orgnr, years, manifest_ts)
             discovered.add(orgnr)
-            burst_count += 1
-
-            if burst_count >= 30:
-                burst_count = 0
-                await asyncio.sleep(30)
 
         if discovered:
             self._orderflow.remove_discovery_stubs(digit, discovered)
@@ -291,7 +283,6 @@ class SyncEngine:
         logger.info("slow_lane_start", shard=digit, count=pending.num_rows)
         records_buf: list[ManifestRecord] = []
         checkpoint_every = self._settings.checkpoint_interval
-        burst_count = 0
 
         for idx in range(pending.num_rows):
             if self._should_shutdown():
@@ -305,7 +296,6 @@ class SyncEngine:
             self._update_manifest_ts(manifest_ts, records)
 
             state.entities_processed += 1
-            burst_count += 1
 
             if (idx + 1) % checkpoint_every == 0 or idx + 1 == pending.num_rows:
                 if records_buf:
@@ -319,10 +309,6 @@ class SyncEngine:
                     total=pending.num_rows,
                     **self._stats,
                 )
-
-            if burst_count >= 30:
-                burst_count = 0
-                await asyncio.sleep(30)
 
         if records_buf:
             self._manifest.upsert(records_buf)
