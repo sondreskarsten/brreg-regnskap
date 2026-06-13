@@ -27,6 +27,7 @@ import asyncio
 import hashlib
 import json
 import time
+from collections import deque
 from datetime import UTC, datetime
 from typing import Any
 
@@ -50,6 +51,14 @@ from brreg_regnskap.orderflow import ManifestTimestamps, OrderflowManager
 from brreg_regnskap.storage import StorageBackend
 
 logger = structlog.get_logger()
+
+# Quota circuit breaker tuning. Saturation = at least _THROTTLE_SATURATION
+# PDF 429s within the last _THROTTLE_WINDOW seconds. A healthy run sits at/below
+# the clean rate and rarely throttles, so this only trips on the quota wall
+# (which produces sustained 429s as every PDF exhausts its retries).
+_THROTTLE_WINDOW = 60.0
+_THROTTLE_SATURATION = 25
+_THROTTLE_WINDOW_MAX = 500
 
 RETRYABLE_ERRORS = (
     aiohttp.ServerDisconnectedError,
@@ -106,6 +115,11 @@ class SyncEngine:
         self._json_limiter = AdaptiveLimiter(20.0, start_rate=20.0, min_rate=5.0)
         self._start_time = time.monotonic()
         self._shutdown = False
+        # Quota circuit breaker: BRREG's kopi service caps sustained volume for
+        # this consumer (observed ~700 requests per rolling window, then ~1.5/s
+        # gets 429 regardless of source region/IP). When saturation is detected,
+        # end the run gracefully so the next scheduled firing gets a fresh quota.
+        self._pdf_throttle_times: deque[float] = deque(maxlen=_THROTTLE_WINDOW_MAX)
         self._stats = {
             "processed": 0,
             "success": 0,
@@ -466,8 +480,23 @@ class SyncEngine:
     def _should_shutdown(self) -> bool:
         if self._shutdown:
             return True
+        if self._pdf_quota_saturated():
+            if not self._shutdown:
+                logger.warning(
+                    "pdf_quota_saturated",
+                    throttles_in_window=len(self._pdf_throttle_times),
+                    window_s=_THROTTLE_WINDOW,
+                    action="ending run for quota recharge",
+                )
+            self._shutdown = True
+            return True
         remaining = self._time_remaining()
         return bool(remaining is not None and remaining < 120)
+
+    def _pdf_quota_saturated(self) -> bool:
+        now = time.monotonic()
+        recent = sum(1 for t in self._pdf_throttle_times if now - t <= _THROTTLE_WINDOW)
+        return recent >= _THROTTLE_SATURATION
 
     def _time_remaining(self) -> float | None:
         if self._settings.max_runtime_minutes <= 0:
@@ -496,6 +525,8 @@ class SyncEngine:
                         isinstance(exc, aiohttp.ClientResponseError) and exc.status == 429
                     ):
                         await limiter.on_throttle()
+                        if limiter is self._pdf_limiter:
+                            self._pdf_throttle_times.append(time.monotonic())
                     raise
                 await limiter.on_success()
                 return result
