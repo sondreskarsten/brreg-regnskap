@@ -32,7 +32,6 @@ from typing import Any
 
 import aiohttp
 import structlog
-from aiolimiter import AsyncLimiter
 from tenacity import (
     RetryCallState,
     retry,
@@ -41,6 +40,7 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
+from brreg_regnskap.adaptive_limiter import AdaptiveLimiter
 from brreg_regnskap.api.models import ManifestRecord, Regnskap
 from brreg_regnskap.api.regnskapsregisteret import BrregRateLimitError, RegnskapsregisteretClient
 from brreg_regnskap.checkpoint import CheckpointManager, CheckpointState
@@ -100,7 +100,7 @@ class SyncEngine:
         self._orderflow = OrderflowManager(self._storage, settings)
         self._checkpoint_mgr = CheckpointManager(self._storage, settings.checkpoint_path)
         self._semaphore = asyncio.Semaphore(settings.max_concurrent)
-        self._limiter = AsyncLimiter(settings.requests_per_second, 1)
+        self._limiter = AdaptiveLimiter(settings.requests_per_second)
         self._start_time = time.monotonic()
         self._shutdown = False
         self._stats = {
@@ -484,7 +484,16 @@ class SyncEngine:
         async def _inner() -> Any:
             async with self._semaphore:
                 await self._limiter.acquire()
-                return await coro_fn(*args, **kwargs)
+                try:
+                    result = await coro_fn(*args, **kwargs)
+                except (aiohttp.ClientResponseError, BrregRateLimitError) as exc:
+                    if isinstance(exc, BrregRateLimitError) or (
+                        isinstance(exc, aiohttp.ClientResponseError) and exc.status == 429
+                    ):
+                        await self._limiter.on_throttle()
+                    raise
+                await self._limiter.on_success()
+                return result
 
         return await _inner()
 
