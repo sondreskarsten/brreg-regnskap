@@ -53,12 +53,14 @@ from brreg_regnskap.storage import StorageBackend
 logger = structlog.get_logger()
 
 # Quota circuit breaker tuning. Saturation = at least _THROTTLE_SATURATION
-# PDF 429s within the last _THROTTLE_WINDOW seconds. A healthy run sits at/below
-# the clean rate and rarely throttles, so this only trips on the quota wall
-# (which produces sustained 429s as every PDF exhausts its retries).
-_THROTTLE_WINDOW = 60.0
-_THROTTLE_SATURATION = 25
-_THROTTLE_WINDOW_MAX = 500
+# PDF 429s within the last _THROTTLE_WINDOW seconds. Once the quota wall is hit,
+# the limiter backs off to min_rate, so sustained throttling settles at ~14
+# 429/min (not the un-backed-off burst rate). A 90s window with a threshold of
+# 18 trips ~80s into sustained throttling while staying well above the handful
+# of 429s the limiter's occasional upward probe produces.
+_THROTTLE_WINDOW = 90.0
+_THROTTLE_SATURATION = 18
+_THROTTLE_WINDOW_MAX = 1000
 
 RETRYABLE_ERRORS = (
     aiohttp.ServerDisconnectedError,
