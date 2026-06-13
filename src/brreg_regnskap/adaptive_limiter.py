@@ -30,6 +30,7 @@ class AdaptiveLimiter:
         self,
         max_rate: float,
         *,
+        start_rate: float | None = None,
         min_rate: float = 0.5,
         decrease_factor: float = 0.7,
         increase_step: float = 0.25,
@@ -40,10 +41,10 @@ class AdaptiveLimiter:
         self._decrease_factor = decrease_factor
         self._increase_step = increase_step
         self._recover_after = recover_after
-        self._rate = max_rate
+        self._rate = max(min_rate, start_rate if start_rate is not None else max_rate)
         self._clean_streak = 0
         self._lock = asyncio.Lock()
-        self._limiter = AsyncLimiter(max_rate, 1)
+        self._limiter = AsyncLimiter(self._rate, 1)
 
     @property
     def rate(self) -> float:

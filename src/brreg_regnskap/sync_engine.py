@@ -100,7 +100,7 @@ class SyncEngine:
         self._orderflow = OrderflowManager(self._storage, settings)
         self._checkpoint_mgr = CheckpointManager(self._storage, settings.checkpoint_path)
         self._semaphore = asyncio.Semaphore(settings.max_concurrent)
-        self._limiter = AdaptiveLimiter(settings.requests_per_second)
+        self._limiter = AdaptiveLimiter(settings.requests_per_second, start_rate=2.0)
         self._start_time = time.monotonic()
         self._shutdown = False
         self._stats = {

@@ -60,3 +60,12 @@ async def test_throttle_resets_clean_streak() -> None:
     await lim.on_success()
     await lim.on_success()
     assert lim.rate == 1.0  # streak was reset, no recovery yet
+
+
+@pytest.mark.asyncio
+async def test_start_rate_below_max() -> None:
+    lim = AdaptiveLimiter(3.0, start_rate=2.0)
+    assert lim.rate == 2.0
+    for _ in range(80):
+        await lim.on_success()
+    assert lim.rate == 2.5  # 80 successes / recover_after 40 = 2 steps x 0.25
