@@ -102,7 +102,7 @@ class SyncEngine:
         self._semaphore = asyncio.Semaphore(settings.max_concurrent)
         # The kopi PDF/years endpoints throttle; the JSON API does not.
         # Separate limiters so JSON successes can't mask PDF 429s.
-        self._pdf_limiter = AdaptiveLimiter(settings.requests_per_second, start_rate=2.0)
+        self._pdf_limiter = AdaptiveLimiter(settings.requests_per_second, start_rate=1.5)
         self._json_limiter = AdaptiveLimiter(20.0, start_rate=20.0, min_rate=5.0)
         self._start_time = time.monotonic()
         self._shutdown = False
