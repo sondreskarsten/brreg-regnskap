@@ -37,7 +37,7 @@ class Settings(BaseSettings):
 
     Optional:
         max_concurrent: Max simultaneous HTTP connections (default 5).
-        requests_per_second: Rate limit for BRREG API calls (default 3.0).
+        requests_per_second: Rate limit for BRREG API calls (default 5.0, the verified PDF-copy-service per-IP ceiling).
         max_retries: Max retry attempts per failed request (default 5).
         checkpoint_interval: Save checkpoint every N entities processed (default 1000).
         max_runtime_minutes: Graceful shutdown after N minutes. 0 = unlimited (default 0).
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
 
     storage_path: str = "./data"
     max_concurrent: int = 5
-    requests_per_second: float = 3.0
+    requests_per_second: float = 5.0
     max_retries: int = 5
     checkpoint_interval: int = 1000
     max_runtime_minutes: int = 0

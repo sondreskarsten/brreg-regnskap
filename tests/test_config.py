@@ -13,7 +13,7 @@ class TestSettings:
         assert s.storage_path == "./data"
         assert s.backend_type == StorageBackendType.LOCAL
         assert s.max_concurrent == 5
-        assert s.requests_per_second == 3.0
+        assert s.requests_per_second == 5.0
 
     def test_s3_backend_detection(self) -> None:
         s = Settings(storage_path="s3://my-bucket/prefix")
