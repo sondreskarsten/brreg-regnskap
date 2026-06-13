@@ -124,6 +124,8 @@ def _load_target_orgnrs_inner(gcs, bucket_name, year, nace_filter, manifest_shar
     else:
         shard_blobs = sorted(b.name for b in bucket.list_blobs(prefix="manifest_shard_")
                              if b.name.endswith(".parquet"))
+        if not shard_blobs:
+            shard_blobs = ["manifest.parquet"]
 
     log.info("Manifest shards: %s", shard_blobs)
 
