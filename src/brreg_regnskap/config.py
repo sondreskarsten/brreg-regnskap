@@ -37,7 +37,7 @@ class Settings(BaseSettings):
 
     Optional:
         max_concurrent: Max simultaneous HTTP connections (default 5).
-        requests_per_second: Rate limit for BRREG API calls (default 4.0; 5/s burst-clean but sustained Cloud Run load saw frequent 429).
+        requests_per_second: Rate limit for BRREG API calls (default 2.5; the kopi PDF service throttles at 3+/s sustained, verified under concurrent load).
         max_retries: Max retry attempts per failed request (default 5).
         checkpoint_interval: Save checkpoint every N entities processed (default 1000).
         max_runtime_minutes: Graceful shutdown after N minutes. 0 = unlimited (default 0).
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
 
     storage_path: str = "./data"
     max_concurrent: int = 5
-    requests_per_second: float = 4.0
+    requests_per_second: float = 2.5
     max_retries: int = 5
     checkpoint_interval: int = 1000
     max_runtime_minutes: int = 0
