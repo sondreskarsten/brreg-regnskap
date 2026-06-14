@@ -61,6 +61,7 @@ class Collector:
         self._start_time = time.monotonic()
         self._shutdown = False
         self._pdf_throttle_times: deque[float] = deque(maxlen=_THROTTLE_WINDOW_MAX)
+        self._pdf_success_times: deque[float] = deque()
         self._stats = {"pdfs": 0, "missing": 0, "failed": 0, "jsons": 0}
         self._collected_orgnrs: set[str] = set()
 
@@ -103,7 +104,7 @@ class Collector:
                 idx += window
                 if (idx - cursor) % batch < pipeline:
                     self._save_cursor(idx)
-                    logger.info("collect_progress", cursor=idx, total=total, **self._stats)
+                    logger.info("collect_progress", cursor=idx, total=total, **self._stats, **self._rates())
 
             # ── Phase 2: raw-JSON pass over orgnrs collected this run ──
             # The JSON endpoint takes no year and returns only the max (latest
@@ -112,8 +113,17 @@ class Collector:
             await self._json_pass(client)
 
         self._save_cursor(idx)
-        logger.info("collect_finished", cursor=idx, total=total, **self._stats)
-        return dict(self._stats)
+        logger.info("collect_finished", cursor=idx, total=total, **self._stats, **self._rates())
+        return {**self._stats, **self._rates()}
+
+    def _rates(self) -> dict[str, float]:
+        now = time.monotonic()
+        elapsed = max(now - self._start_time, 1e-9)
+        run_rate = self._stats["pdfs"] / elapsed
+        window = 60.0
+        recent = sum(1 for t in self._pdf_success_times if now - t <= window)
+        rolling_rate = recent / min(window, elapsed)
+        return {"run_pdf_per_s": round(run_rate, 2), "rolling_pdf_per_s": round(rolling_rate, 2)}
 
     async def _json_pass(self, client: RegnskapsregisteretClient) -> None:
         orgnrs = sorted(self._collected_orgnrs)
@@ -158,6 +168,7 @@ class Collector:
 
         await asyncio.to_thread(self._put, f"pdf/{orgnr}_{year}.pdf", pdf)
         self._stats["pdfs"] += 1
+        self._pdf_success_times.append(time.monotonic())
         self._collected_orgnrs.add(orgnr)
 
     async def _throttled(self, coro_fn, *args, limiter: AdaptiveLimiter, **kwargs):
