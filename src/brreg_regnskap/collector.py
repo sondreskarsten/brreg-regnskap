@@ -89,14 +89,19 @@ class Collector:
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
             client = RegnskapsregisteretClient(session=session)
             idx = cursor
+            pipeline = self._settings.max_concurrent
             while idx < total:
                 if self._should_shutdown():
                     break
-                orgnr = orgnr_col[idx].as_py()
-                year = year_col[idx].as_py()
-                await self._collect_one(client, orgnr, year)
-                idx += 1
-                if (idx - cursor) % batch == 0:
+                window = min(pipeline, total - idx)
+                tasks = []
+                for k in range(window):
+                    orgnr = orgnr_col[idx + k].as_py()
+                    year = year_col[idx + k].as_py()
+                    tasks.append(self._collect_one(client, orgnr, year))
+                await asyncio.gather(*tasks)
+                idx += window
+                if (idx - cursor) % batch < pipeline:
                     self._save_cursor(idx)
                     logger.info("collect_progress", cursor=idx, total=total, **self._stats)
 
@@ -112,17 +117,18 @@ class Collector:
             self._stats["failed"] += 1
             return
 
+        writes: list[tuple[str, bytes]] = []
         if pdf is None:
             self._stats["missing"] += 1
         else:
-            self._put(f"pdf/{orgnr}_{year}.pdf", pdf)
+            writes.append((f"pdf/{orgnr}_{year}.pdf", pdf))
             meta = {
                 "orgnr": orgnr,
                 "year": year,
                 "pdf_hash": hashlib.sha256(pdf).hexdigest(),
                 "pdf_size": len(pdf),
             }
-            self._put(f"meta/{orgnr}_{year}.json", json.dumps(meta).encode())
+            writes.append((f"meta/{orgnr}_{year}.json", json.dumps(meta).encode()))
             self._stats["pdfs"] += 1
 
         try:
@@ -130,10 +136,13 @@ class Collector:
                 client.fetch_regnskap_raw, orgnr, limiter=self._json_limiter
             )
             if raw is not None:
-                self._put(f"json/{orgnr}.json", raw)
+                writes.append((f"json/{orgnr}.json", raw))
                 self._stats["jsons"] += 1
         except Exception as exc:
             logger.warning("json_failed", orgnr=orgnr, error=str(exc))
+
+        if writes:
+            await asyncio.gather(*(asyncio.to_thread(self._put, rel, data) for rel, data in writes))
 
     async def _throttled(self, coro_fn, *args, limiter: AdaptiveLimiter, **kwargs):
         @retry(
