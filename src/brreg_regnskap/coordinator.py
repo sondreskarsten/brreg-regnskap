@@ -16,6 +16,8 @@ allocation; the collector never touches it.
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import json
 from datetime import UTC, datetime
 
@@ -45,39 +47,45 @@ class Coordinator:
         return connect(self._key_file, gcs=self._is_gcs)
 
     def drain_holding(self) -> int:
-        """Move collected files to final paths and fold them into the manifest."""
-        meta_prefix = f"{self._settings.holding_prefix}/meta/"
-        meta_keys = [k for k in self._storage.list_dir(meta_prefix) if k.endswith(".json")]
-        if not meta_keys:
+        """Commit the collector's PDF-only holding area into final paths + manifest.
+
+        The collector dumps only ``holding/pdf/{orgnr}_{year}.pdf``. Here the
+        coordinator does the per-file work it was kept out of: server-side copy
+        the PDF to its final path, fetch the (unlimited) JSON, and write the
+        manifest row. orgnr/year are parsed from the blob name.
+        """
+        pdf_prefix = f"{self._settings.holding_prefix}/pdf/"
+        pdf_keys = [k for k in self._storage.list_dir(pdf_prefix) if k.endswith(".pdf")]
+        if not pdf_keys:
             logger.info("holding_empty")
             return 0
+
+        pairs: list[tuple[str, int, str]] = []
+        for key in pdf_keys:
+            stem = key.rsplit("/", 1)[-1][: -len(".pdf")]
+            orgnr, _, year_s = stem.rpartition("_")
+            if not orgnr or not year_s.isdigit():
+                logger.warning("holding_bad_name", key=key)
+                continue
+            pairs.append((orgnr, int(year_s), key))
+
+        # Fetch JSON for all drained orgnrs concurrently (unlimited endpoint).
+        json_blobs = asyncio.run(self._fetch_json_batch([o for o, _, _ in pairs]))
 
         records: list[ManifestRecord] = []
         now_iso = datetime.now(UTC).isoformat()
         drained = 0
-
-        for meta_key in meta_keys:
-            meta = json.loads(self._storage.read_bytes(meta_key))
-            orgnr = meta["orgnr"]
-            year = int(meta["year"])
-
-            holding_pdf = f"{self._settings.holding_prefix}/pdf/{orgnr}_{year}.pdf"
-            holding_json = f"{self._settings.holding_prefix}/json/{orgnr}.json"
+        for orgnr, year, holding_pdf in pairs:
             final_pdf = self._settings.regnskap_pdf_path(orgnr, year)
-            final_json = self._settings.regnskap_json_path(orgnr, year)
-
-            if not self._storage.exists(holding_pdf):
-                continue
             self._storage.copy(holding_pdf, final_pdf)
 
             json_final_path = None
             file_hash = None
-            if self._storage.exists(holding_json):
-                raw = self._storage.read_bytes(holding_json)
+            raw = json_blobs.get(orgnr)
+            if raw is not None:
+                final_json = self._settings.regnskap_json_path(orgnr, year)
                 self._storage.write_bytes(final_json, raw)
                 json_final_path = final_json
-                import hashlib
-
                 file_hash = hashlib.sha256(raw).hexdigest()
 
             records.append(
@@ -85,25 +93,47 @@ class Coordinator:
                     orgnr=orgnr,
                     year=year,
                     download_timestamp=now_iso,
-                    pdf_hash=meta.get("pdf_hash"),
                     file_hash=file_hash,
                     pdf_path=final_pdf,
                     json_path=json_final_path,
-                    file_size_bytes=meta.get("pdf_size"),
                     status="success",
                 )
             )
-
             self._storage.delete(holding_pdf)
-            if self._storage.exists(holding_json):
-                self._storage.delete(holding_json)
-            self._storage.delete(meta_key)
             drained += 1
 
         if records:
             self._merge_into_manifest(records)
         logger.info("holding_drained", count=drained)
         return drained
+
+    async def _fetch_json_batch(self, orgnrs: list[str]) -> dict[str, bytes]:
+        """Fetch the JSON financial record for each orgnr (unlimited endpoint)."""
+        if not orgnrs:
+            return {}
+        import aiohttp
+
+        from brreg_regnskap.api.regnskapsregisteret import RegnskapsregisteretClient
+
+        out: dict[str, bytes] = {}
+        sem = asyncio.Semaphore(20)
+        connector = aiohttp.TCPConnector(limit=20)
+        timeout = aiohttp.ClientTimeout(total=120)
+        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+            client = RegnskapsregisteretClient(session=session)
+
+            async def one(orgnr: str) -> None:
+                async with sem:
+                    try:
+                        raw = await client.fetch_regnskap_raw(orgnr)
+                    except Exception as exc:
+                        logger.warning("json_fetch_failed", orgnr=orgnr, error=str(exc))
+                        return
+                    if raw is not None:
+                        out[orgnr] = raw
+
+            await asyncio.gather(*(one(o) for o in dict.fromkeys(orgnrs)))
+        return out
 
     def _merge_into_manifest(self, records: list[ManifestRecord]) -> None:
         """Streaming manifest rewrite: existing minus replaced keys, plus new rows.

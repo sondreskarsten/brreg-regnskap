@@ -47,16 +47,12 @@ async def test_collector_walks_and_dumps_to_holding(tmp_path, monkeypatch) -> No
     stats = await Collector(settings).run()
 
     assert stats["pdfs"] == 2
-    assert stats["jsons"] == 2
     cursor = json.loads(storage.read_bytes(settings.collect_cursor_path))
     assert cursor["position"] == 2
     assert (
         storage.read_bytes(f"{settings.holding_prefix}/pdf/910000001_2024.pdf")
         == b"PDF:910000001:2024"
     )
-    meta = json.loads(storage.read_bytes(f"{settings.holding_prefix}/meta/910000001_2024.json"))
-    assert meta["orgnr"] == "910000001"
-    assert "pdf_hash" in meta
 
 
 @pytest.mark.asyncio
@@ -78,7 +74,7 @@ async def test_collector_resumes_from_cursor(tmp_path, monkeypatch) -> None:
 async def test_collector_no_work_list_is_noop(tmp_path) -> None:
     settings = Settings(storage_path=str(tmp_path), max_runtime_minutes=0)
     stats = await Collector(settings).run()
-    assert stats == {"pdfs": 0, "jsons": 0, "missing": 0, "failed": 0}
+    assert stats == {"pdfs": 0, "missing": 0, "failed": 0}
 
 
 @pytest.mark.asyncio

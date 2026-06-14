@@ -14,7 +14,6 @@ no 4M-row structure anywhere, so it runs comfortably in ~1 GiB.
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import time
 from collections import deque
@@ -57,12 +56,11 @@ class Collector:
         self._settings = settings
         self._storage = StorageBackend.from_settings(settings)
         self._pdf_limiter = AdaptiveLimiter(settings.requests_per_second, start_rate=1.5)
-        self._json_limiter = AdaptiveLimiter(20.0, start_rate=20.0, min_rate=5.0)
         self._semaphore = asyncio.Semaphore(settings.max_concurrent)
         self._start_time = time.monotonic()
         self._shutdown = False
         self._pdf_throttle_times: deque[float] = deque(maxlen=_THROTTLE_WINDOW_MAX)
-        self._stats = {"pdfs": 0, "jsons": 0, "missing": 0, "failed": 0}
+        self._stats = {"pdfs": 0, "missing": 0, "failed": 0}
 
     async def run(self) -> dict[str, int]:
         self._storage.check_credentials()
@@ -110,6 +108,13 @@ class Collector:
         return dict(self._stats)
 
     async def _collect_one(self, client: RegnskapsregisteretClient, orgnr: str, year: int) -> None:
+        """Download one PDF and stream it to the holding blob — nothing else.
+
+        PDF is the only quota-scarce resource, so the collector does the bare
+        minimum during the clean window: one fetch, one write, advance. JSON,
+        hashing, and the manifest are the coordinator's job. orgnr/year travel
+        in the blob name, so no sidecar is needed.
+        """
         try:
             pdf = await self._throttled(client.download_pdf, orgnr, year, limiter=self._pdf_limiter)
         except Exception as exc:
@@ -117,32 +122,12 @@ class Collector:
             self._stats["failed"] += 1
             return
 
-        writes: list[tuple[str, bytes]] = []
         if pdf is None:
             self._stats["missing"] += 1
-        else:
-            writes.append((f"pdf/{orgnr}_{year}.pdf", pdf))
-            meta = {
-                "orgnr": orgnr,
-                "year": year,
-                "pdf_hash": hashlib.sha256(pdf).hexdigest(),
-                "pdf_size": len(pdf),
-            }
-            writes.append((f"meta/{orgnr}_{year}.json", json.dumps(meta).encode()))
-            self._stats["pdfs"] += 1
+            return
 
-        try:
-            raw = await self._throttled(
-                client.fetch_regnskap_raw, orgnr, limiter=self._json_limiter
-            )
-            if raw is not None:
-                writes.append((f"json/{orgnr}.json", raw))
-                self._stats["jsons"] += 1
-        except Exception as exc:
-            logger.warning("json_failed", orgnr=orgnr, error=str(exc))
-
-        if writes:
-            await asyncio.gather(*(asyncio.to_thread(self._put, rel, data) for rel, data in writes))
+        await asyncio.to_thread(self._put, f"pdf/{orgnr}_{year}.pdf", pdf)
+        self._stats["pdfs"] += 1
 
     async def _throttled(self, coro_fn, *args, limiter: AdaptiveLimiter, **kwargs):
         @retry(
