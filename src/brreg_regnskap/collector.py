@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 from collections import deque
 
@@ -64,6 +65,8 @@ class Collector:
         self._pdf_success_times: deque[float] = deque()
         self._stats = {"pdfs": 0, "missing": 0, "failed": 0, "jsons": 0}
         self._collected_orgnrs: set[str] = set()
+        self._task_index = int(os.environ.get("CLOUD_RUN_TASK_INDEX", "0"))
+        self._task_count = max(1, int(os.environ.get("CLOUD_RUN_TASK_COUNT", "1")))
 
     async def run(self) -> dict[str, int]:
         self._storage.check_credentials()
@@ -74,9 +77,16 @@ class Collector:
 
         work = self._load_work_list()
         total = work.num_rows
+        # Each parallel task (CLOUD_RUN_TASK_INDEX of CLOUD_RUN_TASK_COUNT) owns a
+        # disjoint, interleaved slice of the work list. Tasks run as separate
+        # container instances, so each gets its own egress IP and its own ~2/s
+        # per-IP budget — N tasks ≈ 2N/s aggregate, no shared mutable state, no
+        # lock. The cursor is the position WITHIN this task's shard.
+        shard = list(range(self._task_index, total, self._task_count))
+        shard_len = len(shard)
         cursor = self._load_cursor()
-        if cursor >= total:
-            logger.info("work_list_exhausted", cursor=cursor, total=total)
+        if cursor >= shard_len:
+            logger.info("shard_exhausted", task=self._task_index, cursor=cursor, shard_len=shard_len)
             return dict(self._stats)
 
         orgnr_col = work.column("orgnr")
@@ -86,25 +96,28 @@ class Collector:
         timeout = aiohttp.ClientTimeout(total=300)
         batch = self._settings.checkpoint_interval
 
-        logger.info("collect_start", cursor=cursor, total=total)
+        logger.info("collect_start", task=self._task_index, task_count=self._task_count,
+                    cursor=cursor, shard_len=shard_len, total=total)
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
             client = RegnskapsregisteretClient(session=session)
-            idx = cursor
+            j = cursor
             pipeline = self._settings.max_concurrent
-            while idx < total:
+            while j < shard_len:
                 if self._should_shutdown():
                     break
-                window = min(pipeline, total - idx)
+                window = min(pipeline, shard_len - j)
                 tasks = []
                 for k in range(window):
-                    orgnr = orgnr_col[idx + k].as_py()
-                    year = year_col[idx + k].as_py()
+                    row = shard[j + k]
+                    orgnr = orgnr_col[row].as_py()
+                    year = year_col[row].as_py()
                     tasks.append(self._collect_one(client, orgnr, year))
                 await asyncio.gather(*tasks)
-                idx += window
-                if (idx - cursor) % batch < pipeline:
-                    self._save_cursor(idx)
-                    logger.info("collect_progress", cursor=idx, total=total, **self._stats, **self._rates())
+                j += window
+                if (j - cursor) % batch < pipeline:
+                    self._save_cursor(j)
+                    logger.info("collect_progress", task=self._task_index, cursor=j,
+                                shard_len=shard_len, **self._stats, **self._rates())
 
             # ── Phase 2: raw-JSON pass over orgnrs collected this run ──
             # The JSON endpoint takes no year and returns only the max (latest
@@ -112,8 +125,9 @@ class Collector:
             # endpoint, so it runs even if the PDF burst hit the quota wall.
             await self._json_pass(client)
 
-        self._save_cursor(idx)
-        logger.info("collect_finished", cursor=idx, total=total, **self._stats, **self._rates())
+        self._save_cursor(j)
+        logger.info("collect_finished", task=self._task_index, cursor=j,
+                    shard_len=shard_len, **self._stats, **self._rates())
         return {**self._stats, **self._rates()}
 
     def _rates(self) -> dict[str, float]:
@@ -205,16 +219,22 @@ class Collector:
 
         return pq.read_table(pa.BufferReader(raw))
 
+    def _cursor_path(self) -> str:
+        if self._task_count > 1:
+            return self._settings.collect_cursor_path.replace(
+                ".json", f"_{self._task_count}_{self._task_index}.json"
+            )
+        return self._settings.collect_cursor_path
+
     def _load_cursor(self) -> int:
-        if not self._storage.exists(self._settings.collect_cursor_path):
+        path = self._cursor_path()
+        if not self._storage.exists(path):
             return 0
-        data = json.loads(self._storage.read_bytes(self._settings.collect_cursor_path))
-        return int(data.get("position", 0))
+        return int(json.loads(self._storage.read_bytes(path)).get("position", 0))
 
     def _save_cursor(self, position: int) -> None:
         self._storage.write_bytes(
-            self._settings.collect_cursor_path,
-            json.dumps({"position": position}).encode(),
+            self._cursor_path(), json.dumps({"position": position}).encode()
         )
 
     def _should_shutdown(self) -> bool:

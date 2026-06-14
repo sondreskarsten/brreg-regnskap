@@ -93,3 +93,49 @@ async def test_collector_missing_pdf_counts(tmp_path, monkeypatch) -> None:
     stats = await Collector(settings).run()
     assert stats["missing"] == 1
     assert stats["pdfs"] == 0
+
+
+@pytest.mark.asyncio
+async def test_collector_shards_by_task_index(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("CLOUD_RUN_TASK_INDEX", "1")
+    monkeypatch.setenv("CLOUD_RUN_TASK_COUNT", "3")
+    settings = Settings(storage_path=str(tmp_path), max_runtime_minutes=0)
+    storage = StorageBackend.from_settings(settings)
+    pairs = [(f"org{i}", 2024) for i in range(6)]
+    _write_work_list(storage, settings, pairs)
+    monkeypatch.setattr(collector_mod, "RegnskapsregisteretClient", _FakeClient)
+
+    stats = await Collector(settings).run()
+
+    # task 1 of 3 owns rows 1 and 4 only
+    assert stats["pdfs"] == 2
+    assert storage.exists(f"{settings.holding_prefix}/pdf/org1_2024.pdf")
+    assert storage.exists(f"{settings.holding_prefix}/pdf/org4_2024.pdf")
+    assert not storage.exists(f"{settings.holding_prefix}/pdf/org0_2024.pdf")
+    assert not storage.exists(f"{settings.holding_prefix}/pdf/org2_2024.pdf")
+    # per-task cursor path
+    cur = f"{settings.collect_cursor_path}".replace(".json", "_3_1.json")
+    assert storage.exists(cur)
+
+
+@pytest.mark.asyncio
+async def test_collector_shards_are_disjoint_and_complete(tmp_path, monkeypatch) -> None:
+    pairs = [(f"e{i}", 2024) for i in range(10)]
+    seen: set[str] = set()
+    for ti in range(3):
+        monkeypatch.setenv("CLOUD_RUN_TASK_INDEX", str(ti))
+        monkeypatch.setenv("CLOUD_RUN_TASK_COUNT", "3")
+        settings = Settings(storage_path=str(tmp_path / f"t{ti}"), max_runtime_minutes=0)
+        storage = StorageBackend.from_settings(settings)
+        _write_work_list(storage, settings, pairs)
+        monkeypatch.setattr(collector_mod, "RegnskapsregisteretClient", _FakeClient)
+        await Collector(settings).run()
+        keys = {
+            k.rsplit("/", 1)[-1]
+            for k in storage.list_dir(f"{settings.holding_prefix}/pdf/")
+            if k.endswith(".pdf")
+        }
+        for k in keys:
+            assert k not in seen  # disjoint across tasks
+            seen.add(k)
+    assert len(seen) == 10  # complete coverage
