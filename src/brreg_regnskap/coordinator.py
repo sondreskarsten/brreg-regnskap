@@ -25,7 +25,8 @@ import structlog
 
 from brreg_regnskap.api.models import ManifestRecord
 from brreg_regnskap.config import Settings
-from brreg_regnskap.manifest import ManifestManager
+from brreg_regnskap.duckgcs import connect, to_gcs
+from brreg_regnskap.manifest import MANIFEST_SCHEMA
 from brreg_regnskap.orderflow import OrderflowManager
 from brreg_regnskap.storage import StorageBackend
 
@@ -33,11 +34,15 @@ logger = structlog.get_logger()
 
 
 class Coordinator:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, key_file: str | None = None) -> None:
         self._settings = settings
         self._storage = StorageBackend.from_settings(settings)
-        self._manifest = ManifestManager(self._storage, settings.manifest_path)
         self._orderflow = OrderflowManager(self._storage, settings)
+        self._key_file = key_file
+        self._is_gcs = settings.storage_path.startswith("gs://")
+
+    def _con(self):
+        return connect(self._key_file, gcs=self._is_gcs)
 
     def drain_holding(self) -> int:
         """Move collected files to final paths and fold them into the manifest."""
@@ -96,47 +101,103 @@ class Coordinator:
             drained += 1
 
         if records:
-            self._manifest.upsert(records)
+            self._merge_into_manifest(records)
         logger.info("holding_drained", count=drained)
         return drained
 
-    def build_work_list(self) -> int:
-        """Write pending (orgnr, year) as a flat work list and reset the cursor."""
-        manifest_ts = self._load_manifest_ts()
-        rows_orgnr: list[str] = []
-        rows_year: list[int] = []
-        for digit in range(10):
-            pending = self._orderflow.fast_lane_pending(digit, manifest_ts)
-            if pending.num_rows == 0:
-                continue
-            rows_orgnr.extend(pending.column("orgnr").to_pylist())
-            rows_year.extend(pending.column("year").to_pylist())
+    def _merge_into_manifest(self, records: list[ManifestRecord]) -> None:
+        """Streaming manifest rewrite: existing minus replaced keys, plus new rows.
 
-        table = pa.table(
-            {
-                "orgnr": pa.array(rows_orgnr, type=pa.string()),
-                "year": pa.array(rows_year, type=pa.int32()),
-            }
+        DuckDB streams the 4M-row manifest under a memory cap rather than loading
+        it into Arrow (which costs ~2.8 GB). New keys (orgnr, year, version)
+        replace any existing rows with the same key.
+        """
+        new_table = _records_to_table(records)
+        con = self._con()
+        try:
+            con.register("new_records", new_table)
+            mpath = to_gcs(self._settings.manifest_path)
+            tmp = to_gcs(self._settings.manifest_path.replace(".parquet", ".tmp.parquet"))
+            exists = self._storage.exists(self._settings.manifest_path)
+            if exists:
+                con.execute(
+                    f"""
+                    COPY (
+                      SELECT * FROM read_parquet('{mpath}') m
+                      WHERE NOT EXISTS (
+                        SELECT 1 FROM new_records n
+                        WHERE n.orgnr = m.orgnr AND n.year = m.year AND n.version = m.version
+                      )
+                      UNION ALL BY NAME
+                      SELECT * FROM new_records
+                    ) TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)
+                    """
+                )
+            else:
+                con.execute(
+                    f"COPY (SELECT * FROM new_records) TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)"
+                )
+        finally:
+            con.close()
+        # Atomic-ish swap: copy tmp over the manifest, delete tmp.
+        self._storage.copy(
+            self._settings.manifest_path.replace(".parquet", ".tmp.parquet"),
+            self._settings.manifest_path,
         )
-        sink = pa.BufferOutputStream()
-        pq.write_table(table, sink, compression="zstd")
-        self._storage.write_bytes(self._settings.work_list_path, sink.getvalue().to_pybytes())
+        self._storage.delete(self._settings.manifest_path.replace(".parquet", ".tmp.parquet"))
+
+    def build_work_list(self) -> int:
+        """Streaming anti-join: write pending (orgnr, year) and reset the cursor.
+
+        Pending = fast-lane orderflow entries with no success row downloaded at or
+        after their create_time. DuckDB streams the manifest under a memory cap.
+        """
+        con = self._con()
+        try:
+            of = to_gcs(f"{self._settings.storage_path}/orderflow/shard_*.parquet")
+            out = to_gcs(self._settings.work_list_path)
+            if self._storage.exists(self._settings.manifest_path):
+                mpath = to_gcs(self._settings.manifest_path)
+                anti = f"""
+                  AND NOT EXISTS (
+                    SELECT 1 FROM read_parquet('{mpath}') m
+                    WHERE m.orgnr = o.orgnr AND m.year = o.year
+                      AND m.status = 'success' AND m.pdf_path IS NOT NULL
+                      AND epoch(CAST(m.download_timestamp AS TIMESTAMP)) >= o.create_time
+                  )
+                """
+            else:
+                anti = ""
+            con.execute(
+                f"""
+                COPY (
+                  SELECT o.orgnr, CAST(o.year AS INTEGER) AS year
+                  FROM read_parquet('{of}') o
+                  WHERE o.year IS NOT NULL
+                    AND o.processing_priority = o.create_time
+                    {anti}
+                  ORDER BY o.processing_priority DESC
+                ) TO '{out}' (FORMAT parquet, COMPRESSION zstd)
+                """
+            )
+            entries = con.execute(
+                f"SELECT count(*) FROM read_parquet('{out}')"
+            ).fetchone()[0]
+        finally:
+            con.close()
+
         self._storage.write_bytes(
             self._settings.collect_cursor_path, json.dumps({"position": 0}).encode()
         )
-        logger.info("work_list_built", entries=table.num_rows)
-        return table.num_rows
+        logger.info("work_list_built", entries=entries)
+        return int(entries)
 
-    def _load_manifest_ts(self) -> dict[tuple[str, int], int]:
-        table = self._manifest.load()
-        ts: dict[tuple[str, int], int] = {}
-        if table.num_rows == 0:
-            return ts
-        orgnr_col = table.column("orgnr").to_pylist()
-        year_col = table.column("year").to_pylist()
-        status_col = table.column("status").to_pylist()
-        pdf_col = table.column("pdf_path").to_pylist()
-        for o, y, s, p in zip(orgnr_col, year_col, status_col, pdf_col, strict=False):
-            if s == "success" and p:
-                ts[(o, y)] = 1
-        return ts
+
+def _records_to_table(records: list[ManifestRecord]) -> pa.Table:
+    cols: dict[str, list[object]] = {f.name: [] for f in MANIFEST_SCHEMA}
+    for r in records:
+        d = r.model_dump()
+        for f in MANIFEST_SCHEMA:
+            cols[f.name].append(d.get(f.name))
+    arrays = {f.name: pa.array(cols[f.name], type=f.type) for f in MANIFEST_SCHEMA}
+    return pa.table(arrays, schema=MANIFEST_SCHEMA)
