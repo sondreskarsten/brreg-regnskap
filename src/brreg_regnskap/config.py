@@ -148,3 +148,18 @@ class Settings(BaseSettings):
     def patch_cursor_path(self) -> str:
         """JSON file storing the date of the last successful patch run."""
         return f"{self.storage_path}/metadata/patch_cursor.json"
+
+    @property
+    def work_list_path(self) -> str:
+        """Coordinator output: flat list of (orgnr, year) pending download."""
+        return f"{self.storage_path}/coord/work_list.parquet"
+
+    @property
+    def collect_cursor_path(self) -> str:
+        """Collector position in the work list."""
+        return f"{self.storage_path}/coord/cursor.json"
+
+    @property
+    def holding_prefix(self) -> str:
+        """Holding area where the collector dumps raw downloads."""
+        return f"{self.storage_path}/holding"

@@ -164,6 +164,10 @@ class StorageBackend:
         with contextlib.suppress(FileNotFoundError):
             self._fs.rm(fs_path)
 
+    def copy(self, src: str, dst: str) -> None:
+        """Copy src to dst within the backend."""
+        self.write_bytes(dst, self.read_bytes(src))
+
     def modified_time(self, path: str) -> datetime | None:
         """Return the last modified time of the file as a UTC datetime.
 
@@ -298,6 +302,11 @@ class GCSNativeBackend(StorageBackend):
         blob = self._bucket().blob(blob_name)
         with contextlib.suppress(Exception):
             blob.delete()
+
+    def copy(self, src: str, dst: str) -> None:
+        bucket = self._bucket()
+        src_blob = bucket.blob(self._to_blob_name(src))
+        bucket.copy_blob(src_blob, bucket, self._to_blob_name(dst))
 
     def modified_time(self, path: str) -> datetime | None:
         blob_name = self._to_blob_name(path)

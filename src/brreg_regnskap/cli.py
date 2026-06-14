@@ -295,6 +295,67 @@ async def _patch_async(settings: Settings, storage: StorageBackend) -> None:
     console.print("Run [bold]brreg-regnskap sync[/bold] to download.")
 
 
+# ── collect ───────────────────────────────────────────────────────
+
+
+@app.command()
+def collect(
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
+    requests_per_second: float | None = typer.Option(None, "--rps"),
+    max_runtime: int | None = typer.Option(None, "--max-runtime"),
+    log_level: str = typer.Option("INFO", "--log-level", "-l"),
+) -> None:
+    """Lean collector: walk the work list, dump downloads to holding.
+
+    Holds no manifest. Reads the cursor, downloads the next batch of PDFs+JSON to
+    the holding area, advances the cursor, stops on quota saturation or
+    max-runtime. The daily coordinator drains holding into final locations.
+    """
+    _configure_logging(log_level)
+    overrides: dict[str, object] = {"storage_path": storage_path, "log_level": log_level}
+    if requests_per_second is not None:
+        overrides["requests_per_second"] = requests_per_second
+    if max_runtime is not None:
+        overrides["max_runtime_minutes"] = max_runtime
+    settings = Settings(**overrides)  # type: ignore[arg-type]
+
+    from brreg_regnskap.collector import Collector
+
+    stats = asyncio.run(Collector(settings).run())
+    console.print(f"collect done: {stats}")
+
+
+# ── coordinate ────────────────────────────────────────────────────
+
+
+@app.command()
+def coordinate(
+    storage_path: str = typer.Argument(..., help="Root storage path (local, s3://, or gs://)"),
+    log_level: str = typer.Option("INFO", "--log-level", "-l"),
+) -> None:
+    """Daily coordinator: drain holding, patch updates, rebuild the work list.
+
+    Owns the manifest (the only process that loads it fully). Folds the
+    collector's holding area into final paths + manifest, polls the updates API
+    for new filings, then writes pending (orgnr, year) as a flat work list and
+    resets the collector cursor.
+    """
+    _configure_logging(log_level)
+    settings = Settings(storage_path=storage_path, log_level=log_level)  # type: ignore[arg-type]
+
+    from brreg_regnskap.coordinator import Coordinator
+    from brreg_regnskap.storage import StorageBackend
+
+    storage = StorageBackend.from_settings(settings)
+    storage.check_credentials()
+
+    coord = Coordinator(settings)
+    drained = coord.drain_holding()
+    asyncio.run(_patch_async(settings, storage))
+    entries = coord.build_work_list()
+    console.print(f"coordinate done: drained={drained} work_list={entries}")
+
+
 # ── daily ─────────────────────────────────────────────────────────
 
 
