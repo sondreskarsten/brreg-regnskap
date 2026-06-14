@@ -56,11 +56,13 @@ class Collector:
         self._settings = settings
         self._storage = StorageBackend.from_settings(settings)
         self._pdf_limiter = AdaptiveLimiter(settings.requests_per_second, start_rate=1.5)
+        self._json_limiter = AdaptiveLimiter(20.0, start_rate=20.0, min_rate=5.0)
         self._semaphore = asyncio.Semaphore(settings.max_concurrent)
         self._start_time = time.monotonic()
         self._shutdown = False
         self._pdf_throttle_times: deque[float] = deque(maxlen=_THROTTLE_WINDOW_MAX)
-        self._stats = {"pdfs": 0, "missing": 0, "failed": 0}
+        self._stats = {"pdfs": 0, "missing": 0, "failed": 0, "jsons": 0}
+        self._collected_orgnrs: set[str] = set()
 
     async def run(self) -> dict[str, int]:
         self._storage.check_credentials()
@@ -103,9 +105,37 @@ class Collector:
                     self._save_cursor(idx)
                     logger.info("collect_progress", cursor=idx, total=total, **self._stats)
 
+            # ── Phase 2: raw-JSON pass over orgnrs collected this run ──
+            # The JSON endpoint takes no year and returns only the max (latest
+            # delivered) year — which equals the fast-lane year. Unlimited
+            # endpoint, so it runs even if the PDF burst hit the quota wall.
+            await self._json_pass(client)
+
         self._save_cursor(idx)
         logger.info("collect_finished", cursor=idx, total=total, **self._stats)
         return dict(self._stats)
+
+    async def _json_pass(self, client: RegnskapsregisteretClient) -> None:
+        orgnrs = sorted(self._collected_orgnrs)
+        if not orgnrs:
+            return
+        logger.info("json_pass_start", orgnrs=len(orgnrs))
+        sem = asyncio.Semaphore(self._settings.max_concurrent)
+
+        async def one(orgnr: str) -> None:
+            async with sem:
+                await self._json_limiter.acquire()
+                try:
+                    raw = await client.fetch_regnskap_raw(orgnr)
+                except Exception as exc:
+                    logger.warning("json_failed", orgnr=orgnr, error=str(exc))
+                    return
+            if raw is not None:
+                await asyncio.to_thread(self._put, f"json/{orgnr}.json", raw)
+                self._stats["jsons"] += 1
+
+        await asyncio.gather(*(one(o) for o in orgnrs))
+        logger.info("json_pass_done", **self._stats)
 
     async def _collect_one(self, client: RegnskapsregisteretClient, orgnr: str, year: int) -> None:
         """Download one PDF and stream it to the holding blob — nothing else.
@@ -128,6 +158,7 @@ class Collector:
 
         await asyncio.to_thread(self._put, f"pdf/{orgnr}_{year}.pdf", pdf)
         self._stats["pdfs"] += 1
+        self._collected_orgnrs.add(orgnr)
 
     async def _throttled(self, coro_fn, *args, limiter: AdaptiveLimiter, **kwargs):
         @retry(

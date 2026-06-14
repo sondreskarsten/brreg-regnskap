@@ -53,6 +53,8 @@ async def test_collector_walks_and_dumps_to_holding(tmp_path, monkeypatch) -> No
         storage.read_bytes(f"{settings.holding_prefix}/pdf/910000001_2024.pdf")
         == b"PDF:910000001:2024"
     )
+    assert stats["jsons"] == 2
+    assert storage.read_bytes(f"{settings.holding_prefix}/json/910000001.json") == b"JSON:910000001"
 
 
 @pytest.mark.asyncio
@@ -74,7 +76,7 @@ async def test_collector_resumes_from_cursor(tmp_path, monkeypatch) -> None:
 async def test_collector_no_work_list_is_noop(tmp_path) -> None:
     settings = Settings(storage_path=str(tmp_path), max_runtime_minutes=0)
     stats = await Collector(settings).run()
-    assert stats == {"pdfs": 0, "missing": 0, "failed": 0}
+    assert stats == {"pdfs": 0, "missing": 0, "failed": 0, "jsons": 0}
 
 
 @pytest.mark.asyncio

@@ -16,7 +16,6 @@ allocation; the collector never touches it.
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import json
 from datetime import UTC, datetime
@@ -60,33 +59,43 @@ class Coordinator:
             logger.info("holding_empty")
             return 0
 
-        pairs: list[tuple[str, int, str]] = []
+        records: list[ManifestRecord] = []
+        now_iso = datetime.now(UTC).isoformat()
+        drained = 0
         for key in pdf_keys:
             stem = key.rsplit("/", 1)[-1][: -len(".pdf")]
             orgnr, _, year_s = stem.rpartition("_")
             if not orgnr or not year_s.isdigit():
                 logger.warning("holding_bad_name", key=key)
                 continue
-            pairs.append((orgnr, int(year_s), key))
+            year = int(year_s)
 
-        # Fetch JSON for all drained orgnrs concurrently (unlimited endpoint).
-        json_blobs = asyncio.run(self._fetch_json_batch([o for o, _, _ in pairs]))
-
-        records: list[ManifestRecord] = []
-        now_iso = datetime.now(UTC).isoformat()
-        drained = 0
-        for orgnr, year, holding_pdf in pairs:
             final_pdf = self._settings.regnskap_pdf_path(orgnr, year)
-            self._storage.copy(holding_pdf, final_pdf)
+            self._storage.copy(key, final_pdf)
 
+            # Pair the raw JSON the collector dumped for this orgnr, but only after
+            # verifying its year matches the PDF's fast-lane year. The JSON endpoint
+            # returns only the max delivered year; the invariant is that it equals
+            # the fast-lane year, and this is where we check it.
             json_final_path = None
             file_hash = None
-            raw = json_blobs.get(orgnr)
-            if raw is not None:
-                final_json = self._settings.regnskap_json_path(orgnr, year)
-                self._storage.write_bytes(final_json, raw)
-                json_final_path = final_json
-                file_hash = hashlib.sha256(raw).hexdigest()
+            journalnr = None
+            holding_json = f"{self._settings.holding_prefix}/json/{orgnr}.json"
+            if self._storage.exists(holding_json):
+                raw = self._storage.read_bytes(holding_json)
+                json_year, journalnr = _json_year_and_journalnr(raw)
+                if json_year == year:
+                    final_json = self._settings.regnskap_json_path(orgnr, year)
+                    self._storage.write_bytes(final_json, raw)
+                    json_final_path = final_json
+                    file_hash = hashlib.sha256(raw).hexdigest()
+                else:
+                    logger.warning(
+                        "json_year_mismatch",
+                        orgnr=orgnr,
+                        pdf_year=year,
+                        json_year=json_year,
+                    )
 
             records.append(
                 ManifestRecord(
@@ -96,44 +105,22 @@ class Coordinator:
                     file_hash=file_hash,
                     pdf_path=final_pdf,
                     json_path=json_final_path,
+                    journalnr=journalnr,
                     status="success",
                 )
             )
-            self._storage.delete(holding_pdf)
+            self._storage.delete(key)
             drained += 1
+
+        # Clean up any JSON blobs left in holding (paired ones already copied).
+        for jkey in self._storage.list_dir(f"{self._settings.holding_prefix}/json/"):
+            if jkey.endswith(".json"):
+                self._storage.delete(jkey)
 
         if records:
             self._merge_into_manifest(records)
         logger.info("holding_drained", count=drained)
         return drained
-
-    async def _fetch_json_batch(self, orgnrs: list[str]) -> dict[str, bytes]:
-        """Fetch the JSON financial record for each orgnr (unlimited endpoint)."""
-        if not orgnrs:
-            return {}
-        import aiohttp
-
-        from brreg_regnskap.api.regnskapsregisteret import RegnskapsregisteretClient
-
-        out: dict[str, bytes] = {}
-        sem = asyncio.Semaphore(20)
-        connector = aiohttp.TCPConnector(limit=20)
-        timeout = aiohttp.ClientTimeout(total=120)
-        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
-            client = RegnskapsregisteretClient(session=session)
-
-            async def one(orgnr: str) -> None:
-                async with sem:
-                    try:
-                        raw = await client.fetch_regnskap_raw(orgnr)
-                    except Exception as exc:
-                        logger.warning("json_fetch_failed", orgnr=orgnr, error=str(exc))
-                        return
-                    if raw is not None:
-                        out[orgnr] = raw
-
-            await asyncio.gather(*(one(o) for o in dict.fromkeys(orgnrs)))
-        return out
 
     def _merge_into_manifest(self, records: list[ManifestRecord]) -> None:
         """Streaming manifest rewrite: existing minus replaced keys, plus new rows.
@@ -231,3 +218,30 @@ def _records_to_table(records: list[ManifestRecord]) -> pa.Table:
             cols[f.name].append(d.get(f.name))
     arrays = {f.name: pa.array(cols[f.name], type=f.type) for f in MANIFEST_SCHEMA}
     return pa.table(arrays, schema=MANIFEST_SCHEMA)
+
+
+def _json_year_and_journalnr(raw: bytes) -> tuple[int | None, str | None]:
+    """Read the delivered year (from regnskapsperiode.tilDato) and journalnr.
+
+    Reads — does not transform — the raw JSON; the stored bytes stay untouched.
+    Returns (None, None) if the JSON can't be parsed or has no period.
+    """
+    try:
+        parsed = json.loads(raw)
+    except Exception:
+        return None, None
+    entry = None
+    if isinstance(parsed, list) and parsed:
+        entry = parsed[0]
+    elif isinstance(parsed, dict):
+        entry = parsed
+    if not isinstance(entry, dict):
+        return None, None
+    journalnr = entry.get("journalnr")
+    journalnr = str(journalnr) if journalnr is not None else None
+    period = entry.get("regnskapsperiode") or {}
+    til = period.get("tilDato") if isinstance(period, dict) else None
+    year = None
+    if isinstance(til, str) and len(til) >= 4 and til[:4].isdigit():
+        year = int(til[:4])
+    return year, journalnr
